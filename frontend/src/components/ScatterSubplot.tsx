@@ -27,7 +27,6 @@ function reconstructFloat32Array(buffer: Uint8Array, shape: [number, number]): n
 
 const ScatterSubplot: React.FC = React.memo(() => {
   const [plotData, setPlotData] = useState<any>(null);
-  const [layout, setLayout] = useState<any>(null); // Separate state for layout
   const plotContainer = useRef<HTMLDivElement>(null);
   const plotRef = useRef<any>(null);
 
@@ -62,12 +61,16 @@ const ScatterSubplot: React.FC = React.memo(() => {
     // Handle resizing
     useEffect(() => {
         const resizeObserver = new ResizeObserver((entries) => {
+          if (!plotData || !plotData.layout) return;
           if (entries[0]) {
             const { width, height } = entries[0].contentRect;
-            setLayout((prev: any) => ({
+            setPlotData((prev: any) => ({
               ...prev,
-              width,
-              height,
+              layout: {
+                ...prev.layout,
+                width,
+                height,
+              },
             }));
             if (plotRef.current) {
               Plotly.Plots.resize(plotRef.current);

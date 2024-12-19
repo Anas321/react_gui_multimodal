@@ -1,5 +1,5 @@
 import { useState} from 'react';
-import { MantineProvider, Container, Accordion, Select } from '@mantine/core';
+import { MantineProvider, Container, Accordion, Select, Menu} from '@mantine/core';
 // import Plot from 'react-plotly.js';
 import { FiArrowRight, FiArrowLeft } from 'react-icons/fi'; // Collapsing arrows
 import '@mantine/core/styles.css';
@@ -7,10 +7,6 @@ import './index.css'; // Import the CSS file
 import alsLogo from '/public/als_logo.jpeg';
 import ScatterSubplot from './components/ScatterSubplot';
 
-// const scatterSubplot = lazy(() => import("./components/ScatterSubplot"));
-
-// // Lazy load the Plot component
-// const Plot = lazy(() => import('react-plotly.js'));
 
 
 function App() {
@@ -85,21 +81,79 @@ function App() {
                 { value: 'SAXS', label: 'SAXS' },
                 { value: 'GISAXS', label: 'GISAXS' },
               ]}
-              className="mt-4"
+              className="mt-6 mx-auto w-[90%]" // Center it horizontally
+              // classNames={{
+              //   label: 'text-xl font-bold mb-2 pl-1', // Tailwind for the label
+              //   input: 'text-lg py-3 px-4', // Tailwind for input size and padding
+              //   dropdown: 'p-2', // Tailwind for dropdown padding
+              //   option: 'text-lg py-2 px-4 hover:bg-gray-100 cursor-pointer rounded', // Tailwind for dropdown items
+              // }}
+              styles={{
+                label: {
+                  fontSize: '1.5rem', // Adjust label font size
+                  paddingBottom: '0.5rem', // Adjust padding for label
+                  paddingLeft: '0.1rem', // Adjust padding for label
+                },
+                input: {
+                  fontSize: '1.25rem', // Adjust input font size
+                  padding: '12px', // Adjust padding for larger clickable area
+                },
+                option: {
+                  fontSize: '1.25rem', // Adjust dropdown font size
+                },
+              }}
             />
             {/* Horizontal Line Cut Accordion */}
             <Accordion
               multiple
               defaultValue={['horizontal-linecut-accordion']} // Expanded by default
               chevronPosition="right"
-              classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[1.5rem] font-bold' }}
+              classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[2rem] font-bold' }}
               className="mt-6"
             >
-              <Accordion.Item value="horizontal-linecut-accordion">
-                <Accordion.Control>Horizontal Line Cut</Accordion.Control>
+            <Accordion.Item value="linecuts-accordion">
+              <Accordion.Control
+                // className="text-3xl font-extrabold"
+                classNames={{
+                  label: 'text-3xl font-extrabold',
+                }}
+               >
+                Linecuts
+              </Accordion.Control>
                 <Accordion.Panel>
-                  <div>
-                    Placeholder for Horizontal Line Cut Controls
+                  {/* Add Linecut Menu */}
+                  <div className="mt-4">
+                    <Menu>
+                      {/* Menu Button */}
+                      <Menu.Target>
+                        <button
+                          className="w-12/12 px-12 py-3 bg-blue-500 text-white text-[1.75rem] font-semibold rounded-lg shadow hover:bg-blue-600 transition mx-auto block"
+                          type="button"
+                        >
+                          Add Linecut
+                        </button>
+                      </Menu.Target>
+
+                      {/* Dropdown Items */}
+                      <Menu.Dropdown>
+                        <Menu.Item>
+                          <span className="text-lg font-medium">Horizontal Linecut</span>
+                        </Menu.Item>
+                        <Menu.Item>
+                          <span className="text-lg font-medium">Vertical Linecut</span>
+                        </Menu.Item>
+                        <Menu.Item>
+                          <span className="text-lg font-medium">Inclined Linecut</span>
+                        </Menu.Item>
+
+                        {/* Conditionally render Azimuthal Integration */}
+                        {experimentType === 'SAXS' && (
+                          <Menu.Item>
+                            <span className="text-lg font-medium">Azimuthal Integration</span>
+                          </Menu.Item>
+                        )}
+                      </Menu.Dropdown>
+                    </Menu>
                   </div>
                 </Accordion.Panel>
               </Accordion.Item>
