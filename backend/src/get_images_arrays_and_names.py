@@ -1,4 +1,3 @@
-# import logging
 import os
 import urllib.parse as urlparse
 
@@ -7,15 +6,6 @@ import numpy as np
 from tiled.client import from_uri
 
 from backend.src.preprocess_image import get_processed_image
-
-# # Configure logging
-# logging.basicConfig(
-#     level=logging.INFO,  # Set logging level to capture all messages
-#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",  # Log format
-#     handlers=[
-#         logging.FileHandler("./images_info.log"),  # Save logs to a file named app.log
-#     ],
-# )
 
 
 def fetch_image_uri_by_index(index, files_uris, accumulated_data, initialization_mode):
@@ -89,41 +79,8 @@ def get_images_arrays_and_names(
                 normalize=False,
             )
 
-            # # Convert image data type to int32
-            # if image_array.dtype != np.int32:
-            #     image_array = image_array.astype(np.int32)
-
             image_arrays.append(processed_image)
             image_names.append(image_name)
-
-            # if i == 0:
-            #     bit_depth_per_pixel = mask_detector.dtype.itemsize * 8
-            #     mask_shape = mask_detector.shape
-            #     total_pixels = mask_detector.size
-            #     total_bits = total_pixels * bit_depth_per_pixel
-            #     logging.info("")
-            #     logging.info("Mask Details:")
-            #     logging.info(f"  Data type:           {mask_detector.dtype}")
-            #     logging.info(f"  Bytes per pixel:     {mask_detector.dtype.itemsize}")
-            #     logging.info(f"  Bit depth per pixel: {bit_depth_per_pixel:,}")
-            #     logging.info(f"  Mask shape:          {mask_shape}")
-            #     logging.info(f"  Total pixels:        {total_pixels:,}")
-            #     logging.info(f"  Total bit size:      {total_bits:,} bits")
-
-            #     # Calculate and print image bit size
-            #     bit_depth_per_pixel = image_array.dtype.itemsize * 8
-            #     image_shape = image_array.shape
-            #     total_pixels = image_array.size
-            #     total_bits = total_pixels * bit_depth_per_pixel
-
-            #     logging.info("Image Details:")
-            #     logging.info(f"  Name:                {image_name}")
-            #     logging.info(f"  Data type:           {image_array.dtype}")
-            #     logging.info(f"  Bytes per pixel:     {image_array.dtype.itemsize}")
-            #     logging.info(f"  Bit depth per pixel: {bit_depth_per_pixel:,}")
-            #     logging.info(f"  Image shape:         {image_shape}")
-            #     logging.info(f"  Total pixels:        {total_pixels:,}")
-            #     logging.info(f"  Total bit size:      {total_bits:,} bits")
 
     else:
 
@@ -143,10 +100,6 @@ def get_images_arrays_and_names(
             image_client = from_uri(file_uri)
             image_array = image_client.read()  # Retrieve the NumPy array
 
-            # # Convert image data type to int32
-            # if image_array.dtype != np.int32:
-            #     image_array = image_array.astype(np.int32)
-
             processed_image = get_processed_image(
                 image_array,
                 mask_detector,
@@ -156,34 +109,5 @@ def get_images_arrays_and_names(
 
             image_arrays.append(processed_image)
             image_names.append(image_uri)
-
-            # if i == 0:
-            #     bit_depth_per_pixel = mask_detector.dtype.itemsize * 8
-            #     mask_shape = mask_detector.shape
-            #     total_pixels = mask_detector.size
-            #     total_bits = total_pixels * bit_depth_per_pixel
-            #     logging.info("")
-            #     logging.info("Mask Details:")
-            #     logging.info(f"  Data type:           {mask_detector.dtype}")
-            #     logging.info(f"  Bytes per pixel:     {mask_detector.dtype.itemsize}")
-            #     logging.info(f"  Bit depth per pixel: {bit_depth_per_pixel:,}")
-            #     logging.info(f"  Mask shape:          {mask_shape}")
-            #     logging.info(f"  Total pixels:        {total_pixels:,}")
-            #     logging.info(f"  Total bit size:      {total_bits:,} bits")
-
-            #     # Calculate and print image bit size
-            #     bit_depth_per_pixel = image_array.dtype.itemsize * 8
-            #     image_shape = image_array.shape
-            #     total_pixels = image_array.size
-            #     total_bits = total_pixels * bit_depth_per_pixel
-
-            #     logging.info("Image Details:")
-            #     logging.info(f"  Name:                {image_uri}")
-            #     logging.info(f"  Data type:           {image_array.dtype}")
-            #     logging.info(f"  Bytes per pixel:     {image_array.dtype.itemsize}")
-            #     logging.info(f"  Bit depth per pixel: {bit_depth_per_pixel:,}")
-            #     logging.info(f"  Image shape:         {image_shape}")
-            #     logging.info(f"  Total pixels:        {total_pixels:,}")
-            #     logging.info(f"  Total bit size:      {total_bits:,} bits")
 
     return image_arrays, image_names

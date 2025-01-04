@@ -1,18 +1,103 @@
-import { useState} from 'react';
-import { MantineProvider, Container, Accordion, Select, Menu} from '@mantine/core';
+import { useState, useEffect} from 'react';
+import { MantineProvider, Container, Accordion, Select, Menu, MultiSelect } from '@mantine/core';
 // import Plot from 'react-plotly.js';
 import { FiArrowRight, FiArrowLeft } from 'react-icons/fi'; // Collapsing arrows
 import '@mantine/core/styles.css';
 import './index.css'; // Import the CSS file
 import alsLogo from '/public/als_logo.jpeg';
 import ScatterSubplot from './components/ScatterSubplot';
+import LinecutSection from './components/LinecutSection';
+import HorizontalLinecutFig from './components/HorizontalLinecutFig';
+
+import { handleExperimentTypeChange, addLinecut } from './utils/linecutHandlers';
+
+const leftImageColorPalette = [
+  "red",
+  "blue",
+  "green",
+  "orange",
+  "purple",
+  "teal",
+  "pink",
+  "brown",
+  "gray",
+  "cyan",
+];
+
+const rightImageColorPalette = [
+  "lime",
+  "navy",
+  "gold",
+  "coral",
+  "indigo",
+  "magenta",
+  "olive",
+  "maroon",
+  "silver",
+  "turquoise",
+];
 
 
 
 function App() {
+  const [horizontalLinecuts, setHorizontalLinecuts] = useState<{ id: number; position: number; color: string }[]>([]);
+  const [verticalLinecuts, setVerticalLinecuts] = useState<{ position: number; color: string }[]>([]);
   const [isSecondCollapsed, setSecondCollapsed] = useState(false);
   const [isThirdCollapsed, setThirdCollapsed] = useState(false);
   const [experimentType, setExperimentType] = useState('SAXS');
+  const [selectedLinecuts, setSelectedLinecuts] = useState<string[]>([]); // Manage multiple linecuts
+
+  const linecutOrder = ['Horizontal', 'Vertical', 'Inclined', 'Azimuthal'];
+
+  const [linecutPosition, setLinecutPosition] = useState(0);
+  const [linecutData1, setLinecutData1] = useState<number[]>([]); // Data from scatter image 1
+  const [linecutData2, setLinecutData2] = useState<number[]>([]); // Data from scatter image 2
+  const [imageHeight, setImageHeight] = useState<number>(100); // Default value for height
+  const [imageWidth, setImageWidth] = useState<number>(100);  // Default value for width
+  const [imageData1, setImageData1] = useState<number[][]>([]); // Data for scatter image 1
+  const [imageData2, setImageData2] = useState<number[][]>([]); // Data for scatter image 2
+
+
+  const addHorizontalLinecut = () => {
+    console.log("Adding a horizontal linecut...");
+    if (horizontalLinecuts.length >= 10) return; // Limit to 10 linecuts
+    const newLinecut = {
+      id: horizontalLinecuts.length + 1,
+      position: 0, // Default position at the middle
+      color: leftImageColorPalette[horizontalLinecuts.length % leftImageColorPalette.length],
+    };
+    console.log("New Linecut:", newLinecut);
+    setHorizontalLinecuts((prev) => [...prev, newLinecut]);
+
+    // Add the new linecut's ID to selectedLinecuts
+    setSelectedLinecuts((prev) => [...prev, String(newLinecut.id)]);
+  };
+
+
+    // Update linecut position
+    const updateLinecutPosition = (id: number, position: number) => {
+      setHorizontalLinecuts((prev) =>
+        prev.map((linecut) =>
+          linecut.id === id ? { ...linecut, position } : linecut
+        )
+      );
+    };
+
+
+  const computeLinecutData = (position: number) => {
+    if (imageData1.length > 0 && imageData2.length > 0) {
+      // Extract horizontal linecut data based on the position
+      const data1 = imageData1[position]; // Row from scatter image 1
+      const data2 = imageData2[position]; // Row from scatter image 2
+      setLinecutData1(data1);
+      setLinecutData2(data2);
+    }
+  };
+
+  useEffect(() => {
+    computeLinecutData(linecutPosition);
+  }, [linecutPosition, imageData1, imageData2]);
+
 
   return (
     <MantineProvider>
@@ -54,8 +139,7 @@ function App() {
         fluid
         style={{
           display: 'flex',
-          flexDirection: 'row',
-          height: '150vh',
+          height: '100vh',
           width: '100%',
           padding: 0,
         }}
@@ -72,36 +156,32 @@ function App() {
             <Select
               label="Select Experiment Type"
               value={experimentType}
-              onChange={(value) => {
-                if (value !== null) {
-                  setExperimentType(value);
-                }
-              }}
+              onChange={(value) => handleExperimentTypeChange(value, setExperimentType, setSelectedLinecuts)}
               data={[
                 { value: 'SAXS', label: 'SAXS' },
                 { value: 'GISAXS', label: 'GISAXS' },
               ]}
               className="mt-6 mx-auto w-[90%]" // Center it horizontally
-              // classNames={{
-              //   label: 'text-xl font-bold mb-2 pl-1', // Tailwind for the label
-              //   input: 'text-lg py-3 px-4', // Tailwind for input size and padding
-              //   dropdown: 'p-2', // Tailwind for dropdown padding
-              //   option: 'text-lg py-2 px-4 hover:bg-gray-100 cursor-pointer rounded', // Tailwind for dropdown items
-              // }}
-              styles={{
-                label: {
-                  fontSize: '1.5rem', // Adjust label font size
-                  paddingBottom: '0.5rem', // Adjust padding for label
-                  paddingLeft: '0.1rem', // Adjust padding for label
-                },
-                input: {
-                  fontSize: '1.25rem', // Adjust input font size
-                  padding: '12px', // Adjust padding for larger clickable area
-                },
-                option: {
-                  fontSize: '1.25rem', // Adjust dropdown font size
-                },
+              classNames={{
+                label: 'text-xl font-bold mb-2 pl-1', // Tailwind for the label
+                input: 'text-lg py-3 px-4', // Tailwind for input size and padding
+                dropdown: 'p-2', // Tailwind for dropdown padding
+                option: 'text-lg py-2 px-4 hover:bg-gray-100 cursor-pointer rounded', // Tailwind for dropdown items
               }}
+              // styles={{
+              //   label: {
+              //     fontSize: '1.5rem', // Adjust label font size
+              //     paddingBottom: '0.5rem', // Adjust padding for label
+              //     paddingLeft: '0.1rem', // Adjust padding for label
+              //   },
+              //   input: {
+              //     fontSize: '1.25rem', // Adjust input font size
+              //     padding: '12px', // Adjust padding for larger clickable area
+              //   },
+              //   option: {
+              //     fontSize: '1.25rem', // Adjust dropdown font size
+              //   },
+              // }}
             />
             {/* Horizontal Line Cut Accordion */}
             <Accordion
@@ -113,10 +193,7 @@ function App() {
             >
             <Accordion.Item value="linecuts-accordion">
               <Accordion.Control
-                // className="text-3xl font-extrabold"
-                classNames={{
-                  label: 'text-3xl font-extrabold',
-                }}
+                classNames={{label: 'text-3xl font-bold'}}
                >
                 Linecuts
               </Accordion.Control>
@@ -136,25 +213,47 @@ function App() {
 
                       {/* Dropdown Items */}
                       <Menu.Dropdown>
-                        <Menu.Item>
-                          <span className="text-lg font-medium">Horizontal Linecut</span>
+                        <Menu.Item
+                        onClick={() => {
+                          addLinecut('Horizontal', selectedLinecuts, setSelectedLinecuts);
+                          addHorizontalLinecut();
+                        }}
+                        >
+                          <span className="text-2xl font-medium">Horizontal Linecut</span>
                         </Menu.Item>
-                        <Menu.Item>
-                          <span className="text-lg font-medium">Vertical Linecut</span>
+                        <Menu.Item onClick={() => addLinecut('Vertical', selectedLinecuts, setSelectedLinecuts)}>
+                          <span className="text-2xl font-medium">Vertical Linecut</span>
                         </Menu.Item>
-                        <Menu.Item>
-                          <span className="text-lg font-medium">Inclined Linecut</span>
+                        {/* Conditionally render Azimuthal Integration in the menu*/}
+                        <Menu.Item onClick={() => addLinecut('Inclined', selectedLinecuts, setSelectedLinecuts)}>
+                          <span className="text-2xl font-medium">Inclined Linecut</span>
                         </Menu.Item>
-
                         {/* Conditionally render Azimuthal Integration */}
                         {experimentType === 'SAXS' && (
-                          <Menu.Item>
-                            <span className="text-lg font-medium">Azimuthal Integration</span>
+                          <Menu.Item onClick={() => addLinecut('Azimuthal', selectedLinecuts, setSelectedLinecuts)}>
+                            <span className="text-2xl font-medium">Azimuthal Integration</span>
                           </Menu.Item>
                         )}
                       </Menu.Dropdown>
                     </Menu>
                   </div>
+                    {/* Render all selected LinecutSections */}
+                    {linecutOrder.filter((linecut) => selectedLinecuts.includes(linecut)).map((linecutType) => (
+                      <LinecutSection
+                        key={linecutType}
+                        linecutType={linecutType}
+                        position={linecutPosition}
+                        setPosition={setLinecutPosition}
+                        imageHeight={imageHeight}
+                        linecuts={horizontalLinecuts}
+                        selectedLinecuts={selectedLinecuts}
+                        setSelectedLinecuts={setSelectedLinecuts}
+                        updateLinecutPosition={updateLinecutPosition}
+                       />
+                    ))}
+                    {/* {selectedLinecuts.map((linecutType) => (
+                    <LinecutSection key={linecutType} linecutType={linecutType} />
+                  ))} */}
                 </Accordion.Panel>
               </Accordion.Item>
             </Accordion>
@@ -182,7 +281,14 @@ function App() {
                 <Accordion.Control>Scatter Images</Accordion.Control>
                 <Accordion.Panel>
                 <div>
-                  <ScatterSubplot/>
+                  <ScatterSubplot
+                    linecutPosition={linecutPosition}
+                    setImageHeight={setImageHeight}
+                    setImageWidth={setImageWidth}
+                    setImageData1={setImageData1}
+                    setImageData2={setImageData2}
+                    horizontalLinecuts={horizontalLinecuts} // Pass here
+                  />
                 </div>
                 </Accordion.Panel>
               </Accordion.Item>
@@ -214,20 +320,32 @@ function App() {
                     chevronPosition="right"
                     classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[1.5rem] font-bold'}}
                   >
+                    {selectedLinecuts.includes('Horizontal') && (
                     <Accordion.Item value="horizontal-linecut-accordion">
                       <Accordion.Control>Horizontal Linecut</Accordion.Control>
-                      <Accordion.Panel>Placeholder</Accordion.Panel>
+                      <Accordion.Panel>
+                        <HorizontalLinecutFig
+                          linecutType="Horizontal"
+                          linecutData1={linecutData1}
+                          linecutData2={linecutData2}
+
+                        />
+                      </Accordion.Panel>
                     </Accordion.Item>
+                    )}
+                    {selectedLinecuts.includes('Vertical') && (
                     <Accordion.Item value="vertical-linecut-accordion">
                       <Accordion.Control>Vertical Linecut</Accordion.Control>
                       <Accordion.Panel>Placeholder</Accordion.Panel>
                     </Accordion.Item>
+                    )}
+                    {selectedLinecuts.includes('Inclined') && (
                     <Accordion.Item value="inclined-linecut-accordion">
                       <Accordion.Control>Inclined Linecut</Accordion.Control>
                       <Accordion.Panel>Placeholder</Accordion.Panel>
                     </Accordion.Item>
-
-                    {experimentType === 'SAXS' && (
+                    )}
+                    {experimentType === 'SAXS' && selectedLinecuts.includes('Azimuthal') && (
                       <Accordion.Item value="azimuthal-integration-accordion">
                         <Accordion.Control>Azimuthal Integration</Accordion.Control>
                         <Accordion.Panel>
