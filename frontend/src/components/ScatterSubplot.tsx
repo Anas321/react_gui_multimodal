@@ -22,6 +22,8 @@ interface ScatterSubplotProps {
   setImageData1: (data: number[][]) => void;
   setImageData2: (data: number[][]) => void;
   horizontalLinecuts: { id: number; position: number; color: string }[];
+  leftImageColorPalette: string[];
+  rightImageColorPalette: string[];
 }
 
 const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
@@ -31,6 +33,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setImageData1,
   setImageData2,
   horizontalLinecuts,
+  leftImageColorPalette,
+  rightImageColorPalette,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const [imageWidth, setLocalImageWidth] = useState<number>(0);
@@ -105,54 +109,45 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     >
       {plotData ? (
         <Plot
-          data={[
-            ...plotData.data,
-            // Linecuts for the left image
-            ...horizontalLinecuts.map((linecut: { id: number; position: number; color: string }) => ({
-              x: [0, imageWidth],
-              y: [linecut.position, linecut.position],
-              mode: "lines",
-              line: { color: linecut.color, width: 2 },
-              showlegend: false,
-              xaxis: "x1",
-              yaxis: "y1",
-            })),
-            // Linecuts for the right image
-            ...horizontalLinecuts.map((linecut) => ({
-              x: [0, imageWidth],
-              y: [linecut.position, linecut.position],
-              mode: "lines",
-              line: { color: linecut.color, width: 2 },
-              showlegend: false,
-              xaxis: "x2", // Ensure this matches the right image axes
-              yaxis: "y2",
-            })),
+        data={[
+          ...plotData.data,
+          // Linecuts for the left image
+          ...horizontalLinecuts.map((linecut) => ({
+            x: [0, imageWidth],
+            y: [linecut.position, linecut.position],
+            mode: "lines",
+            line: {
+              color: leftImageColorPalette[
+                (linecut.id - 1) % leftImageColorPalette.length
+              ],
+              width: 2,
+            },
+            showlegend: false,
+            xaxis: "x1",
+            yaxis: "y1",
+          })),
+          // Linecuts for the right image
+          ...horizontalLinecuts.map((linecut) => ({
+            x: [0, imageWidth],
+            y: [linecut.position, linecut.position],
+            mode: "lines",
+            line: {
+              color: rightImageColorPalette[
+                (linecut.id - 1) % rightImageColorPalette.length
+              ],
+              width: 2,
+            },
+            showlegend: false,
+            xaxis: "x2",
+            yaxis: "y2",
+          })),
+        ]}
+        layout={plotData.layout}
+        config={{ scrollZoom: true }}
+        useResizeHandler={true}
+        style={{ width: "100%", height: "100%" }}
+      />
 
-            // {
-            //   x: [0, imageWidth],
-            //   y: [linecutPosition, linecutPosition],
-            //   mode: "lines",
-            //   line: { color: "red", width: 2 },
-            //   showlegend: false,
-            //   xaxis: "x1",
-            //   yaxis: "y1",
-            // },
-            // // Add horizontal line for the second scatter image
-            // {
-            //   x: [0, imageWidth],
-            //   y: [linecutPosition, linecutPosition],
-            //   mode: "lines",
-            //   line: { color: "blue", width: 2 },
-            //   showlegend: false,
-            //   xaxis: "x2",
-            //   yaxis: "y2",
-            // },
-          ]}
-          layout={plotData.layout}
-          config={{ scrollZoom: true }}
-          useResizeHandler={true}
-          style={{ width: "100%", height: "100%" }}
-        />
       ) : (
         <p>Loading scatter subplot...</p>
       )}

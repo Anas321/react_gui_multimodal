@@ -1,5 +1,5 @@
 // LinecutSection.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Slider, MultiSelect } from '@mantine/core';
 
 interface LinecutSectionProps {
@@ -22,56 +22,101 @@ const LinecutSection: React.FC<LinecutSectionProps> = ({
   selectedLinecuts,
   setSelectedLinecuts,
   updateLinecutPosition,
- }) => {
+}) => {
   if (!linecutType) return null;
+
+  // Find the currently active linecut
+  const activeLinecut = linecuts.find((linecut) =>
+    selectedLinecuts.includes(String(linecut.id))
+  );
+
+  // Update slider position whenever the active linecut changes
+  useEffect(() => {
+    if (activeLinecut) {
+      setPosition(activeLinecut.position);
+    }
+  }, [activeLinecut, setPosition]);
 
   return (
     <div className="mt-4 p-4 bg-gray-100 rounded shadow">
       <h2 className="text-2xl font-bold">{linecutType} Linecut</h2>
       {(linecutType === 'Horizontal' || linecutType === 'Vertical') && (
         <>
-        <Slider
-          label={`Adjust ${linecutType} position`}
-          min={0}
-          max={imageHeight - 1}
-          step={1}
-          value={position}
-          onChange={(value) => {
+          {/* Slider to adjust linecut position */}
+          <Slider
+            label={`Adjust ${linecutType} position`}
+            min={0}
+            max={imageHeight - 1}
+            step={1}
+            value={position}
+            onChange={(value) => {
+              setPosition(value); // Update local position
+              if (activeLinecut) {
+                updateLinecutPosition(activeLinecut.id, value); // Update position in the parent state
+              }
+            }}
+            marks={[
+              { value: 0, label: '0' },
+              { value: imageHeight - 1, label: `${imageHeight - 1}` },
+            ]}
+            className="mt-6 mb-6"
+          />
 
-            console.log("Slider value:", value); // Check the slider value
+          {/* MultiSelect for choosing linecuts */}
+          {/* <MultiSelect
+            data={linecuts.map((linecut) => ({
+              value: String(linecut.id),
+              label: `Linecut ${linecut.id}`,
+            }))}
+            value={selectedLinecuts}
+            onChange={(values) => {
+              // Identify the removed linecuts
+              const removedLinecuts = horizontalLinecuts.filter(
+                (linecut) => !values.includes(String(linecut.id))
+              );
 
-            setPosition(value); // Update local position
+              // Remove the deselected linecuts from the states
+              removedLinecuts.forEach((linecut) => {
+                setHorizontalLinecuts((prev) =>
+                  prev.filter((lc) => lc.id !== linecut.id)
+                );
+                setLinecutData1((prev) =>
+                  prev.filter((data) => data.id !== linecut.id)
+                );
+                setLinecutData2((prev) =>
+                  prev.filter((data) => data.id !== linecut.id)
+                );
+              });
 
-            const activeLinecut = linecuts.find((linecut) =>
-              selectedLinecuts.includes(String(linecut.id))
-            );
+              // Update selected linecuts
+              setSelectedLinecuts(values);
+            }}
+            placeholder="Select linecuts"
+            mt="2rem"
+          /> */}
 
-            console.log("Active Linecut:", activeLinecut); // Check the selected linecut
-            console.log("Selected Linecuts:", selectedLinecuts);
-            console.log("Linecuts:", linecuts);
-
-
-            if (activeLinecut) {
-              updateLinecutPosition(activeLinecut.id, value); // Update position in the parent state
-            }
-          }}
-          marks={[
-            { value: 0, label: '0' },
-            { value: imageHeight, label: `${imageHeight}` },
-          ]}
-          className="mt-6 mb-6"
-        />
-        <MultiSelect
-          data={linecuts.map((linecut) => ({
-            value: String(linecut.id),
-            label: `Linecut ${linecut.id}`,
-          }))}
-          value={selectedLinecuts}
-          onChange={setSelectedLinecuts}
-          placeholder="Select linecuts"
-          mt="2rem"
-        />
-      </>
+          <MultiSelect
+            data={Array.from(
+              new Map(
+                linecuts.map((linecut) => [
+                  linecut.id,
+                  { value: String(linecut.id), label: `Linecut ${linecut.id}` },
+                ])
+              ).values()
+            )}
+            value={selectedLinecuts}
+            onChange={(values) => {
+              setSelectedLinecuts(values);
+              const selectedId = values.length ? Number(values[values.length - 1]) : null;
+              const selectedLinecut = linecuts.find((linecut) => linecut.id === selectedId);
+              if (selectedLinecut) {
+                setPosition(selectedLinecut.position); // Sync slider position with the newly selected linecut
+              }
+            }}
+            placeholder="Select linecuts"
+            mt="2rem"
+          />
+        </>
       )}
     </div>
   );
