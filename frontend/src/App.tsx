@@ -11,6 +11,9 @@ import HorizontalLinecutFig from './components/HorizontalLinecutFig';
 
 import { handleExperimentTypeChange, addLinecut } from './utils/linecutHandlers';
 
+import { Linecut } from './types';
+
+
 const leftImageColorPalette = [
   "red",
   "blue",
@@ -26,11 +29,11 @@ const leftImageColorPalette = [
 
 const rightImageColorPalette = [
   "lime",
-  "navy",
   "gold",
+  "navy",
+  "magenta",
   "coral",
   "indigo",
-  "magenta",
   "olive",
   "maroon",
   "silver",
@@ -40,8 +43,8 @@ const rightImageColorPalette = [
 
 
 function App() {
-  const [horizontalLinecuts, setHorizontalLinecuts] = useState<{ id: number; position: number; color: string }[]>([]);
-  const [verticalLinecuts, setVerticalLinecuts] = useState<{ position: number; color: string }[]>([]);
+  const [horizontalLinecuts, setHorizontalLinecuts] = useState<Linecut[]>([]);
+  // const [verticalLinecuts, setVerticalLinecuts] = useState<{ position: number; color: string }[]>([]);
   const [isSecondCollapsed, setSecondCollapsed] = useState(false);
   const [isThirdCollapsed, setThirdCollapsed] = useState(false);
   const [experimentType, setExperimentType] = useState('SAXS');
@@ -60,19 +63,35 @@ function App() {
   const [imageData2, setImageData2] = useState<number[][]>([]); // Data for scatter image 2
 
 
+  const deleteHorizontalLinecut = (id: number) => {
+    setHorizontalLinecuts((prev) => prev.filter((linecut) => linecut.id !== id));
+  };
+
+
+  const toggleHorizontalLinecutVisibility = (id: number) => {
+    setHorizontalLinecuts((prev) =>
+      prev.map((linecut) =>
+        linecut.id === id ? { ...linecut, hidden: !linecut.hidden } : linecut
+      )
+    );
+  };
+
 
   const addHorizontalLinecut = () => {
-    if (horizontalLinecuts.length >= 10) return; // Limit to 10 linecuts
+    // Ensure unique IDs for new linecuts
+    const existingIds = horizontalLinecuts.map((linecut) => linecut.id);
+    const newId = Math.max(0, ...existingIds) + 1;
 
-    const newId = horizontalLinecuts.length + 1; // Unique ID
-    const defaultPosition = 0 //Math.floor(imageHeight / 2); // Default position
+    const defaultPosition = Math.floor(imageHeight / 2); // Default position at the center
 
     const newLinecut = {
       id: newId,
       position: defaultPosition,
       color: leftImageColorPalette[newId % leftImageColorPalette.length], // Assign color dynamically
+      hidden: false,
     };
 
+    // Add the new linecut
     setHorizontalLinecuts((prev) => [...prev, newLinecut]);
 
     // Add to selected linecuts
@@ -89,43 +108,43 @@ function App() {
   };
 
 
-    const updateLinecutPosition = (id: number, position: number) => {
-      setHorizontalLinecuts((prev) =>
-        prev.map((linecut) =>
-          linecut.id === id ? { ...linecut, position } : linecut
-        )
+  const updateLinecutPosition = (id: number, position: number) => {
+    setHorizontalLinecuts((prev) =>
+      prev.map((linecut) =>
+        linecut.id === id ? { ...linecut, position } : linecut
+      )
+    );
+
+    // Update linecut data dynamically
+    if (imageData1.length > 0 && imageData2.length > 0) {
+      const newLinecutData1 = imageData1[position];
+      const newLinecutData2 = imageData2[position];
+
+      setLinecutData1((prev) =>
+        prev.map((data) => (data.id === id ? { ...data, data: newLinecutData1 } : data))
       );
-
-      // Update linecut data dynamically
-      if (imageData1.length > 0 && imageData2.length > 0) {
-        const newLinecutData1 = imageData1[position];
-        const newLinecutData2 = imageData2[position];
-
-        setLinecutData1((prev) =>
-          prev.map((data) => (data.id === id ? { ...data, data: newLinecutData1 } : data))
-        );
-        setLinecutData2((prev) =>
-          prev.map((data) => (data.id === id ? { ...data, data: newLinecutData2 } : data))
-        );
-      }
-    };
+      setLinecutData2((prev) =>
+        prev.map((data) => (data.id === id ? { ...data, data: newLinecutData2 } : data))
+      );
+    }
+  };
 
 
 
-    const computeLinecutData = (position: number) => {
-      if (imageData1.length > 0 && imageData2.length > 0) {
-        // Extract horizontal linecut data based on the position
-        const data1 = imageData1[position]; // Row from scatter image 1
-        const data2 = imageData2[position]; // Row from scatter image 2
+  const computeLinecutData = (position: number) => {
+    if (imageData1.length > 0 && imageData2.length > 0) {
+      // Extract horizontal linecut data based on the position
+      const data1 = imageData1[position]; // Row from scatter image 1
+      const data2 = imageData2[position]; // Row from scatter image 2
 
-        // Wrap the data in the expected structure
-        const newLinecutData1 = { id: position, data: data1 };
-        const newLinecutData2 = { id: position, data: data2 };
+      // Wrap the data in the expected structure
+      const newLinecutData1 = { id: position, data: data1 };
+      const newLinecutData2 = { id: position, data: data2 };
 
-        setLinecutData1((prev) => [...prev, newLinecutData1]); // Add to the existing state
-        setLinecutData2((prev) => [...prev, newLinecutData2]); // Add to the existing state
-      }
-    };
+      setLinecutData1((prev) => [...prev, newLinecutData1]); // Add to the existing state
+      setLinecutData2((prev) => [...prev, newLinecutData2]); // Add to the existing state
+    }
+  };
 
 
   useEffect(() => {
@@ -274,15 +293,14 @@ function App() {
                     {/* Render all selected LinecutSections */}
                     {linecutOrder.filter((linecut) => selectedLinecuts.includes(linecut)).map((linecutType) => (
                       <LinecutSection
-                        key={linecutType}
                         linecutType={linecutType}
-                        position={linecutPosition}
-                        setPosition={setLinecutPosition}
                         imageHeight={imageHeight}
                         linecuts={horizontalLinecuts}
-                        selectedLinecuts={selectedLinecuts}
-                        setSelectedLinecuts={setSelectedLinecuts}
                         updateLinecutPosition={updateLinecutPosition}
+                        deleteHorizontalLinecut={deleteHorizontalLinecut}
+                        toggleHorizontalLinecutVisibility={toggleHorizontalLinecutVisibility}
+                        leftImageColorPalette={leftImageColorPalette}
+                        rightImageColorPalette={rightImageColorPalette}
                        />
                     ))}
                     {/* {selectedLinecuts.map((linecutType) => (
@@ -316,7 +334,6 @@ function App() {
                 <Accordion.Panel>
                 <div>
                   <ScatterSubplot
-                    linecutPosition={linecutPosition}
                     setImageHeight={setImageHeight}
                     setImageWidth={setImageWidth}
                     setImageData1={setImageData1}
@@ -361,7 +378,6 @@ function App() {
                       <Accordion.Control>Horizontal Linecut</Accordion.Control>
                       <Accordion.Panel>
                       <HorizontalLinecutFig
-                        linecutType="Horizontal"
                         linecuts={horizontalLinecuts}
                         linecutData1={linecutData1}
                         linecutData2={linecutData2}

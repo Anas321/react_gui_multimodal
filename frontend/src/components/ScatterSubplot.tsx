@@ -16,7 +16,6 @@ function reconstructFloat32Array(buffer: Uint8Array, shape: [number, number]): n
 }
 
 interface ScatterSubplotProps {
-  linecutPosition: number;
   setImageHeight: (height: number) => void;
   setImageWidth: (width: number) => void;
   setImageData1: (data: number[][]) => void;
@@ -27,7 +26,6 @@ interface ScatterSubplotProps {
 }
 
 const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
-  linecutPosition,
   setImageHeight,
   setImageWidth,
   setImageData1,
@@ -40,6 +38,9 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   const [imageWidth, setLocalImageWidth] = useState<number>(0);
   const [imageHeight, setLocalImageHeight] = useState<number>(0);
   const plotContainer = useRef<HTMLDivElement>(null);
+
+  const visibleLinecuts = horizontalLinecuts.filter((linecut) => !linecut.hidden);
+
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/scatter-subplot")
@@ -111,8 +112,9 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         <Plot
         data={[
           ...plotData.data,
+          ...visibleLinecuts.map((linecut) => ({
           // Linecuts for the left image
-          ...horizontalLinecuts.map((linecut) => ({
+          // ...horizontalLinecuts.map((linecut) => ({
             x: [0, imageWidth],
             y: [linecut.position, linecut.position],
             mode: "lines",
@@ -126,8 +128,9 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
             xaxis: "x1",
             yaxis: "y1",
           })),
-          // Linecuts for the right image
-          ...horizontalLinecuts.map((linecut) => ({
+            // ...horizontalLinecuts.map((linecut) => ({
+            // Render only visible linecuts for the right image
+            ...visibleLinecuts.map((linecut) => ({
             x: [0, imageWidth],
             y: [linecut.position, linecut.position],
             mode: "lines",

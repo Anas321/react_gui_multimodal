@@ -46,4 +46,4 @@ def get_processed_image(
     # Apply mask
     # masked_image = (masked_image - 1.0) * (-1.0)
 
-    return masked_image[::2, ::2]
+    return masked_image[::4, ::4]
