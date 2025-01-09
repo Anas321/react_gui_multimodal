@@ -4,4 +4,5 @@ export interface Linecut {
     position: number; // Current position of the linecut
     color: string; // Color of the linecut
     hidden?: boolean; // Optional property to track if the linecut is hidden
+    width?: number; // Optional property to track the width of the linecut
   }

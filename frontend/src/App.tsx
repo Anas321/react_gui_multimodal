@@ -1,5 +1,5 @@
 import { useState, useEffect} from 'react';
-import { MantineProvider, Container, Accordion, Select, Menu, MultiSelect } from '@mantine/core';
+import { MantineProvider, Container, Accordion, Select, Menu} from '@mantine/core';
 // import Plot from 'react-plotly.js';
 import { FiArrowRight, FiArrowLeft } from 'react-icons/fi'; // Collapsing arrows
 import '@mantine/core/styles.css';
@@ -53,8 +53,6 @@ function App() {
   const linecutOrder = ['Horizontal', 'Vertical', 'Inclined', 'Azimuthal'];
 
   const [linecutPosition, setLinecutPosition] = useState(0);
-  // const [linecutData1, setLinecutData1] = useState<number[]>([]); // Data from scatter image 1
-  // const [linecutData2, setLinecutData2] = useState<number[]>([]); // Data from scatter image 2
   const [linecutData1, setLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
   const [linecutData2, setLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
   const [imageHeight, setImageHeight] = useState<number>(100); // Default value for height
@@ -64,8 +62,33 @@ function App() {
 
 
   const deleteHorizontalLinecut = (id: number) => {
-    setHorizontalLinecuts((prev) => prev.filter((linecut) => linecut.id !== id));
+    setHorizontalLinecuts((prev) => {
+      // Filter out the linecut to be deleted
+      const updatedLinecuts = prev.filter((linecut) => linecut.id !== id);
+
+      // Renumber the remaining linecuts to keep the order
+      return updatedLinecuts.map((linecut, index) => ({
+        ...linecut,
+        id: index + 1, // Reassign IDs starting from 1
+      }));
+    });
+
+    // Also update the linecut data (if applicable)
+    setLinecutData1((prev) =>
+      prev.filter((data) => data.id !== id).map((data, index) => ({
+        ...data,
+        id: index + 1, // Ensure the IDs in data match the updated linecuts
+      }))
+    );
+
+    setLinecutData2((prev) =>
+      prev.filter((data) => data.id !== id).map((data, index) => ({
+        ...data,
+        id: index + 1, // Ensure the IDs in data match the updated linecuts
+      }))
+    );
   };
+
 
 
   const toggleHorizontalLinecutVisibility = (id: number) => {
@@ -89,6 +112,7 @@ function App() {
       position: defaultPosition,
       color: leftImageColorPalette[newId % leftImageColorPalette.length], // Assign color dynamically
       hidden: false,
+      width: 1, // Default width
     };
 
     // Add the new linecut
@@ -114,7 +138,6 @@ function App() {
         linecut.id === id ? { ...linecut, position } : linecut
       )
     );
-
     // Update linecut data dynamically
     if (imageData1.length > 0 && imageData2.length > 0) {
       const newLinecutData1 = imageData1[position];
@@ -128,6 +151,20 @@ function App() {
       );
     }
   };
+
+  const updateLinecutWidth = (id: number, width: number) => {
+    setHorizontalLinecuts((prev) =>
+      prev.map((linecut) =>
+        linecut.id === id
+          ? {
+              ...linecut,
+              width, // Update only the width
+            }
+          : linecut
+      )
+    );
+  };
+
 
 
 
@@ -150,6 +187,7 @@ function App() {
   useEffect(() => {
     computeLinecutData(linecutPosition);
   }, [linecutPosition, imageData1, imageData2]);
+
 
 
   return (
@@ -201,7 +239,7 @@ function App() {
         {/* First Column */}
         {!isSecondCollapsed && (
           <div className={`border border-gray-300 shadow-lg h-full bg-gray-100 relative transition-all duration-300 flex-shrink-0
-            ${isSecondCollapsed ? 'w-0' : 'w-[14%]'}`}
+            ${isSecondCollapsed ? 'w-0' : 'w-[15%]'}`}
           >
             <h1 className="text-3xl font-bold mb-4 mt-4 text-center">Scatter Controls</h1>
             <hr className="w-full border border-gray-300" />
@@ -291,17 +329,21 @@ function App() {
                     </Menu>
                   </div>
                     {/* Render all selected LinecutSections */}
-                    {linecutOrder.filter((linecut) => selectedLinecuts.includes(linecut)).map((linecutType) => (
-                      <LinecutSection
-                        linecutType={linecutType}
-                        imageHeight={imageHeight}
-                        linecuts={horizontalLinecuts}
-                        updateLinecutPosition={updateLinecutPosition}
-                        deleteHorizontalLinecut={deleteHorizontalLinecut}
-                        toggleHorizontalLinecutVisibility={toggleHorizontalLinecutVisibility}
-                        leftImageColorPalette={leftImageColorPalette}
-                        rightImageColorPalette={rightImageColorPalette}
-                       />
+                    {linecutOrder.filter((linecut) => selectedLinecuts.includes(linecut)).map((linecutType, index) => (
+                      horizontalLinecuts.length > 0 && (
+                        <LinecutSection
+                          key={`linecut-section-${linecutType}-${index}`} // Unique key
+                          linecutType={linecutType}
+                          imageHeight={imageHeight}
+                          linecuts={horizontalLinecuts}
+                          updateLinecutPosition={updateLinecutPosition}
+                          updateLinecutWidth={updateLinecutWidth}
+                          deleteHorizontalLinecut={deleteHorizontalLinecut}
+                          toggleHorizontalLinecutVisibility={toggleHorizontalLinecutVisibility}
+                          leftImageColorPalette={leftImageColorPalette}
+                          rightImageColorPalette={rightImageColorPalette}
+                        />
+                      )
                     ))}
                     {/* {selectedLinecuts.map((linecutType) => (
                     <LinecutSection key={linecutType} linecutType={linecutType} />
@@ -318,8 +360,8 @@ function App() {
             ${isSecondCollapsed
             ? 'flex-grow-0 w-0 overflow-hidden'
             : isThirdCollapsed
-            ? 'flex-grow w-[86%]'
-            : 'flex-grow w-[36%]'
+            ? 'flex-grow w-[85%]'
+            : 'flex-grow w-[35%]'
           }`}
         >
           {/* {!isSecondCollapsed && ( */}
@@ -377,13 +419,26 @@ function App() {
                     <Accordion.Item value="horizontal-linecut-accordion">
                       <Accordion.Control>Horizontal Linecut</Accordion.Control>
                       <Accordion.Panel>
+                      {horizontalLinecuts.length > 0 && (
                       <HorizontalLinecutFig
                         linecuts={horizontalLinecuts}
                         linecutData1={linecutData1}
                         linecutData2={linecutData2}
                         leftImageColorPalette={leftImageColorPalette}
                         rightImageColorPalette={rightImageColorPalette}
+                        imageData1={imageData1}
+                        imageData2={imageData2}
+
+                        // linecuts,
+                        // linecutData1,
+                        // linecutData2,
+                        // leftImageColorPalette,
+                        // rightImageColorPalette,
+                        // imageData1,
+                        // imageData2,
+
                       />
+                      )}
                       </Accordion.Panel>
                     </Accordion.Item>
                     )}
@@ -421,8 +476,8 @@ function App() {
             ${isThirdCollapsed
             ? 'flex-grow-0 w-0 overflow-hidden'
             : isSecondCollapsed
-            ? 'flex-grow w-[86%]'
-            : 'flex-grow w-[36%]'
+            ? 'flex-grow w-[85%]'
+            : 'flex-grow w-[35%]'
           }`}
         >
           {!isThirdCollapsed && (
@@ -457,7 +512,7 @@ function App() {
         {/* Fourth Column */}
         {!isThirdCollapsed && (
           <div className={`border border-gray-300 shadow-lg h-full bg-gray-100 relative transition-all duration-300 flex-shrink-0
-            ${isThirdCollapsed ? 'w-0' : 'w-[14%]'}`}
+            ${isThirdCollapsed ? 'w-0' : 'w-[15%]'}`}
           >
             <h1 className="text-3xl font-bold mb-4 mt-4 text-center">XPS Controls</h1>
             <hr className="w-full border border-gray-300" />

@@ -20,7 +20,7 @@ interface ScatterSubplotProps {
   setImageWidth: (width: number) => void;
   setImageData1: (data: number[][]) => void;
   setImageData2: (data: number[][]) => void;
-  horizontalLinecuts: { id: number; position: number; color: string }[];
+  horizontalLinecuts: { id: number; position: number; color: string; width: number }[];
   leftImageColorPalette: string[];
   rightImageColorPalette: string[];
 }
@@ -41,33 +41,27 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
   const visibleLinecuts = horizontalLinecuts.filter((linecut) => !linecut.hidden);
 
-
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/scatter-subplot")
       .then((response) => response.arrayBuffer())
       .then((buffer) => {
         const decoded = decode(new Uint8Array(buffer)) as any;
 
-        // Extract and reshape binary arrays
         const reshapedArray1 = reconstructFloat32Array(extractBinary(decoded.array_1), decoded.metadata.shape_1);
         const reshapedArray2 = reconstructFloat32Array(extractBinary(decoded.array_2), decoded.metadata.shape_2);
         const reshapedAbsDiff = reconstructFloat32Array(extractBinary(decoded.array_diff), decoded.metadata.shape_diff);
 
-        // Get dimensions
         const height = reshapedArray1.length;
         const width = reshapedArray1[0].length;
 
-        // Pass dimensions and data to parent component
         setImageHeight(height);
         setImageWidth(width);
         setImageData1(reshapedArray1);
         setImageData2(reshapedArray2);
 
-        // Update local state
         setLocalImageHeight(height);
         setLocalImageWidth(width);
 
-        // Update Plotly data
         const plotlyData = decoded.metadata.plotly;
         plotlyData.data[0].z = reshapedArray1;
         plotlyData.data[1].z = reshapedArray2;
@@ -101,6 +95,30 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     return () => resizeObserver.disconnect();
   }, [plotData]);
 
+  // Generate dynamic annotations
+  const generateAnnotations = () =>
+    visibleLinecuts.flatMap((linecut) => [
+      {
+        x: -10, // Position to the left of the left image
+        y: linecut.position,
+        text: `${linecut.id}`,
+        showarrow: false,
+        font: { color: "black", size: 25 },
+        xref: "x1",
+        yref: "y1",
+        align: "right",
+      },
+      {
+        x: -10, // Also position to the left of the right image
+        y: linecut.position,
+        text: `${linecut.id}`,
+        showarrow: false,
+        font: { color: "black", size: 25 },
+        xref: "x2",
+        yref: "y2",
+        align: "right",
+      },
+    ]);
 
   return (
     <div
@@ -110,47 +128,53 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     >
       {plotData ? (
         <Plot
-        data={[
-          ...plotData.data,
-          ...visibleLinecuts.map((linecut) => ({
-          // Linecuts for the left image
-          // ...horizontalLinecuts.map((linecut) => ({
-            x: [0, imageWidth],
-            y: [linecut.position, linecut.position],
-            mode: "lines",
-            line: {
-              color: leftImageColorPalette[
-                (linecut.id - 1) % leftImageColorPalette.length
-              ],
-              width: 2,
-            },
-            showlegend: false,
-            xaxis: "x1",
-            yaxis: "y1",
-          })),
-            // ...horizontalLinecuts.map((linecut) => ({
-            // Render only visible linecuts for the right image
+          data={[
+            ...plotData.data,
+            // Render rectangles for the left image
             ...visibleLinecuts.map((linecut) => ({
-            x: [0, imageWidth],
-            y: [linecut.position, linecut.position],
-            mode: "lines",
-            line: {
-              color: rightImageColorPalette[
-                (linecut.id - 1) % rightImageColorPalette.length
+              x: [0, imageWidth, imageWidth, 0],
+              y: [
+                linecut.position - (linecut.width || 1) / 2,
+                linecut.position - (linecut.width || 1) / 2,
+                linecut.position + (linecut.width || 1) / 2,
+                linecut.position + (linecut.width || 1) / 2,
               ],
-              width: 2,
-            },
-            showlegend: false,
-            xaxis: "x2",
-            yaxis: "y2",
-          })),
-        ]}
-        layout={plotData.layout}
-        config={{ scrollZoom: true }}
-        useResizeHandler={true}
-        style={{ width: "100%", height: "100%" }}
-      />
-
+              mode: "lines",
+              fill: "toself",
+              fillcolor: leftImageColorPalette[(linecut.id - 1) % leftImageColorPalette.length],
+              line: { color: leftImageColorPalette[(linecut.id - 1) % leftImageColorPalette.length] },
+              opacity: 0.3,
+              xaxis: "x1",
+              yaxis: "y1",
+              showlegend: false,
+            })),
+            // Render rectangles for the right image
+            ...visibleLinecuts.map((linecut) => ({
+              x: [0, imageWidth, imageWidth, 0],
+              y: [
+                linecut.position - (linecut.width || 1) / 2,
+                linecut.position - (linecut.width || 1) / 2,
+                linecut.position + (linecut.width || 1) / 2,
+                linecut.position + (linecut.width || 1) / 2,
+              ],
+              mode: "lines",
+              fill: "toself",
+              fillcolor: rightImageColorPalette[(linecut.id - 1) % rightImageColorPalette.length],
+              line: { color: rightImageColorPalette[(linecut.id - 1) % rightImageColorPalette.length] },
+              opacity: 0.3,
+              xaxis: "x2",
+              yaxis: "y2",
+              showlegend: false,
+            })),
+          ]}
+          layout={{
+            ...plotData.layout,
+            annotations: generateAnnotations(), // Add annotations dynamically
+          }}
+          config={{ scrollZoom: true }}
+          useResizeHandler={true}
+          style={{ width: "100%", height: "100%" }}
+        />
       ) : (
         <p>Loading scatter subplot...</p>
       )}
