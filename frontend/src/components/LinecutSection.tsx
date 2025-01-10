@@ -32,14 +32,14 @@ const LinecutSection: React.FC<LinecutSectionProps> = ({
 
   return (
     <div className="mt-4 pl-1 bg-gray-100 rounded shadow">
-      <h2 className="text-2xl mb-4 font-bold">{linecutType} Linecuts</h2>
+      <h2 className="text-2xl mb-0 font-bold text-center">{linecutType} Linecuts</h2>
 
       {/* Scrollable Linecuts Section */}
       <div className="max-h-96 overflow-y-auto overflow-x-hidden pl-4 pt-6">
         {linecuts.map((linecut) => (
           <div
             key={linecut.id}
-            className="mb-8 pt-10 pb-5 pl-2 pr-3 relative shadow-lg h-[290px]"
+            className="mb-5 pt-10 pb-5 pl-2 pr-3 relative shadow-lg border-2 h-[290px]"
           >
             {/* Delete Button */}
             <div className="absolute top-0 left-0 group">
@@ -107,32 +107,9 @@ const LinecutSection: React.FC<LinecutSectionProps> = ({
                 onChange={(value) => updateLinecutWidth(linecut.id, value)}
                 marks={[1, 20]}
                 styles="w-full"
+                disabled={linecut.hidden} // Disable the slider if the linecut is hidden
               />
             </div>
-            {/* <div className="mb-4">
-              <h4 className="text-sm font-semibold mb-2">Width (in pixels)</h4>
-              <Slider
-                label={(value) => `${value}`}
-                min={1}
-                max={20}
-                step={0.1}
-                value={linecut.width || 1} // Default to 1 if width is undefined
-                onChange={(value) => updateLinecutWidth(linecut.id, value)}
-                marks={[
-                  { value: 1, label: "1" },
-                  { value: 20, label: "20" },
-                ]}
-                color="blue"
-                styles={{
-                  markLabel: {
-                    color: "black",
-                  },
-                }}
-                disabled={linecut.hidden} // Disable if linecut is hidden
-                className="mt-2"
-              />
-            </div> */}
-
             {/* Slider to Adjust Linecut Position */}
             <div className="mb-4">
               <h4 className="text-md font-semibold mb-2">Position (pixels)</h4>
@@ -144,31 +121,9 @@ const LinecutSection: React.FC<LinecutSectionProps> = ({
                 onChange={(value) => updateLinecutPosition(linecut.id, value)}
                 marks={[0, imageHeight - 1]}
                 styles="w-full"
+                disabled={linecut.hidden} // Disable the slider if the linecut is hidden
               />
             </div>
-            {/* <div className="mb-4">
-              <h4 className="text-sm font-semibold mb-2">Position (in pixels)</h4>
-              <Slider
-                label={(value) => `${value.toFixed(1)}`} // Show one decimal place
-                min={0}
-                max={imageHeight - 1}
-                step={1}
-                value={linecut.position}
-                onChange={(value) => updateLinecutPosition(linecut.id, value)}
-                marks={[
-                  { value: 0, label: "0" },
-                  { value: imageHeight - 1, label: `${imageHeight - 1}` },
-                ]}
-                color="blue"
-                styles={{
-                  markLabel: {
-                    color: "black",
-                  },
-                }}
-                disabled={linecut.hidden} // Disable if linecut is hidden
-                className="mt-2"
-              />
-            </div> */}
           </div>
         ))}
       </div>
