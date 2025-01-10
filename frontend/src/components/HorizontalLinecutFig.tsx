@@ -140,6 +140,7 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
         layout={layout}
         config={{
           responsive: true, // Enables responsiveness
+          scrollZoom: true, // Enables scroll zoom
         }}
         useResizeHandler
         style={{ width: "100%", height: "100%" }}
