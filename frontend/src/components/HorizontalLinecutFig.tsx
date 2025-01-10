@@ -4,20 +4,12 @@ import { Linecut } from "../types";
 
 interface HorizontalLinecutFigProps {
   linecuts: Linecut[]; // List of linecuts with positions and colors
-  linecutData1: { id: number; data: number[] }[]; // Data for left scatter image
-  linecutData2: { id: number; data: number[] }[]; // Data for right scatter image
-  leftImageColorPalette: string[]; // Color palette for the left image
-  rightImageColorPalette: string[]; // Color palette for the right image
   imageData1: number[][]; // Full data for the left scatter image
   imageData2: number[][]; // Full data for the right scatter image
 }
 
 const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
   linecuts,
-  linecutData1,
-  linecutData2,
-  leftImageColorPalette,
-  rightImageColorPalette,
   imageData1,
   imageData2,
 }) => {
@@ -109,10 +101,7 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
                   mode: "lines" as const,
                   name: `Left Linecut ${linecut.id}`,
                   line: {
-                    color:
-                      leftImageColorPalette[
-                        (linecut.id - 1) % leftImageColorPalette.length
-                      ], // Cycle through the left image palette
+                    color: linecut.leftColor, // Use user-defined color for the left image
                     width: 2,
                   },
                 },
@@ -127,10 +116,7 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
                   mode: "lines" as const,
                   name: `Right Linecut ${linecut.id}`,
                   line: {
-                    color:
-                      rightImageColorPalette[
-                        (linecut.id - 1) % rightImageColorPalette.length
-                      ], // Cycle through the right image palette
+                    color: linecut.rightColor, // Use user-defined color for the right image
                     width: 2,
                   },
                 },

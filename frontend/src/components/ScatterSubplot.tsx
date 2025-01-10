@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import Plot from "react-plotly.js";
 import { decode, ExtData } from "@msgpack/msgpack";
+import { Linecut } from "../types";
+
 
 // Function to handle ExtType
 function extractBinary(ext: ExtData | Uint8Array): Uint8Array {
@@ -20,7 +22,7 @@ interface ScatterSubplotProps {
   setImageWidth: (width: number) => void;
   setImageData1: (data: number[][]) => void;
   setImageData2: (data: number[][]) => void;
-  horizontalLinecuts: { id: number; position: number; color: string; width: number }[];
+  horizontalLinecuts: Linecut[]; //{ id: number; position: number; color: string; width: number }[];
   leftImageColorPalette: string[];
   rightImageColorPalette: string[];
 }
@@ -31,8 +33,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setImageData1,
   setImageData2,
   horizontalLinecuts,
-  leftImageColorPalette,
-  rightImageColorPalette,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const [imageWidth, setLocalImageWidth] = useState<number>(0);
@@ -96,12 +96,12 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   }, [plotData]);
 
   // Generate dynamic annotations
-  const generateAnnotations = () =>
+  const generateHorizontalLinecutAnnotations = () =>
     visibleLinecuts.flatMap((linecut) => [
       {
-        x: -10, // Position to the left of the left image
+        x: -40, // Position to the left of the left image
         y: linecut.position,
-        text: `${linecut.id}`,
+        text: `${linecut.position.toFixed(1)}`, // Linecut position as text
         showarrow: false,
         font: { color: "black", size: 25 },
         xref: "x1",
@@ -109,9 +109,9 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         align: "right",
       },
       {
-        x: -10, // Also position to the left of the right image
+        x: -40, // Also position to the left of the right image
         y: linecut.position,
-        text: `${linecut.id}`,
+        text: `${linecut.position.toFixed(1)}`,
         showarrow: false,
         font: { color: "black", size: 25 },
         xref: "x2",
@@ -141,8 +141,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
               ],
               mode: "lines",
               fill: "toself",
-              fillcolor: leftImageColorPalette[(linecut.id - 1) % leftImageColorPalette.length],
-              line: { color: leftImageColorPalette[(linecut.id - 1) % leftImageColorPalette.length] },
+              fillcolor: linecut.leftColor,
+              line: { color: linecut.leftColor },
               opacity: 0.3,
               xaxis: "x1",
               yaxis: "y1",
@@ -159,8 +159,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
               ],
               mode: "lines",
               fill: "toself",
-              fillcolor: rightImageColorPalette[(linecut.id - 1) % rightImageColorPalette.length],
-              line: { color: rightImageColorPalette[(linecut.id - 1) % rightImageColorPalette.length] },
+              fillcolor: linecut.rightColor,
+              line: { color: linecut.rightColor },
               opacity: 0.3,
               xaxis: "x2",
               yaxis: "y2",
@@ -169,7 +169,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           ]}
           layout={{
             ...plotData.layout,
-            annotations: generateAnnotations(), // Add annotations dynamically
+            annotations: generateHorizontalLinecutAnnotations(), // Add annotations dynamically
           }}
           config={{ scrollZoom: true }}
           useResizeHandler={true}

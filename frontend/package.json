@@ -10,11 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
     "@esbuild-plugins/node-modules-polyfill": "^0.2.2",
     "@juggle/resize-observer": "^3.4.0",
     "@mantine/core": "^7.15.0",
     "@msgpack/msgpack": "^3.0.0-beta2",
+    "@mui/lab": "^6.0.0-beta.22",
+    "@mui/material": "^6.3.1",
     "buffer": "^6.0.3",
     "lodash": "^4.17.21",
     "lodash.debounce": "^4.0.8",
@@ -22,6 +26,7 @@
     "plotly.js": "^2.35.2",
     "plotly.js-dist-min": "^2.35.3",
     "react": "^18.3.1",
+    "react-color": "^2.19.3",
     "react-dom": "^18.3.1",
     "react-icons": "^5.4.0",
     "react-plotly.js": "^2.6.0"
@@ -31,6 +36,7 @@
     "@types/lodash": "^4.17.13",
     "@types/plotly.js": "^2.35.1",
     "@types/react": "^18.3.12",
+    "@types/react-color": "^3.0.13",
     "@types/react-dom": "^18.3.1",
     "@types/react-plotly.js": "^2.6.3",
     "@vitejs/plugin-react": "^4.3.4",

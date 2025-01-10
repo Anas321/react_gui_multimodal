@@ -61,6 +61,17 @@ function App() {
   const [imageData2, setImageData2] = useState<number[][]>([]); // Data for scatter image 2
 
 
+  const updateLinecutColor = (id: number, side: 'left' | 'right', color: string) => {
+    setHorizontalLinecuts((prev) =>
+      prev.map((linecut) =>
+        linecut.id === id
+          ? { ...linecut, [`${side}Color`]: color } // Update either `leftColor` or `rightColor`
+          : linecut
+      )
+    );
+  };
+
+
   const deleteHorizontalLinecut = (id: number) => {
     setHorizontalLinecuts((prev) => {
       // Filter out the linecut to be deleted
@@ -110,7 +121,8 @@ function App() {
     const newLinecut = {
       id: newId,
       position: defaultPosition,
-      color: leftImageColorPalette[newId % leftImageColorPalette.length], // Assign color dynamically
+      leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
+      rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
       hidden: false,
       width: 1, // Default width
     };
@@ -259,20 +271,6 @@ function App() {
                 dropdown: 'p-2', // Tailwind for dropdown padding
                 option: 'text-lg py-2 px-4 hover:bg-gray-100 cursor-pointer rounded', // Tailwind for dropdown items
               }}
-              // styles={{
-              //   label: {
-              //     fontSize: '1.5rem', // Adjust label font size
-              //     paddingBottom: '0.5rem', // Adjust padding for label
-              //     paddingLeft: '0.1rem', // Adjust padding for label
-              //   },
-              //   input: {
-              //     fontSize: '1.25rem', // Adjust input font size
-              //     padding: '12px', // Adjust padding for larger clickable area
-              //   },
-              //   option: {
-              //     fontSize: '1.25rem', // Adjust dropdown font size
-              //   },
-              // }}
             />
             {/* Horizontal Line Cut Accordion */}
             <Accordion
@@ -338,10 +336,9 @@ function App() {
                           linecuts={horizontalLinecuts}
                           updateLinecutPosition={updateLinecutPosition}
                           updateLinecutWidth={updateLinecutWidth}
+                          updateLinecutColor={updateLinecutColor}
                           deleteHorizontalLinecut={deleteHorizontalLinecut}
                           toggleHorizontalLinecutVisibility={toggleHorizontalLinecutVisibility}
-                          leftImageColorPalette={leftImageColorPalette}
-                          rightImageColorPalette={rightImageColorPalette}
                         />
                       )
                     ))}
@@ -420,24 +417,11 @@ function App() {
                       <Accordion.Control>Horizontal Linecut</Accordion.Control>
                       <Accordion.Panel>
                       {horizontalLinecuts.length > 0 && (
-                      <HorizontalLinecutFig
-                        linecuts={horizontalLinecuts}
-                        linecutData1={linecutData1}
-                        linecutData2={linecutData2}
-                        leftImageColorPalette={leftImageColorPalette}
-                        rightImageColorPalette={rightImageColorPalette}
-                        imageData1={imageData1}
-                        imageData2={imageData2}
-
-                        // linecuts,
-                        // linecutData1,
-                        // linecutData2,
-                        // leftImageColorPalette,
-                        // rightImageColorPalette,
-                        // imageData1,
-                        // imageData2,
-
-                      />
+                        <HorizontalLinecutFig
+                          linecuts={horizontalLinecuts} // Pass the entire linecuts array
+                          imageData1={imageData1} // Data for left scatter image
+                          imageData2={imageData2} // Data for right scatter image
+                        />
                       )}
                       </Accordion.Panel>
                     </Accordion.Item>
