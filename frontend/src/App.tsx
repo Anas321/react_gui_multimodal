@@ -1,4 +1,4 @@
-import { useState, useEffect} from 'react';
+import { useState, useEffect, useMemo} from 'react';
 import { MantineProvider, Container, Accordion, Select, Menu} from '@mantine/core';
 // import Plot from 'react-plotly.js';
 import { FiArrowRight, FiArrowLeft } from 'react-icons/fi'; // Collapsing arrows
@@ -8,12 +8,11 @@ import alsLogo from '/public/als_logo.jpeg';
 import ScatterSubplot from './components/ScatterSubplot';
 import LinecutSection from './components/LinecutSection';
 import HorizontalLinecutFig from './components/HorizontalLinecutFig';
-
 import { handleExperimentTypeChange, addLinecut } from './utils/linecutHandlers';
-
 import { Linecut } from './types';
+import { throttle, debounce } from "lodash";
 
-
+//move
 const leftImageColorPalette = [
   "red",
   "blue",
@@ -26,7 +25,7 @@ const leftImageColorPalette = [
   "gray",
   "cyan",
 ];
-
+//move
 const rightImageColorPalette = [
   "lime",
   "gold",
@@ -43,14 +42,17 @@ const rightImageColorPalette = [
 
 
 function App() {
-  const [horizontalLinecuts, setHorizontalLinecuts] = useState<Linecut[]>([]);
-  // const [verticalLinecuts, setVerticalLinecuts] = useState<{ position: number; color: string }[]>([]);
   const [isSecondCollapsed, setSecondCollapsed] = useState(false);
   const [isThirdCollapsed, setThirdCollapsed] = useState(false);
+  const linecutOrder = ['Horizontal', 'Vertical', 'Inclined', 'Azimuthal'];
+
+
+  //move all these
+  const [horizontalLinecuts, setHorizontalLinecuts] = useState<Linecut[]>([]);
+  // const [verticalLinecuts, setVerticalLinecuts] = useState<{ position: number; color: string }[]>([]);
   const [experimentType, setExperimentType] = useState('SAXS');
   const [selectedLinecuts, setSelectedLinecuts] = useState<string[]>([]); // Manage multiple linecuts
 
-  const linecutOrder = ['Horizontal', 'Vertical', 'Inclined', 'Azimuthal'];
 
   const [linecutPosition, setLinecutPosition] = useState(0);
   const [linecutData1, setLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
@@ -111,12 +113,12 @@ function App() {
   };
 
 
-  const addHorizontalLinecut = () => {
+  const addHorizontalLinecut = throttle(() => {
     // Ensure unique IDs for new linecuts
     const existingIds = horizontalLinecuts.map((linecut) => linecut.id);
     const newId = Math.max(0, ...existingIds) + 1;
 
-    const defaultPosition = Math.floor(imageHeight / 2); // Default position at the center
+    const defaultPosition = 0 // Math.floor(imageHeight / 2); // Default position at the center
 
     const newLinecut = {
       id: newId,
@@ -141,28 +143,38 @@ function App() {
       setLinecutData1((prev) => [...prev, { id: newId, data: data1 }]);
       setLinecutData2((prev) => [...prev, { id: newId, data: data2 }]);
     }
-  };
+  }, 200);
 
 
-  const updateLinecutPosition = (id: number, position: number) => {
+  const throttledUpdateLinecutPosition = throttle((id, position) => {
     setHorizontalLinecuts((prev) =>
       prev.map((linecut) =>
         linecut.id === id ? { ...linecut, position } : linecut
       )
     );
-    // Update linecut data dynamically
-    if (imageData1.length > 0 && imageData2.length > 0) {
-      const newLinecutData1 = imageData1[position];
-      const newLinecutData2 = imageData2[position];
 
-      setLinecutData1((prev) =>
-        prev.map((data) => (data.id === id ? { ...data, data: newLinecutData1 } : data))
+    if (imageData1.length > 0 && imageData2.length > 0) {
+      const newLinecutData1 = computeLinecutData(position, imageData1);
+      const newLinecutData2 = computeLinecutData(position, imageData2);
+
+      debouncedSetLinecutData1((prev) =>
+        prev.map((data) =>
+          data.id === id ? { ...data, data: newLinecutData1 } : data
+        )
       );
-      setLinecutData2((prev) =>
-        prev.map((data) => (data.id === id ? { ...data, data: newLinecutData2 } : data))
+
+      debouncedSetLinecutData2((prev) =>
+        prev.map((data) =>
+          data.id === id ? { ...data, data: newLinecutData2 } : data
+        )
       );
     }
+  }, 100); // Throttle updates to once every 100ms
+
+  const updateLinecutPosition = (id, position) => {
+    throttledUpdateLinecutPosition(id, position);
   };
+
 
   const updateLinecutWidth = (id: number, width: number) => {
     setHorizontalLinecuts((prev) =>
@@ -178,27 +190,41 @@ function App() {
   };
 
 
-
-
-  const computeLinecutData = (position: number) => {
-    if (imageData1.length > 0 && imageData2.length > 0) {
-      // Extract horizontal linecut data based on the position
-      const data1 = imageData1[position]; // Row from scatter image 1
-      const data2 = imageData2[position]; // Row from scatter image 2
-
-      // Wrap the data in the expected structure
-      const newLinecutData1 = { id: position, data: data1 };
-      const newLinecutData2 = { id: position, data: data2 };
-
-      setLinecutData1((prev) => [...prev, newLinecutData1]); // Add to the existing state
-      setLinecutData2((prev) => [...prev, newLinecutData2]); // Add to the existing state
+  const computeLinecutData = (position: number, imageData: number[][]) => {
+    if (imageData.length > 0) {
+      return imageData[position]; // Get the specific row at the given position
     }
-  };
+    return [];
+  }; // Execute at most once every 100ms
 
+  // Memoized linecut data for both images
+  const linecutDataMemoized1 = useMemo(() => {
+    return computeLinecutData(linecutPosition, imageData1);
+  }, [linecutPosition, imageData1]);
 
+  const linecutDataMemoized2 = useMemo(() => {
+    return computeLinecutData(linecutPosition, imageData2);
+  }, [linecutPosition, imageData2]);
+
+  // Debounce the linecut data updates
+  const debouncedSetLinecutData1 = useMemo(
+    () => debounce(setLinecutData1, 100),
+    [setLinecutData1]
+  );
+
+  const debouncedSetLinecutData2 = useMemo(
+    () => debounce(setLinecutData2, 100),
+    [setLinecutData2]
+  );
+
+  // Update linecut data when the memoized values change
   useEffect(() => {
-    computeLinecutData(linecutPosition);
-  }, [linecutPosition, imageData1, imageData2]);
+    if (linecutDataMemoized1.length > 0 && linecutDataMemoized2.length > 0) {
+      debouncedSetLinecutData1((prev) => [...prev, { id: linecutPosition, data: linecutDataMemoized1 }]);
+      debouncedSetLinecutData2((prev) => [...prev, { id: linecutPosition, data: linecutDataMemoized2 }]);
+    }
+  }, [linecutDataMemoized1, linecutDataMemoized2, linecutPosition]);
+
 
 
 

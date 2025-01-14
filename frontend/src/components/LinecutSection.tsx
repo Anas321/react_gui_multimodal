@@ -133,11 +133,11 @@ const LinecutSection: React.FC<LinecutSectionProps> = ({
                   <h4 className="text-md font-semibold mb-2">Width (pixels)</h4>
                   <InputSlider
                     min={1}
-                    max={20}
+                    max={100}
                     value={linecut.width || 1}
                     step={0.1}
                     onChange={(value) => updateLinecutWidth(linecut.id, value)}
-                    marks={[1, 20]}
+                    marks={[1, 100]}
                     styles="w-full"
                     disabled={linecut.hidden}
                   />

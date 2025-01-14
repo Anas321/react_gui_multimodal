@@ -13,26 +13,32 @@ router = APIRouter()
 @router.get("/scatter-subplot")
 def create_scatter_subplot(scans=Depends(get_initial_scans)):
 
-    # scatter_image_array_1 = np.array(scans["scatter_image_array_1_full_res"])
-    # scatter_image_array_2 = np.array(scans["scatter_image_array_2_full_res"])
-
     # Convert arrays to NumPy
     scatter_image_array_1 = np.array(scans["scatter_image_array_1_full_res"])
     scatter_image_array_2 = np.array(scans["scatter_image_array_2_full_res"])
 
     # Compute absolute difference
-    abs_difference_array = np.abs(scatter_image_array_1 - scatter_image_array_2)
-
-    # scatter_image_array_1 = scatter_image_array_1.astype(np.uint8)
-    # scatter_image_array_2 = scatter_image_array_2.astype(np.uint8)
-    # abs_difference_array = abs_difference_array.astype(np.uint8)
+    difference_array = scatter_image_array_1 - scatter_image_array_2
 
     scatter_image_array_1 = scatter_image_array_1.astype(np.float32)
     scatter_image_array_2 = scatter_image_array_2.astype(np.float32)
-    abs_difference_array = abs_difference_array.astype(np.float32)
+    difference_array = difference_array.astype(np.float32)
+
+    # # Downsample images by a factor of 4
+    # downsample_factor = 4
+    # scatter_image_array_1_down = scatter_image_array_1[::downsample_factor, ::downsample_factor]
+    # scatter_image_array_2_down = scatter_image_array_2[::downsample_factor, ::downsample_factor]
+    # abs_difference_down = abs_difference_array[::downsample_factor, ::downsample_factor]
 
     zmin = float(min(np.min(scatter_image_array_1), np.min(scatter_image_array_2)))
     zmax = float(max(np.max(scatter_image_array_1), np.max(scatter_image_array_2)))
+
+    # Divergent color scale for the difference plot
+    diff_min = float(-max(abs(np.min(difference_array)), abs(np.max(difference_array))))
+    diff_max = float(max(abs(np.min(difference_array)), abs(np.max(difference_array))))
+
+    # diff_min = float(np.min(difference_array))
+    # diff_max = float(np.max(difference_array))
 
     # Create the subplots figure
     scatter_subplot_fig = make_subplots(
@@ -40,7 +46,7 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
         cols=3,
         shared_xaxes=True,
         shared_yaxes=True,
-        horizontal_spacing=0.05,  # Adjust spacing between subplots
+        horizontal_spacing=0.1,  # Adjust spacing between subplots
     )
 
     # Add the scatter image figures to the subplots with a shared coloraxis
@@ -67,8 +73,8 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
     scatter_subplot_fig.add_trace(
         go.Heatmap(
             z=[],  # Add the absolute difference heatmap
-            colorscale="viridis",
-            coloraxis="coloraxis",  # Use shared color axis
+            colorscale="RdBu",
+            coloraxis="coloraxis2",  # Use shared color axis
         ),
         row=1,
         col=3,
@@ -76,17 +82,17 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
 
     # Update layout for the subplots, setting zmin and zmax for coloraxis
     scatter_subplot_fig.update_layout(
-        annotations=[
-            dict(
-                text="|Difference|",  # Title for the third image
-                x=0.5,  # Center of the x-axis for the third subplot
-                y=1.06,  # Slightly above the plot
-                xref="x3 domain",  # Reference the x domain of the third subplot
-                yref="paper",  # Reference the y domain of the entire figure
-                showarrow=False,
-                font=dict(size=18, color="black"),
-            ),
-        ],
+        # annotations=[
+        #     dict(
+        #         text="|Difference|",  # Title for the third image
+        #         x=0.5,  # Center of the x-axis for the third subplot
+        #         y=1.06,  # Slightly above the plot
+        #         xref="x3 domain",  # Reference the x domain of the third subplot
+        #         yref="paper",  # Reference the y domain of the entire figure
+        #         showarrow=False,
+        #         font=dict(size=18, color="black"),
+        #     ),
+        # ],
         coloraxis=dict(
             colorscale="viridis",
             cmin=zmin,
@@ -94,8 +100,25 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
             colorbar=dict(
                 len=1.0,  # Adjust the height of the colorbar
                 thickness=30,  # Adjust the thickness of the colorbar
-                x=1.05,  # Position it to the right of the subplots
+                x=0.64,  # Position it to the right of the subplots
                 xanchor="left",
+                tickfont=dict(
+                    size=19, color="black"
+                ),  # Adjust the font size of the colorbar ticks
+            ),
+        ),
+        coloraxis2=dict(
+            colorscale="RdBu",
+            cmin=diff_min,
+            cmax=diff_max,
+            colorbar=dict(
+                len=1.0,  # Adjust the height of the colorbar
+                thickness=30,  # Adjust the thickness of the colorbar
+                x=1.01,  # Position it to the right of the subplots
+                xanchor="left",
+                tickfont=dict(
+                    size=19, color="black"
+                ),  # Adjust the font size of the colorbar ticks
             ),
         ),
         yaxis=dict(autorange="reversed"),  # Reverse y-axis
@@ -121,7 +144,12 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
     # Serialize arrays to bytes
     array_1_bytes = scatter_image_array_1.tobytes()
     array_2_bytes = scatter_image_array_2.tobytes()
-    abs_diff_bytes = abs_difference_array.tobytes()
+    diff_bytes = difference_array.tobytes()
+
+    # # Serialize downsampled arrays to bytes
+    # array_1_down_bytes = scatter_image_array_1_down.tobytes()
+    # array_2_down_bytes = scatter_image_array_2_down.tobytes()
+    # diff_down_bytes = difference_down.tobytes()
 
     # Prepare metadata for reconstruction
     metadata = {
@@ -129,14 +157,18 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
         "dtype_1": str(scatter_image_array_1.dtype),
         "shape_2": scatter_image_array_2.shape,
         "dtype_2": str(scatter_image_array_2.dtype),
-        "shape_diff": abs_difference_array.shape,
-        "dtype_diff": str(abs_difference_array.dtype),
-        "zmin": zmin,
-        "zmax": zmax,
+        "shape_diff": difference_array.shape,
+        "dtype_diff": str(difference_array.dtype),
+        # "shape_1_down": scatter_image_array_1_down.shape,
+        # "dtype_1_down": str(scatter_image_array_1_down.dtype),
+        # "shape_2_down": scatter_image_array_2_down.shape,
+        # "dtype_2_down": str(scatter_image_array_2_down.dtype),
+        # "shape_diff_down": abs_difference_down.shape,
+        # "dtype_diff_down": str(abs_difference_down.dtype),
+        # "zmin": zmin,
+        # "zmax": zmax,
         "plotly": scatter_subplot_fig.to_plotly_json(),  # Serialize Plotly structure
     }
-
-    print(metadata["dtype_1"])
 
     # Pack metadata and binary data
     packed_data = msgpack.packb(
@@ -144,7 +176,10 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
             "metadata": metadata,
             "array_1": msgpack.ExtType(1, array_1_bytes),
             "array_2": msgpack.ExtType(2, array_2_bytes),
-            "array_diff": msgpack.ExtType(3, abs_diff_bytes),
+            "array_diff": msgpack.ExtType(3, diff_bytes),
+            # "array_1_down": msgpack.ExtType(4, array_1_down_bytes),
+            # "array_2_down": msgpack.ExtType(5, array_2_down_bytes),
+            # "array_diff_down": msgpack.ExtType(6, abs_diff_down_bytes),
         }
     )
 

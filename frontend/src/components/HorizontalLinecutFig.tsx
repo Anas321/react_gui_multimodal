@@ -14,8 +14,24 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
   imageData2,
 }) => {
   const [layout, setLayout] = useState({
-    xaxis: { title: "Pixel Index" },
-    yaxis: { title: "Intensity" },
+    xaxis: {
+      title: {
+        text: "Pixel Index",
+        font: { size: 25 }, // Font size for x-axis title
+      },
+      tickfont: { size: 25 }, // Font size for x-axis ticks
+    },
+    yaxis: {
+      title: {
+        text: "Intensity",
+        font: { size: 25 }, // Font size for y-axis title
+      },
+      tickfont: { size: 25 }, // Font size for y-axis ticks
+    },
+    legend: {
+      font: { size: 25 }, // Font size for legend text
+    },
+    font: { size: 25 }, // Global font size for annotations
     showlegend: true,
   });
 
