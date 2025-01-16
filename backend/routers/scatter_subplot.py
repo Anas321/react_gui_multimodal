@@ -100,7 +100,7 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
             colorbar=dict(
                 len=1.0,  # Adjust the height of the colorbar
                 thickness=30,  # Adjust the thickness of the colorbar
-                x=0.64,  # Position it to the right of the subplots
+                x=0.63,  # Position it to the right of the subplots
                 xanchor="left",
                 tickfont=dict(
                     size=19, color="black"

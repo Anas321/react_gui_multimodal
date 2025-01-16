@@ -465,6 +465,21 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
               ...generateHorizontalLinecutAnnotations(),
               // ...generateOperationSigns(),
             ],
+            // Add dynamic colorbar length for all three plots
+            coloraxis: {
+              ...plotData.layout.coloraxis,
+              colorbar: {
+                ...plotData.layout.coloraxis?.colorbar,
+                len: isThirdCollapsed ? 1.0 : 0.53, // Adjust length based on collapse state
+              }
+            },
+            coloraxis2: {
+              ...plotData.layout.coloraxis2,
+              colorbar: {
+                ...plotData.layout.coloraxis2?.colorbar,
+                len: isThirdCollapsed ? 1.0 : 0.53,
+              }
+            },
           }}
         />
       ) : (
@@ -473,10 +488,10 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       {/* Only render signs when second column is not collapsed */}
       {isThirdCollapsed && (
         <>
-          <div className="absolute top-1/2 left-[29%] -translate-y-1/2 text-5xl font-bold">
+          <div className="absolute top-1/2 left-[31%] -translate-y-1/2 text-5xl font-bold">
             −
           </div>
-          <div className="absolute top-1/2 left-[66%] -translate-y-1/2 text-5xl font-bold">
+          <div className="absolute top-1/2 left-[68%] -translate-y-1/2 text-5xl font-bold">
             =
           </div>
         </>
