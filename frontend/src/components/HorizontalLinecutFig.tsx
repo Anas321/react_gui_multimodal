@@ -6,26 +6,25 @@ interface HorizontalLinecutFigProps {
   linecuts: Linecut[]; // List of linecuts with positions and colors
   imageData1: number[][]; // Full data for the left scatter image
   imageData2: number[][]; // Full data for the right scatter image
+  zoomedPixelRange: [number, number] | null; // New prop for zoomed range
 }
 
 const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
   linecuts,
   imageData1,
   imageData2,
+  zoomedPixelRange,
 }) => {
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const [layout, setLayout] = useState({
     xaxis: {
-      title: {
-        text: "Pixel Index",
-        font: { size: 25 }, // Font size for x-axis title
-      },
+      title: { text: "Pixel Index", font: { size: 25 }, range: undefined },
       tickfont: { size: 25 }, // Font size for x-axis ticks
     },
     yaxis: {
-      title: {
-        text: "Intensity",
-        font: { size: 25 }, // Font size for y-axis title
-      },
+      title: { text: "Intensity", font: { size: 25 } },
       tickfont: { size: 25 }, // Font size for y-axis ticks
     },
     legend: {
@@ -35,7 +34,19 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
     showlegend: true,
   });
 
-  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Update layout when zoomedPixelRange changes
+  useEffect(() => {
+    console.log("Received zoomedPixelRange:", zoomedPixelRange);
+    if (zoomedPixelRange) {
+      setLayout((prev) => ({
+        ...prev,
+        xaxis: { ...prev.xaxis, range: [...zoomedPixelRange] }, // Ensure deep copy
+      }));
+    }
+  }, [zoomedPixelRange]);
+
+
 
   // Update layout dimensions when container size changes
   useEffect(() => {
@@ -86,7 +97,7 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
   };
 
   return (
-    <div ref={containerRef} className="mt-4 p-4 bg-gray-100 rounded shadow">
+    <div className="mt-4 p-4 bg-gray-100 rounded shadow">
       <Plot
         data={[
           // Map through all visible linecuts and add their data to the plot

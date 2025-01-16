@@ -5,25 +5,26 @@ import { FaEye, FaEyeSlash } from "react-icons/fa"; // Icons for visibility togg
 import { Linecut } from "../types";
 import InputSlider from "./InputSlider";
 import { Accordion } from "@mantine/core";
+import { set } from "lodash";
 
-interface LinecutSectionProps {
+interface HorizontalLinecutSectionProps {
   linecutType: string | null;
   imageHeight: number;
   linecuts: Linecut[];
-  updateLinecutPosition: (id: number, position: number) => void;
-  updateLinecutWidth: (id: number, width: number) => void;
-  updateLinecutColor: (id: number, side: "left" | "right", color: string) => void;
+  updateHorizontalLinecutPosition: (id: number, position: number) => void;
+  updateHorizontalLinecutWidth: (id: number, width: number) => void;
+  updateHorizontalLinecutColor: (id: number, side: "left" | "right", color: string) => void;
   deleteHorizontalLinecut: (id: number) => void;
   toggleHorizontalLinecutVisibility: (id: number) => void;
 }
 
-const LinecutSection: React.FC<LinecutSectionProps> = ({
+const HorizontalLinecutSection: React.FC<HorizontalLinecutSectionProps> = ({
   linecutType,
   imageHeight,
   linecuts,
-  updateLinecutPosition,
-  updateLinecutWidth,
-  updateLinecutColor,
+  updateHorizontalLinecutPosition,
+  updateHorizontalLinecutWidth,
+  updateHorizontalLinecutColor,
   deleteHorizontalLinecut,
   toggleHorizontalLinecutVisibility,
 }) => {
@@ -116,7 +117,7 @@ const LinecutSection: React.FC<LinecutSectionProps> = ({
                       }
                       onChange={(color: ColorResult) => {
                         const selectedColor = color.hex;
-                        updateLinecutColor(linecut.id, colorPicker.side, selectedColor);
+                        updateHorizontalLinecutColor(linecut.id, colorPicker.side, selectedColor);
                       }}
                     />
                     <button
@@ -128,35 +129,68 @@ const LinecutSection: React.FC<LinecutSectionProps> = ({
                   </div>
                 )}
 
-                {/* Slider to Adjust Linecut Width */}
+                {/* Slider and Input Box for Linecut Width */}
                 <div className="mb-6">
                   <h4 className="text-md font-semibold mb-2">Width (pixels)</h4>
-                  <InputSlider
-                    min={1}
-                    max={100}
-                    value={linecut.width || 1}
-                    step={0.1}
-                    onChange={(value) => updateLinecutWidth(linecut.id, value)}
-                    marks={[1, 100]}
-                    styles="w-full"
-                    disabled={linecut.hidden}
-                  />
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <InputSlider
+                        min={1}
+                        max={100}
+                        value={linecut.width || 1}
+                        step={0.1}
+                        onChange={(value) => updateHorizontalLinecutWidth(linecut.id, value)}
+                        marks={[1, 100]}
+                        styles="w-full"
+                        disabled={linecut.hidden}
+                      />
+                    </div>
+                    <input
+                      type="number"
+                      value={linecut.width || 1}
+                      min={1}
+                      max={100}
+                      step={0.1}
+                      onChange={(e) =>
+                        updateHorizontalLinecutWidth(linecut.id, parseFloat(e.target.value) || 1)
+                      }
+                      className="border rounded w-20 text-center"
+                      disabled={linecut.hidden}
+                    />
+                  </div>
                 </div>
 
-                {/* Slider to Adjust Linecut Position */}
+                {/* Slider and Input Box for Linecut Position */}
                 <div className="mb-4">
                   <h4 className="text-md font-semibold mb-2">Position (pixels)</h4>
-                  <InputSlider
-                    min={0}
-                    max={imageHeight - 1}
-                    value={linecut.position}
-                    step={1}
-                    onChange={(value) => updateLinecutPosition(linecut.id, value)}
-                    marks={[0, imageHeight - 1]}
-                    styles="w-full"
-                    disabled={linecut.hidden}
-                  />
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <InputSlider
+                        min={0}
+                        max={imageHeight - 1}
+                        value={linecut.position}
+                        step={1}
+                        onChange={(value) => updateHorizontalLinecutPosition(linecut.id, value)}
+                        marks={[0, imageHeight - 1]}
+                        styles="w-full"
+                        disabled={linecut.hidden}
+                      />
+                    </div>
+                    <input
+                      type="number"
+                      value={linecut.position}
+                      min={0}
+                      max={imageHeight - 1}
+                      step={1}
+                      onChange={(e) =>
+                        updateHorizontalLinecutPosition(linecut.id, parseInt(e.target.value) || 0)
+                      }
+                      className="border rounded w-20 text-center"
+                      disabled={linecut.hidden}
+                    />
+                  </div>
                 </div>
+
               </div>
             ))}
           </div>
@@ -166,4 +200,4 @@ const LinecutSection: React.FC<LinecutSectionProps> = ({
   );
 };
 
-export default LinecutSection;
+export default HorizontalLinecutSection;

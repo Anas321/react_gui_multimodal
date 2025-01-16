@@ -6,6 +6,7 @@ import { cond, reverse } from "lodash";
 import { relayout } from "plotly.js";
 // import { createScatterSubplot } from "../utils/createScatterSubplot";
 import { downsampleArray } from "../utils/downsampleArray";
+import useMultimodal from '../hooks/useMultimodal';
 
 // Function to handle ExtType
 function extractBinary(ext: ExtData | Uint8Array): Uint8Array {
@@ -20,22 +21,22 @@ function reconstructFloat32Array(buffer: Uint8Array, shape: [number, number]): n
   );
 }
 
-function calculateZminMax(array_1: number[][], array_2: number[][]): [number, number] {
-  let zmin = Infinity;
-  let zmax = -Infinity;
+// function calculateZminMax(array_1: number[][], array_2: number[][]): [number, number] {
+//   let zmin = Infinity;
+//   let zmax = -Infinity;
 
-  // Combine both arrays and iterate through them
-  [array_1, array_2].forEach((array) => {
-    array.forEach((row) => {
-      row.forEach((value) => {
-        if (value < zmin) zmin = value;
-        if (value > zmax) zmax = value;
-      });
-    });
-  });
+//   // Combine both arrays and iterate through them
+//   [array_1, array_2].forEach((array) => {
+//     array.forEach((row) => {
+//       row.forEach((value) => {
+//         if (value < zmin) zmin = value;
+//         if (value > zmax) zmax = value;
+//       });
+//     });
+//   });
 
-  return [zmin, zmax];
-}
+//   return [zmin, zmax];
+// }
 
 
 interface ScatterSubplotProps {
@@ -46,6 +47,7 @@ interface ScatterSubplotProps {
   horizontalLinecuts: Linecut[];
   leftImageColorPalette: string[];
   rightImageColorPalette: string[];
+  setZoomedPixelRange: (range: [number, number] | null) => void;
 }
 
 const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
@@ -54,6 +56,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setImageData1,
   setImageData2,
   horizontalLinecuts,
+  setZoomedPixelRange,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
@@ -66,6 +69,9 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   const [downsampledArray1, setDownsampledArray1] = useState<number[][]>([]);
   const [downsampledArray2, setDownsampledArray2] = useState<number[][]>([]);
   const [downsampledDiff, setDownsampledDiff] = useState<number[][]>([]);
+
+  // const [zoomedPixelRange, setZoomedPixelRange] = useState<[number, number] | null>(null);
+
 
   const visibleLinecuts = horizontalLinecuts.filter((linecut) => !linecut.hidden);
 
@@ -188,6 +194,15 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
     const handleRelayout = (relayoutData) => {
 
+      const xStart = relayoutData["xaxis2.range[0]"];
+      const xEnd = relayoutData["xaxis2.range[1]"];
+
+      if (xStart !== undefined && xEnd !== undefined) {
+        console.log("xStart", xStart, "xEnd", xEnd);
+        setZoomedPixelRange([Math.floor(xStart), Math.ceil(xEnd)]); // Update zoomed range
+      }
+
+
       // Check if the relayout event corresponds to an autoscale action
       const isAutoscale =
       "xaxis.autorange" in relayoutData ||
@@ -209,6 +224,9 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           xaxis: { ...prev.layout.xaxis, range: undefined, autorange: true },
           xaxis2: { ...prev.layout.xaxis2, range: undefined, autorange: true },
           xaxis3: { ...prev.layout.xaxis3, range: undefined, autorange: true },
+          yaxis: { ...prev.layout.yaxis, range: undefined, autorange: "reversed" },
+          yaxis2: { ...prev.layout.yaxis2, range: undefined, autorange: "reversed" },
+          yaxis3: { ...prev.layout.yaxis3, range: undefined, autorange: "reversed"},
         },
       }));
       return;
