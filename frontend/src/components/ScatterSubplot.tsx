@@ -111,8 +111,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         setFullResArray2(fullResArray2);
         setFullResDiff(fullResDiff)
 
-
-
         setDownsampledArray1(downsampledArray1);
         setDownsampledArray2(downsampledArray2);
         setDownsampledDiff(downsampledDiff)
@@ -192,26 +190,17 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
 
 
-    const handleRelayout = (relayoutData) => {
-
-      const xStart = relayoutData["xaxis2.range[0]"];
-      const xEnd = relayoutData["xaxis2.range[1]"];
-
-      if (xStart !== undefined && xEnd !== undefined) {
-        console.log("xStart", xStart, "xEnd", xEnd);
-        setZoomedPixelRange([Math.floor(xStart), Math.ceil(xEnd)]); // Update zoomed range
-      }
-
-
-      // Check if the relayout event corresponds to an autoscale action
-      const isAutoscale =
+  const handleRelayout = (relayoutData) => {
+    // Check if the relayout event corresponds to an autoscale action
+    const isAutoscale =
       "xaxis.autorange" in relayoutData ||
       "yaxis.autorange" in relayoutData;
 
-
     if (isAutoscale) {
-      setIsZooming(false); // Reset zoom state
-      // Revert to downsampled data and reset layout ranges
+      setIsZooming(false);
+      setZoomedPixelRange(null);
+
+      const height = downsampledArray1.length;
       setPlotData((prev) => ({
         ...prev,
         data: [
@@ -224,73 +213,71 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           xaxis: { ...prev.layout.xaxis, range: undefined, autorange: true },
           xaxis2: { ...prev.layout.xaxis2, range: undefined, autorange: true },
           xaxis3: { ...prev.layout.xaxis3, range: undefined, autorange: true },
-          yaxis: { ...prev.layout.yaxis, range: undefined, autorange: "reversed" },
-          yaxis2: { ...prev.layout.yaxis2, range: undefined, autorange: "reversed" },
-          yaxis3: { ...prev.layout.yaxis3, range: undefined, autorange: "reversed"},
+          yaxis: { ...prev.layout.yaxis, range: [height, 0] },
+          yaxis2: { ...prev.layout.yaxis2, range: [height, 0] },
+          yaxis3: { ...prev.layout.yaxis3, range: [height, 0] },
         },
       }));
       return;
+    }
+
+    const xStart = relayoutData["xaxis2.range[0]"];
+    const xEnd = relayoutData["xaxis2.range[1]"];
+
+    // Update zoomed range with full resolution coordinates
+    if (xStart !== undefined && xEnd !== undefined) {
+      const fullResStart = Math.floor(xStart * downsampleFactor);
+      const fullResEnd = Math.ceil(xEnd * downsampleFactor);
+      console.log("Full resolution range:", fullResStart, fullResEnd);
+      setZoomedPixelRange([fullResStart, fullResEnd]);
     }
 
     if (isZooming) {
       return;
     }
 
-    setIsZooming(true); // Enable zoom state on the first zoom
+    setIsZooming(true);
 
-      // Calculate indices in the downsampled data
-      const xStartDownsampled = Math.max(0, Math.floor(relayoutData["xaxis2.range[0]"]));
-      const xEndDownsampled = Math.min(
-        downsampledArray1[0].length,
-        Math.ceil(relayoutData["xaxis2.range[1]"])
-      );
-      const yStartDownsampled = Math.max(0, Math.floor(relayoutData["yaxis2.range[0]"]));
-      const yEndDownsampled = Math.min(
-        downsampledArray1.length,
-        Math.ceil(relayoutData["yaxis2.range[1]"])
-      );
+    // Calculate indices in the downsampled data
+    const xStartDownsampled = Math.max(0, Math.floor(relayoutData["xaxis2.range[0]"]));
+    const xEndDownsampled = Math.min(
+      downsampledArray1[0].length,
+      Math.ceil(relayoutData["xaxis2.range[1]"])
+    );
+    const yStartDownsampled = Math.max(0, Math.floor(relayoutData["yaxis2.range[0]"]));
+    const yEndDownsampled = Math.min(
+      downsampledArray1.length,
+      Math.ceil(relayoutData["yaxis2.range[1]"])
+    );
 
-      // Scale indices back to the full-resolution data
-      const xStartFullRes = Math.max(0, xStartDownsampled * downsampleFactor);
-      const xEndFullRes = Math.min(fullResArray1[0].length, xEndDownsampled * downsampleFactor);
-      const yStartFullRes = Math.max(0, yStartDownsampled * downsampleFactor);
-      const yEndFullRes = Math.min(fullResArray1.length, yEndDownsampled * downsampleFactor);
+    // Scale indices back to the full-resolution data
+    const xStartFullRes = Math.max(0, xStartDownsampled * downsampleFactor);
+    const xEndFullRes = Math.min(fullResArray1[0].length, xEndDownsampled * downsampleFactor);
+    const yStartFullRes = Math.max(0, yStartDownsampled * downsampleFactor);
+    const yEndFullRes = Math.min(fullResArray1.length, yEndDownsampled * downsampleFactor);
 
-      // // Extract full-resolution zoomed-in regions
-      // const zoomedArray1 = fullResArray1
-      //   .slice(yEndFullRes, yStartFullRes)
-      //   .map((row) => row.slice(xStartFullRes, xEndFullRes));
-      // const zoomedArray2 = fullResArray2
-      //   .slice(yEndFullRes, yStartFullRes)
-      //   .map((row) => row.slice(xStartFullRes, xEndFullRes));
-      // const zoomedDiff = zoomedArray1.map((row, i) =>
-      //   row.map((val, j) => val - zoomedArray2[i][j])
-      // );
-
-
-
-      // Update the plot data with the full-resolution zoomed-in data
-      setPlotData((prev) => {
-        const updatedData = {
-          ...prev,
-          data: [
-            { ...prev.data[0], z: fullResArray1 },
-            { ...prev.data[1], z: fullResArray2 },
-            { ...prev.data[2], z: fullResDiff },
-          ],
-          layout: {
-            ...prev.layout,
-            xaxis: { ...prev.layout.xaxis, range: [xStartFullRes, xEndFullRes] },
-            xaxis2: { ...prev.layout.xaxis2, range: [xStartFullRes, xEndFullRes] },
-            xaxis3: { ...prev.layout.xaxis3, range: [xStartFullRes, xEndFullRes] },
-            yaxis: { ...prev.layout.yaxis, range: [yStartFullRes, yEndFullRes] },
-            yaxis2: { ...prev.layout.yaxis2, range: [yStartFullRes, yEndFullRes] },
-            yaxis3: { ...prev.layout.yaxis3, range: [yStartFullRes, yEndFullRes] },
-          },
-        };
-        return updatedData;
-      });
-    };
+    // Update the plot data with the full-resolution zoomed-in data
+    setPlotData((prev) => {
+      const updatedData = {
+        ...prev,
+        data: [
+          { ...prev.data[0], z: fullResArray1 },
+          { ...prev.data[1], z: fullResArray2 },
+          { ...prev.data[2], z: fullResDiff },
+        ],
+        layout: {
+          ...prev.layout,
+          xaxis: { ...prev.layout.xaxis, range: [xStartFullRes, xEndFullRes] },
+          xaxis2: { ...prev.layout.xaxis2, range: [xStartFullRes, xEndFullRes] },
+          xaxis3: { ...prev.layout.xaxis3, range: [xStartFullRes, xEndFullRes] },
+          yaxis: { ...prev.layout.yaxis, range: [yStartFullRes, yEndFullRes] },
+          yaxis2: { ...prev.layout.yaxis2, range: [yStartFullRes, yEndFullRes] },
+          yaxis3: { ...prev.layout.yaxis3, range: [yStartFullRes, yEndFullRes] },
+        },
+      };
+      return updatedData;
+    });
+  };
 
 
   return (

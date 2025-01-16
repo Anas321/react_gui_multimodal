@@ -132,13 +132,13 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
         showticklabels=False,
         showgrid=False,
         zeroline=False,
-        # matches="x",
+        matches="x",
     )
     scatter_subplot_fig.update_yaxes(
         showticklabels=False,
         showgrid=False,
         zeroline=False,
-        # scaleanchor="x",
+        scaleanchor="x",
     )
 
     # Serialize arrays to bytes

@@ -3,10 +3,16 @@ import Plot from "react-plotly.js";
 import { Linecut } from "../types";
 
 interface HorizontalLinecutFigProps {
-  linecuts: Linecut[]; // List of linecuts with positions and colors
-  imageData1: number[][]; // Full data for the left scatter image
-  imageData2: number[][]; // Full data for the right scatter image
-  zoomedPixelRange: [number, number] | null; // New prop for zoomed range
+  linecuts: Linecut[];
+  imageData1: number[][];
+  imageData2: number[][];
+  zoomedPixelRange: [number, number] | null;
+}
+
+// Add interface for dimensions
+interface Dimensions {
+  width: number | undefined;
+  height: number | undefined;
 }
 
 const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
@@ -15,49 +21,43 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
   imageData2,
   zoomedPixelRange,
 }) => {
-
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [layout, setLayout] = useState({
+  // Move layout into a memoized value that updates when zoomedPixelRange changes
+  const layout = React.useMemo(() => ({
+    width: undefined, // Let ResizeObserver handle this
+    height: undefined, // Let ResizeObserver handle this
     xaxis: {
-      title: { text: "Pixel Index", font: { size: 25 }, range: undefined },
-      tickfont: { size: 25 }, // Font size for x-axis ticks
+      title: { text: "Pixel Index", font: { size: 25 } },
+      tickfont: { size: 25 },
+      range: zoomedPixelRange || undefined, // Directly use zoomedPixelRange
     },
     yaxis: {
       title: { text: "Intensity", font: { size: 25 } },
-      tickfont: { size: 25 }, // Font size for y-axis ticks
+      tickfont: { size: 25 },
     },
     legend: {
-      font: { size: 25 }, // Font size for legend text
+      font: { size: 25 },
     },
-    font: { size: 25 }, // Global font size for annotations
+    font: { size: 25 },
     showlegend: true,
+  }), [zoomedPixelRange]);
+
+  // Separate state for dimensions only
+  const [dimensions, setDimensions] = useState<Dimensions>({
+    width: undefined,
+    height: undefined,
   });
 
-
-  // Update layout when zoomedPixelRange changes
-  useEffect(() => {
-    console.log("Received zoomedPixelRange:", zoomedPixelRange);
-    if (zoomedPixelRange) {
-      setLayout((prev) => ({
-        ...prev,
-        xaxis: { ...prev.xaxis, range: [...zoomedPixelRange] }, // Ensure deep copy
-      }));
-    }
-  }, [zoomedPixelRange]);
-
-
-
-  // Update layout dimensions when container size changes
+  // Update dimensions when container size changes
   useEffect(() => {
     const resizeObserver = new ResizeObserver((entries) => {
       if (entries[0]) {
         const { width, height } = entries[0].contentRect;
-        setLayout((prev) => ({
-          ...prev,
-          width,
-          height: height,
-        }));
+        setDimensions({
+          width: Math.floor(width), // Ensure we're using numbers
+          height: Math.floor(height),
+        });
       }
     });
 
@@ -68,7 +68,6 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Helper function to compute averaged intensity
   const computeAveragedIntensity = (
     imageData: number[][],
     position: number,
@@ -96,64 +95,62 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
     return averagedIntensity;
   };
 
+  // Memoize the plot data to prevent unnecessary recalculations
+  const plotData = React.useMemo(() =>
+    linecuts
+      .filter((linecut) => !linecut.hidden)
+      .flatMap((linecut) => {
+        const averagedDataLeft = computeAveragedIntensity(
+          imageData1,
+          linecut.position,
+          linecut.width ?? 1
+        );
+
+        const averagedDataRight = computeAveragedIntensity(
+          imageData2,
+          linecut.position,
+          linecut.width ?? 1
+        );
+
+        return [
+          {
+            x: Array.from({ length: averagedDataLeft.length }, (_, i) => i),
+            y: averagedDataLeft,
+            type: "scatter" as const,
+            mode: "lines" as const,
+            name: `Left Linecut ${linecut.id}`,
+            line: {
+              color: linecut.leftColor,
+              width: 2,
+            },
+          },
+          {
+            x: Array.from({ length: averagedDataRight.length }, (_, i) => i),
+            y: averagedDataRight,
+            type: "scatter" as const,
+            mode: "lines" as const,
+            name: `Right Linecut ${linecut.id}`,
+            line: {
+              color: linecut.rightColor,
+              width: 2,
+            },
+          },
+        ];
+      }),
+    [linecuts, imageData1, imageData2]
+  );
+
   return (
-    <div className="mt-4 p-4 bg-gray-100 rounded shadow">
+    <div ref={containerRef} className="mt-4 p-4 bg-gray-100 rounded shadow">
       <Plot
-        data={[
-          // Map through all visible linecuts and add their data to the plot
-          ...linecuts
-            .filter((linecut) => !linecut.hidden) // Only include visible linecuts
-            .flatMap((linecut) => {
-              const averagedDataLeft = computeAveragedIntensity(
-                imageData1,
-                linecut.position,
-                linecut.width ?? 1 // Provide default width if undefined
-              );
-
-              const averagedDataRight = computeAveragedIntensity(
-                imageData2,
-                linecut.position,
-                linecut.width ?? 1 // Provide default width if undefined
-              );
-
-              return [
-                // Plot for the left image
-                {
-                  x: Array.from(
-                    { length: averagedDataLeft.length },
-                    (_, i) => i
-                  ),
-                  y: averagedDataLeft,
-                  type: "scatter" as const,
-                  mode: "lines" as const,
-                  name: `Left Linecut ${linecut.id}`,
-                  line: {
-                    color: linecut.leftColor, // Use user-defined color for the left image
-                    width: 2,
-                  },
-                },
-                // Plot for the right image
-                {
-                  x: Array.from(
-                    { length: averagedDataRight.length },
-                    (_, i) => i
-                  ),
-                  y: averagedDataRight,
-                  type: "scatter" as const,
-                  mode: "lines" as const,
-                  name: `Right Linecut ${linecut.id}`,
-                  line: {
-                    color: linecut.rightColor, // Use user-defined color for the right image
-                    width: 2,
-                  },
-                },
-              ];
-            }),
-        ]}
-        layout={layout}
+        data={plotData}
+        layout={{
+          ...layout,
+          ...dimensions,
+        }}
         config={{
-          responsive: true, // Enables responsiveness
-          scrollZoom: true, // Enables scroll zoom
+          responsive: true,
+          scrollZoom: true,
         }}
         useResizeHandler
         style={{ width: "100%", height: "100%" }}
