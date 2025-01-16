@@ -149,8 +149,23 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
           ...dimensions,
         }}
         config={{
-          responsive: true,
           scrollZoom: true,
+          responsive: true,
+          displayModeBar: true,
+          displaylogo: false,
+          modeBarButtons: [
+            [
+              'pan2d',  // Add pan button
+              'zoom2d', // Add zoom button
+              'zoomIn2d',
+              'zoomOut2d',
+              'autoScale2d',
+              'resetScale2d',
+              'toImage',
+            ],
+          ],
+          modeBarButtonsToRemove: [], // Keep all default buttons
+          showTips: true,  // Show tooltips when hovering over mode bar buttons
         }}
         useResizeHandler
         style={{ width: "100%", height: "100%" }}

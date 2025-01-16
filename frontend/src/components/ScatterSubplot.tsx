@@ -2,11 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Plot from "react-plotly.js";
 import { decode, ExtData } from "@msgpack/msgpack";
 import { Linecut } from "../types";
-import { cond, reverse } from "lodash";
-import { relayout } from "plotly.js";
-// import { createScatterSubplot } from "../utils/createScatterSubplot";
 import { downsampleArray } from "../utils/downsampleArray";
-import useMultimodal from '../hooks/useMultimodal';
 
 // Function to handle ExtType
 function extractBinary(ext: ExtData | Uint8Array): Uint8Array {
@@ -70,10 +66,27 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   const [downsampledArray2, setDownsampledArray2] = useState<number[][]>([]);
   const [downsampledDiff, setDownsampledDiff] = useState<number[][]>([]);
 
-  // const [zoomedPixelRange, setZoomedPixelRange] = useState<[number, number] | null>(null);
-
-
   const visibleLinecuts = horizontalLinecuts.filter((linecut) => !linecut.hidden);
+
+
+  const [dragMode, setDragMode] = useState('zoom');
+
+    // Add handler for mode changes
+    const handleModeChange = (relayoutData: any) => {
+      if (relayoutData.dragmode) {
+        setDragMode(relayoutData.dragmode);
+        // Force update the layout to maintain the dragmode
+        setPlotData(prev => ({
+          ...prev,
+          layout: {
+            ...prev.layout,
+            dragmode: relayoutData.dragmode,
+          }
+        }));
+      }
+    };
+
+
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/scatter-subplot")
@@ -189,7 +202,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   };
 
 
-  const handleRelayout = (relayoutData) => {
+  const handleRelayout = (relayoutData: any) => {
     const isAutoscale =
       "xaxis.autorange" in relayoutData ||
       "yaxis.autorange" in relayoutData;
@@ -275,62 +288,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     }
   };
 
-  //   // // Update zoomed range with full resolution coordinates
-  //   // if (xStart !== undefined && xEnd !== undefined) {
-  //   //   // Convert to full resolution coordinates for HorizontalLinecutFig
-  //   //   // Important: use the raw xStart/xEnd values here
-  //   //   const fullResStart = Math.floor(xStart * downsampleFactor);
-  //   //   const fullResEnd = Math.ceil(xEnd * downsampleFactor);
-  //   //   setZoomedPixelRange([fullResStart, fullResEnd]);
-  //   // }
-
-  //   // if (isZooming) {
-  //   //   return;
-  //   // }
-
-  //   // setIsZooming(true);
-
-  //   // // Calculate indices in the downsampled data
-  //   // const xStartDownsampled = Math.max(0, Math.floor(relayoutData["xaxis2.range[0]"]));
-  //   // const xEndDownsampled = Math.min(
-  //   //   downsampledArray1[0].length,
-  //   //   Math.ceil(relayoutData["xaxis2.range[1]"])
-  //   // );
-  //   // const yStartDownsampled = Math.max(0, Math.floor(relayoutData["yaxis2.range[0]"]));
-  //   // const yEndDownsampled = Math.min(
-  //   //   downsampledArray1.length,
-  //   //   Math.ceil(relayoutData["yaxis2.range[1]"])
-  //   // );
-
-  //   // // Scale indices back to the full-resolution data
-  //   // const xStartFullRes = Math.max(0, xStartDownsampled * downsampleFactor);
-  //   // const xEndFullRes = Math.min(fullResArray1[0].length, xEndDownsampled * downsampleFactor);
-  //   // const yStartFullRes = Math.max(0, yStartDownsampled * downsampleFactor);
-  //   // const yEndFullRes = Math.min(fullResArray1.length, yEndDownsampled * downsampleFactor);
-
-  //   // // Update the plot data with the full-resolution zoomed-in data
-  //   // setPlotData((prev) => {
-  //   //   const updatedData = {
-  //   //     ...prev,
-  //   //     data: [
-  //   //       { ...prev.data[0], z: fullResArray1 },
-  //   //       { ...prev.data[1], z: fullResArray2 },
-  //   //       { ...prev.data[2], z: fullResDiff },
-  //   //     ],
-  //   //     layout: {
-  //   //       ...prev.layout,
-  //   //       xaxis: { ...prev.layout.xaxis, range: [xStartFullRes, xEndFullRes] },
-  //   //       xaxis2: { ...prev.layout.xaxis2, range: [xStartFullRes, xEndFullRes] },
-  //   //       xaxis3: { ...prev.layout.xaxis3, range: [xStartFullRes, xEndFullRes] },
-  //   //       yaxis: { ...prev.layout.yaxis, range: [yStartFullRes, yEndFullRes] },
-  //   //       yaxis2: { ...prev.layout.yaxis2, range: [yStartFullRes, yEndFullRes] },
-  //   //       yaxis3: { ...prev.layout.yaxis3, range: [yStartFullRes, yEndFullRes] },
-  //   //     },
-  //   //   };
-  //   //   return updatedData;
-  //   // });
-  // };
-
 
   return (
     <div
@@ -340,72 +297,139 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     >
       {plotData ? (
         <Plot
-        data={[
-          ...plotData.data,
-          // Render rectangles for the left image (x1, y1)
-          ...visibleLinecuts.map((linecut) => {
-            const scale = isZooming ? 1 : downsampleFactor; // Scale down linecuts for downsampled data
-            return {
-              x: [
-                0,
-                plotData.data[0].z[0].length,
-                plotData.data[0].z[0].length,
-                0,
-              ],
-              y: [
-                (linecut.position - (linecut.width || 1) / 2) / scale,
-                (linecut.position - (linecut.width || 1) / 2) / scale,
-                (linecut.position + (linecut.width || 1) / 2) / scale,
-                (linecut.position + (linecut.width || 1) / 2) / scale,
-              ],
-              mode: "lines",
-              fill: "toself",
-              fillcolor: linecut.leftColor,
-              line: { color: linecut.leftColor },
-              opacity: 0.3,
-              xaxis: "x1", // Associate with the left image
-              yaxis: "y1",
-              showlegend: false,
-            };
-          }),
-          // Render rectangles for the right image (x2, y2)
-          ...visibleLinecuts.map((linecut) => {
-            const scale = isZooming ? 1 : downsampleFactor; // Scale down linecuts for downsampled data
-            return {
-              x: [
-                0,
-                plotData.data[1].z[0].length,
-                plotData.data[1].z[0].length,
-                0,
-              ],
-              y: [
-                (linecut.position - (linecut.width || 1) / 2) / scale,
-                (linecut.position - (linecut.width || 1) / 2) / scale,
-                (linecut.position + (linecut.width || 1) / 2) / scale,
-                (linecut.position + (linecut.width || 1) / 2) / scale,
-              ],
-              mode: "lines",
-              fill: "toself",
-              fillcolor: linecut.rightColor,
-              line: { color: linecut.rightColor },
-              opacity: 0.3,
-              xaxis: "x2", // Associate with the right image
-              yaxis: "y2",
-              showlegend: false,
-            };
-          }),
-        ]}
-        layout={{
-          ...plotData.layout,
-          annotations: generateHorizontalLinecutAnnotations(),
-        }}
-        config={{ scrollZoom: true, responsive: true, displayModeBar: true }}
-        useResizeHandler={true}
-        style={{ width: "100%", height: "100%" }}
-        onRelayout={handleRelayout}
-      />
+          data={[
+            ...plotData.data,
+            // Render rectangles for the left image (x1, y1)
+            ...visibleLinecuts.flatMap((linecut) => {
+              const scale = isZooming ? 1 : downsampleFactor;
 
+              const imageHeight = plotData.data[0].z.length;
 
+              // Clamp the y-coordinates to the image boundaries
+              const yTop = Math.max(0, (linecut.position - (linecut.width || 1) / 2) / scale);
+              const yBottom = Math.min(imageHeight, (linecut.position + (linecut.width || 1) / 2) / scale);
+
+              return [
+                // Rectangle for the width
+                {
+                  x: [
+                    0,
+                    plotData.data[0].z[0].length,
+                    plotData.data[0].z[0].length,
+                    0,
+                  ],
+                  y: [
+                    yTop,
+                    yTop,
+                    yBottom,
+                    yBottom,
+                  ],
+                  mode: "lines",
+                  fill: "toself",
+                  fillcolor: linecut.leftColor,
+                  line: { color: linecut.leftColor },
+                  opacity: 0.3, // Reduced opacity for the width region
+                  xaxis: "x1",
+                  yaxis: "y1",
+                  showlegend: false,
+                },
+                // Solid line at the median
+                {
+                  x: [0, plotData.data[0].z[0].length],
+                  y: [linecut.position / scale, linecut.position / scale],
+                  mode: "lines",
+                  line: {
+                    color: linecut.leftColor,
+                    width: 2 // Make the line slightly thicker
+                  },
+                  opacity: 0.75, // Full opacity for the center line
+                  xaxis: "x1",
+                  yaxis: "y1",
+                  showlegend: false,
+                }
+              ];
+            }),
+            // Render rectangles for the right image (x2, y2)
+            ...visibleLinecuts.flatMap((linecut) => {
+              const scale = isZooming ? 1 : downsampleFactor;
+              const imageHeight = plotData.data[1].z.length;
+
+              // Clamp the y-coordinates to the image boundaries
+              const yTop = Math.max(0, (linecut.position - (linecut.width || 1) / 2) / scale);
+              const yBottom = Math.min(imageHeight, (linecut.position + (linecut.width || 1) / 2) / scale);
+
+              return [
+                // Rectangle for the width
+                {
+                  x: [
+                    0,
+                    plotData.data[1].z[0].length,
+                    plotData.data[1].z[0].length,
+                    0,
+                  ],
+                  y: [
+                    yTop,
+                    yTop,
+                    yBottom,
+                    yBottom,
+                  ],
+                  mode: "lines",
+                  fill: "toself",
+                  fillcolor: linecut.rightColor,
+                  line: { color: linecut.rightColor },
+                  opacity: 0.3, // Reduced opacity for the width region
+                  xaxis: "x2",
+                  yaxis: "y2",
+                  showlegend: false,
+                },
+                // Solid line at the median
+                {
+                  x: [0, plotData.data[1].z[0].length],
+                  y: [linecut.position / scale, linecut.position / scale],
+                  mode: "lines",
+                  line: {
+                    color: linecut.rightColor,
+                    width: 2 // Make the line slightly thicker
+                  },
+                  opacity: 0.75, // Full opacity for the center line
+                  xaxis: "x2",
+                  yaxis: "y2",
+                  showlegend: false,
+                }
+              ];
+            }),
+          ]}
+          config={{
+            scrollZoom: true,
+            responsive: true,
+            displayModeBar: true,
+            displaylogo: false,
+            modeBarButtons: [
+              [
+                'pan2d',  // Add pan button
+                'zoom2d', // Add zoom button
+                'zoomIn2d',
+                'zoomOut2d',
+                'autoScale2d',
+                'resetScale2d',
+                'toImage',
+              ],
+            ],
+            modeBarButtonsToRemove: [], // Keep all default buttons
+            showTips: true,  // Show tooltips when hovering over mode bar buttons
+          }}
+          useResizeHandler={true}
+          style={{ width: "100%", height: "100%" }}
+          onRelayout={(relayoutData) => {
+            handleModeChange(relayoutData);
+            handleRelayout(relayoutData);
+          }}
+          layout={{
+            ...plotData.layout,
+            dragmode: dragMode,  // Set default mode to zoom
+            annotations: generateHorizontalLinecutAnnotations(),
+          }}
+        />
       ) : (
         <p>Loading scatter subplot...</p>
       )}
