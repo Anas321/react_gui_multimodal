@@ -44,6 +44,7 @@ interface ScatterSubplotProps {
   leftImageColorPalette: string[];
   rightImageColorPalette: string[];
   setZoomedPixelRange: (range: [number, number] | null) => void;
+  isThirdCollapsed: boolean;
 }
 
 const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
@@ -53,6 +54,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setImageData2,
   horizontalLinecuts,
   setZoomedPixelRange,
+  isThirdCollapsed,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
@@ -202,6 +204,36 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   };
 
 
+  // Add this function to generate the operation signs
+  const generateOperationSigns = () => {
+    const imageHeight = plotData.data[0].z.length;
+    return [
+      // Minus sign between first and second images
+      {
+        x: -250, // Position between first and second images
+        y: imageHeight / 2,
+        text: '−',  // Minus sign (use proper minus sign, not hyphen)
+        showarrow: false,
+        font: { color: "black", size: 40, weight: 'bold' },
+        xref: "x2",
+        yref: "y",
+        align: "center",
+      },
+      // Equals sign between second and third images
+      {
+        x: -200, // Position between second and third images
+        y: imageHeight / 2,
+        text: '=',
+        showarrow: false,
+        font: { color: "black", size: 40, weight: 'bold' },
+        xref: "x3",
+        yref: "y",
+        align: "center",
+      },
+    ];
+  };
+
+
   const handleRelayout = (relayoutData: any) => {
     const isAutoscale =
       "xaxis.autorange" in relayoutData ||
@@ -290,6 +322,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
 
   return (
+    <div className="relative w-full h-full"> {/* Add relative positioning to parent */}
+
     <div
       ref={plotContainer}
       className="w-full h-full"
@@ -427,12 +461,27 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           layout={{
             ...plotData.layout,
             dragmode: dragMode,  // Set default mode to zoom
-            annotations: generateHorizontalLinecutAnnotations(),
+            annotations: [
+              ...generateHorizontalLinecutAnnotations(),
+              // ...generateOperationSigns(),
+            ],
           }}
         />
       ) : (
         <p>Loading scatter subplot...</p>
       )}
+      {/* Only render signs when second column is not collapsed */}
+      {isThirdCollapsed && (
+        <>
+          <div className="absolute top-1/2 left-[29%] -translate-y-1/2 text-5xl font-bold">
+            −
+          </div>
+          <div className="absolute top-1/2 left-[66%] -translate-y-1/2 text-5xl font-bold">
+            =
+          </div>
+        </>
+      )}
+      </div>
     </div>
   );
 });

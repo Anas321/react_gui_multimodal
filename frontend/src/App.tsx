@@ -397,8 +397,8 @@ function App() {
             >
               <Accordion.Item value="scatter-images-accordion">
                 <Accordion.Control>Scatter Images</Accordion.Control>
-                <Accordion.Panel>
-                <div>
+                <Accordion.Panel className="h-[30vh]">
+                <div className="h-full">
                   <ScatterSubplot
                     setImageHeight={setImageHeight}
                     setImageWidth={setImageWidth}
@@ -408,6 +408,7 @@ function App() {
                     leftImageColorPalette={leftImageColorPalette}
                     rightImageColorPalette={rightImageColorPalette}
                     setZoomedPixelRange={setZoomedPixelRange}
+                    isThirdCollapsed={isThirdCollapsed}
                   />
                 </div>
                 </Accordion.Panel>
