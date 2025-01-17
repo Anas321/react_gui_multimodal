@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { debounce, set, throttle } from 'lodash';
 import { Linecut } from '../types';
 import { leftImageColorPalette, rightImageColorPalette } from '../utils/constants';
@@ -6,19 +6,72 @@ import { leftImageColorPalette, rightImageColorPalette } from '../utils/constant
 
 export default function useMultimodal() {
 
+  // 1. First, declare all useState hooks
   const [horizontalLinecuts, setHorizontalLinecuts] = useState<Linecut[]>([]);
   const [experimentType, setExperimentType] = useState('SAXS');
-  const [selectedLinecuts, setSelectedLinecuts] = useState<string[]>([]); // Manage multiple linecuts
+  const [selectedLinecuts, setSelectedLinecuts] = useState<string[]>([]);
   const [horizontalLinecutPosition, setHorizontalLinecutPosition] = useState(0);
   const [horizontalLinecutData1, setHorizontalLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
   const [horizontalLinecutData2, setHorizontalLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
-  const [imageHeight, setImageHeight] = useState<number>(100); // Default value for height
-  const [imageWidth, setImageWidth] = useState<number>(100);  // Default value for width
-  const [imageData1, setImageData1] = useState<number[][]>([]); // Data for scatter image 1
-  const [imageData2, setImageData2] = useState<number[][]>([]); // Data for scatter image 2
+  const [imageHeight, setImageHeight] = useState<number>(100);
+  const [imageWidth, setImageWidth] = useState<number>(100);
+  const [imageData1, setImageData1] = useState<number[][]>([]);
+  const [imageData2, setImageData2] = useState<number[][]>([]);
+  const [zoomedPixelRange, setZoomedPixelRange] = useState<[number, number] | null>(null);
 
 
+  // 2. Then declare all useMemo hooks
+  // Cache linecut data computations
+  const linecutDataCache = useMemo(() => new Map(), []);
 
+
+  // 3. Then declare all useCallback hooks
+  const computeLinecutData = useCallback((position: number, imageData: number[][]): number[] => {
+    const cacheKey = `${position}-${imageData.length}`;
+    if (linecutDataCache.has(cacheKey)) {
+      return linecutDataCache.get(cacheKey);
+    }
+
+    if (Array.isArray(imageData) && position >= 0 && position < imageData.length) {
+      const data = imageData[position];
+      linecutDataCache.set(cacheKey, data);
+      return data;
+    }
+    return [];
+  }, [linecutDataCache]);
+
+
+  // 4. Finally, declare all throttle and debounce hooks
+  // Throttle the update linecut position function to prevent too many updates
+  const throttledUpdateLinecutPosition = useCallback(
+    throttle((id: number, position: number) => {
+      setHorizontalLinecuts(prev =>
+        prev.map(linecut =>
+          linecut.id === id ? { ...linecut, position } : linecut
+        )
+      );
+
+      if (imageData1.length > 0 && imageData2.length > 0) {
+        const newLinecutData1 = computeLinecutData(position, imageData1);
+        const newLinecutData2 = computeLinecutData(position, imageData2);
+
+        setHorizontalLinecutData1(prev =>
+          prev.map(data =>
+            data.id === id ? { ...data, data: newLinecutData1 } : data
+          )
+        );
+        setHorizontalLinecutData2(prev =>
+          prev.map(data =>
+            data.id === id ? { ...data, data: newLinecutData2 } : data
+          )
+        );
+      }
+    }, 200, { leading: true, trailing: true }),
+    [imageData1, imageData2, computeLinecutData]
+  );
+
+
+  // Update the color of a horizontal linecut
   const updateHorizontalLinecutColor = (id: number, side: 'left' | 'right', color: string) => {
     setHorizontalLinecuts((prev) =>
       prev.map((linecut) =>
@@ -30,6 +83,7 @@ export default function useMultimodal() {
   };
 
 
+  // Delete a horizontal linecut
   const deleteHorizontalLinecut = (id: number) => {
     setHorizontalLinecuts((prev) => {
       // Filter out the linecut to be deleted
@@ -59,7 +113,7 @@ export default function useMultimodal() {
   };
 
 
-
+  // Toggle the visibility of a horizontal linecut
   const toggleHorizontalLinecutVisibility = (id: number) => {
     setHorizontalLinecuts((prev) =>
       prev.map((linecut) =>
@@ -68,7 +122,7 @@ export default function useMultimodal() {
     );
   };
 
-
+  // Add a new horizontal linecut
   const addHorizontalLinecut = throttle(() => {
     // Ensure unique IDs for new linecuts
     const existingIds = horizontalLinecuts.map((linecut) => linecut.id);
@@ -105,52 +159,12 @@ export default function useMultimodal() {
   }, 200);
 
 
-  const throttledUpdateLinecutPosition = throttle((id, position) => {
-    setHorizontalLinecuts((prev) =>
-      prev.map((linecut) =>
-        linecut.id === id ? { ...linecut, position } : linecut
-      )
-    );
-
-    setHorizontalLinecutPosition(position);
-
-    if (imageData1.length > 0 && imageData2.length > 0) {
-      const newLinecutData1 = computeLinecutData(position, imageData1);
-      const newLinecutData2 = computeLinecutData(position, imageData2);
-
-      // Inline debounced functions
-      const debouncedSetData1 = debounce((data) => {
-        setHorizontalLinecutData1((prev) =>
-          prev.map((linecutData) =>
-            linecutData.id === id ? { ...linecutData, data } : linecutData
-          )
-        );
-      }, 100);
-
-      const debouncedSetData2 = debounce((data) => {
-        setHorizontalLinecutData2((prev) =>
-          prev.map((linecutData) =>
-            linecutData.id === id ? { ...linecutData, data } : linecutData
-          )
-        );
-      }, 100);
-
-      // Call the debounced setters
-      debouncedSetData1(newLinecutData1);
-      debouncedSetData2(newLinecutData2);
-
-      // Cleanup to prevent memory leaks
-      debouncedSetData1.cancel();
-      debouncedSetData2.cancel();
-    }
-  }, 100);
-
-
+  // Update the position of a horizontal linecut
   const updateHorizontalLinecutPosition = (id: number, position: number) => {
     throttledUpdateLinecutPosition(id, position);
   };
 
-
+  // Update the width of a horizontal linecut
   const updateHorizontalLinecutWidth = (id: number, width: number) => {
     setHorizontalLinecuts((prev) =>
       prev.map((linecut) =>
@@ -165,47 +179,6 @@ export default function useMultimodal() {
   };
 
 
-  const computeLinecutData = (position: number, imageData: number[][]): number[] => {
-    if (Array.isArray(imageData) && position >= 0 && position < imageData.length) {
-      return imageData[position];
-    }
-    return [];
-  };
-
-
-  // Memoized linecut data for both images
-  const linecutDataMemoized1 = useMemo(() => {
-    return computeLinecutData(horizontalLinecutPosition, imageData1);
-  }, [horizontalLinecutPosition, imageData1]);
-
-  const linecutDataMemoized2 = useMemo(() => {
-    return computeLinecutData(horizontalLinecutPosition, imageData2);
-  }, [horizontalLinecutPosition, imageData2]);
-
-
-useEffect(() => {
-    const debouncedSetData1 = debounce((newData) => {
-      setHorizontalLinecutData1((prev) => [...prev, newData]);
-    }, 100);
-
-    const debouncedSetData2 = debounce((newData) => {
-      setHorizontalLinecutData2((prev) => [...prev, newData]);
-    }, 100);
-
-    if (linecutDataMemoized1.length > 0 && linecutDataMemoized2.length > 0) {
-      debouncedSetData1({ id: horizontalLinecutPosition, data: linecutDataMemoized1 });
-      debouncedSetData2({ id: horizontalLinecutPosition, data: linecutDataMemoized2 });
-    }
-
-    // Cleanup to prevent memory leaks
-    return () => {
-      debouncedSetData1.cancel();
-      debouncedSetData2.cancel();
-    };
-  }, [linecutDataMemoized1, linecutDataMemoized2, horizontalLinecutPosition]);
-
-
-    const [zoomedPixelRange, setZoomedPixelRange] = useState<[number, number] | null>(null);
 
 
   return {
@@ -235,14 +208,6 @@ useEffect(() => {
     updateHorizontalLinecutWidth,
     zoomedPixelRange,
     setZoomedPixelRange,
-
-    // verticalLinecuts,
-    // setVerticalLinecuts,
-    // verticalLinecutData1,
-    // verticalLinecutData2,
-    // addVerticalLinecut,
-    // updateVerticalLinecutPosition,
-
   };
 
 }
