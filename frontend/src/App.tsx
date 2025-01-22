@@ -11,6 +11,8 @@ import HorizontalLinecutFig from './components/HorizontalLinecutFig';
 import { handleExperimentTypeChange, addLinecut } from './utils/linecutHandlers';
 import { leftImageColorPalette, rightImageColorPalette } from './utils/constants';
 import useMultimodal from './hooks/useMultimodal';
+import VerticalLinecutSection from './components/VerticalLinecutSection';
+import VerticalLinecutFig from './components/VerticalLinecutFig';
 
 
 function App() {
@@ -43,8 +45,20 @@ function App() {
     addHorizontalLinecut,
     updateHorizontalLinecutPosition,
     updateHorizontalLinecutWidth,
-    zoomedPixelRange,
-    setZoomedPixelRange,
+    zoomedXPixelRange,
+    setZoomedXPixelRange,
+    // verticalLinecuts
+    verticalLinecuts,
+    verticalLinecutData1,
+    verticalLinecutData2,
+    addVerticalLinecut,
+    updateVerticalLinecutPosition,
+    updateVerticalLinecutWidth,
+    updateVerticalLinecutColor,
+    deleteVerticalLinecut,
+    toggleVerticalLinecutVisibility,
+    zoomedYPixelRange,
+    setZoomedYPixelRange,
   } = useMultimodal();
 
 
@@ -156,9 +170,19 @@ function App() {
                         >
                           <span className="text-2xl font-medium">Horizontal Linecut</span>
                         </Menu.Item>
-                        <Menu.Item onClick={() => addLinecut('Vertical', selectedLinecuts, setSelectedLinecuts)}>
+
+                        <Menu.Item
+                          onClick={() => {
+                            addLinecut('Vertical', selectedLinecuts, setSelectedLinecuts);
+                            addVerticalLinecut();
+                          }}
+                        >
                           <span className="text-2xl font-medium">Vertical Linecut</span>
                         </Menu.Item>
+
+                        {/* <Menu.Item onClick={() => addLinecut('Vertical', selectedLinecuts, setSelectedLinecuts)}>
+                          <span className="text-2xl font-medium">Vertical Linecut</span>
+                        </Menu.Item> */}
                         {/* Conditionally render Azimuthal Integration in the menu*/}
                         <Menu.Item onClick={() => addLinecut('Inclined', selectedLinecuts, setSelectedLinecuts)}>
                           <span className="text-2xl font-medium">Inclined Linecut</span>
@@ -173,10 +197,11 @@ function App() {
                     </Menu>
                   </div>
                     {/* Render all selected LinecutSections */}
-                    {linecutOrder.filter((linecut) => selectedLinecuts.includes(linecut)).map((linecutType, index) => (
-                      horizontalLinecuts.length > 0 && (
+                    {linecutOrder.filter((linecut) => selectedLinecuts.includes(linecut)).map((linecutType) => {
+                    if (linecutType === 'Horizontal' && horizontalLinecuts.length > 0) {
+                      return (
                         <HorizontalLinecutSection
-                          key={`linecut-section-${linecutType}-${index}`} // Unique key
+                          key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
                           imageHeight={imageHeight}
                           linecuts={horizontalLinecuts}
@@ -186,8 +211,27 @@ function App() {
                           deleteHorizontalLinecut={deleteHorizontalLinecut}
                           toggleHorizontalLinecutVisibility={toggleHorizontalLinecutVisibility}
                         />
-                      )
-                    ))}
+                      );
+                    }
+
+                    if (linecutType === 'Vertical' && verticalLinecuts.length > 0) {
+                      return (
+                        <VerticalLinecutSection
+                          key={`linecut-section-${linecutType}`}
+                          linecutType={linecutType}
+                          imageWidth={imageWidth}
+                          linecuts={verticalLinecuts}
+                          updateVerticalLinecutPosition={updateVerticalLinecutPosition}
+                          updateVerticalLinecutWidth={updateVerticalLinecutWidth}
+                          updateVerticalLinecutColor={updateVerticalLinecutColor}
+                          deleteVerticalLinecut={deleteVerticalLinecut}
+                          toggleVerticalLinecutVisibility={toggleVerticalLinecutVisibility}
+                        />
+                      );
+                    }
+
+                    return null;
+                  })}
                     {/* {selectedLinecuts.map((linecutType) => (
                     <LinecutSection key={linecutType} linecutType={linecutType} />
                   ))} */}
@@ -224,9 +268,11 @@ function App() {
                     setImageData1={setImageData1}
                     setImageData2={setImageData2}
                     horizontalLinecuts={horizontalLinecuts}
+                    verticalLinecuts={verticalLinecuts}
                     leftImageColorPalette={leftImageColorPalette}
                     rightImageColorPalette={rightImageColorPalette}
-                    setZoomedPixelRange={setZoomedPixelRange}
+                    setZoomedXPixelRange={setZoomedXPixelRange}
+                    setZoomedYPixelRange={setZoomedYPixelRange}
                     isThirdCollapsed={isThirdCollapsed}
                   />
                 </div>
@@ -269,17 +315,26 @@ function App() {
                           linecuts={horizontalLinecuts} // Pass the entire linecuts array
                           imageData1={imageData1} // Data for left scatter image
                           imageData2={imageData2} // Data for right scatter image
-                          zoomedPixelRange={zoomedPixelRange}
+                          zoomedXPixelRange={zoomedXPixelRange}
                         />
                       )}
                       </Accordion.Panel>
                     </Accordion.Item>
                     )}
                     {selectedLinecuts.includes('Vertical') && (
-                    <Accordion.Item value="vertical-linecut-accordion">
-                      <Accordion.Control>Vertical Linecut</Accordion.Control>
-                      <Accordion.Panel>Placeholder</Accordion.Panel>
-                    </Accordion.Item>
+                      <Accordion.Item value="vertical-linecut-accordion">
+                        <Accordion.Control>Vertical Linecut</Accordion.Control>
+                        <Accordion.Panel>
+                          {verticalLinecuts.length > 0 && (
+                            <VerticalLinecutFig
+                              linecuts={verticalLinecuts}
+                              imageData1={imageData1}
+                              imageData2={imageData2}
+                              zoomedYPixelRange={zoomedYPixelRange}
+                            />
+                          )}
+                        </Accordion.Panel>
+                      </Accordion.Item>
                     )}
                     {selectedLinecuts.includes('Inclined') && (
                     <Accordion.Item value="inclined-linecut-accordion">
