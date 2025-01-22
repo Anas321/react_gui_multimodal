@@ -18,7 +18,7 @@ router = APIRouter()
 # @FastAPICache(expire=60) # Cache for 60 seconds
 async def get_initial_scans():
 
-    DEV_MODE = False
+    DEV_MODE = True
 
     # Load the .env file
     load_dotenv("./.env")

@@ -82,17 +82,6 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
 
     # Update layout for the subplots, setting zmin and zmax for coloraxis
     scatter_subplot_fig.update_layout(
-        # annotations=[
-        #     dict(
-        #         text="|Difference|",  # Title for the third image
-        #         x=0.5,  # Center of the x-axis for the third subplot
-        #         y=1.06,  # Slightly above the plot
-        #         xref="x3 domain",  # Reference the x domain of the third subplot
-        #         yref="paper",  # Reference the y domain of the entire figure
-        #         showarrow=False,
-        #         font=dict(size=18, color="black"),
-        #     ),
-        # ],
         coloraxis=dict(
             colorscale="viridis",
             cmin=zmin,
@@ -146,11 +135,6 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
     array_2_bytes = scatter_image_array_2.tobytes()
     diff_bytes = difference_array.tobytes()
 
-    # # Serialize downsampled arrays to bytes
-    # array_1_down_bytes = scatter_image_array_1_down.tobytes()
-    # array_2_down_bytes = scatter_image_array_2_down.tobytes()
-    # diff_down_bytes = difference_down.tobytes()
-
     # Prepare metadata for reconstruction
     metadata = {
         "shape_1": scatter_image_array_1.shape,
@@ -159,14 +143,6 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
         "dtype_2": str(scatter_image_array_2.dtype),
         "shape_diff": difference_array.shape,
         "dtype_diff": str(difference_array.dtype),
-        # "shape_1_down": scatter_image_array_1_down.shape,
-        # "dtype_1_down": str(scatter_image_array_1_down.dtype),
-        # "shape_2_down": scatter_image_array_2_down.shape,
-        # "dtype_2_down": str(scatter_image_array_2_down.dtype),
-        # "shape_diff_down": abs_difference_down.shape,
-        # "dtype_diff_down": str(abs_difference_down.dtype),
-        # "zmin": zmin,
-        # "zmax": zmax,
         "plotly": scatter_subplot_fig.to_plotly_json(),  # Serialize Plotly structure
     }
 

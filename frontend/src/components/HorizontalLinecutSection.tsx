@@ -5,7 +5,6 @@ import { FaEye, FaEyeSlash } from "react-icons/fa"; // Icons for visibility togg
 import { Linecut } from "../types";
 import InputSlider from "./InputSlider";
 import { Accordion } from "@mantine/core";
-import { set } from "lodash";
 
 interface HorizontalLinecutSectionProps {
   linecutType: string | null;
@@ -32,7 +31,44 @@ const HorizontalLinecutSection: React.FC<HorizontalLinecutSectionProps> = ({
     id: number;
     side: "left" | "right";
     visible: boolean;
+    originalColor: string; // Store the original color when opening the picker
+    currentColor: string; // Track the current color during picking
   } | null>(null);
+
+  const handleColorChange = (id: number, side: "left" | "right", color: string) => {
+    // Update the current color in the picker state
+    if (colorPicker) {
+      setColorPicker({
+        ...colorPicker,
+        currentColor: color,
+      });
+    }
+    // Update the color preview
+    updateHorizontalLinecutColor(id, side, color);
+  };
+
+  const handleOpenColorPicker = (linecut: Linecut, side: "left" | "right") => {
+    const originalColor = side === "left" ? linecut.leftColor : linecut.rightColor;
+    setColorPicker({
+      id: linecut.id,
+      side,
+      visible: true,
+      originalColor,
+      currentColor: originalColor,
+    });
+  };
+
+  const handleCancelColor = () => {
+    if (colorPicker) {
+      // Revert to the original color
+      updateHorizontalLinecutColor(
+        colorPicker.id,
+        colorPicker.side,
+        colorPicker.originalColor
+      );
+      setColorPicker(null);
+    }
+  };
 
   return (
     <Accordion
@@ -83,26 +119,20 @@ const HorizontalLinecutSection: React.FC<HorizontalLinecutSectionProps> = ({
                   </span>
                 </div>
 
-                {/* Linecut Title with Two Colored Lines */}
+                {/* Linecut Title with Color Pickers */}
                 <div className="flex items-center mb-4">
                   <h3 className="text-xl font-medium">Linecut {linecut.id}</h3>
                   <div className="flex items-center ml-4">
-                    {/* Left Color Picker Trigger */}
                     <div
                       className="h-3 w-12 mr-2 cursor-pointer"
                       style={{ backgroundColor: linecut.leftColor }}
-                      onClick={() =>
-                        setColorPicker({ id: linecut.id, side: "left", visible: true })
-                      }
+                      onClick={() => handleOpenColorPicker(linecut, "left")}
                       title="Click to change color"
                     ></div>
-                    {/* Right Color Picker Trigger */}
                     <div
                       className="h-3 w-12 cursor-pointer"
                       style={{ backgroundColor: linecut.rightColor }}
-                      onClick={() =>
-                        setColorPicker({ id: linecut.id, side: "right", visible: true })
-                      }
+                      onClick={() => handleOpenColorPicker(linecut, "right")}
                       title="Click to change color"
                     ></div>
                   </div>
@@ -110,22 +140,27 @@ const HorizontalLinecutSection: React.FC<HorizontalLinecutSectionProps> = ({
 
                 {/* Color Picker Popup */}
                 {colorPicker?.visible && colorPicker.id === linecut.id && (
-                  <div className="absolute z-50">
+                  <div className="absolute z-50 bg-white p-4 shadow-lg rounded">
                     <SketchPicker
-                      color={
-                        colorPicker.side === "left" ? linecut.leftColor : linecut.rightColor
+                      color={colorPicker.currentColor}
+                      onChange={(color: ColorResult) =>
+                        handleColorChange(linecut.id, colorPicker.side, color.hex)
                       }
-                      onChange={(color: ColorResult) => {
-                        const selectedColor = color.hex;
-                        updateHorizontalLinecutColor(linecut.id, colorPicker.side, selectedColor);
-                      }}
                     />
-                    <button
-                      className="mt-2 px-4 py-2 bg-gray-800 text-white rounded"
-                      onClick={() => setColorPicker(null)}
-                    >
-                      Close
-                    </button>
+                    <div className="flex justify-end gap-2 mt-2">
+                      <button
+                        className="px-4 py-2 bg-green-600 text-white rounded"
+                        onClick={() => setColorPicker(null)}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-gray-400 text-white rounded"
+                        onClick={handleCancelColor}
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 )}
 

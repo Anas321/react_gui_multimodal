@@ -45,8 +45,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
   // Resolution-specific states
   const [resolutionData, setResolutionData] = useState({
-    low: { array1: [], array2: [], diff: [], factor: 4 },
-    medium: { array1: [], array2: [], diff: [], factor: 2 },
+    low: { array1: [], array2: [], diff: [], factor: null},
+    medium: { array1: [], array2: [], diff: [], factor: null },
     full: { array1: [], array2: [], diff: [], factor: 1 }
   });
 
@@ -62,7 +62,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   const generateLinecutOverlay = useCallback((linecut: Linecut) => {
     if (!plotData) return [];
 
-    const cacheKey = `${linecut.id}-${linecut.position}-${linecut.width}-${currentResolution}`;
+    const cacheKey = `${linecut.id}-${linecut.position}-${linecut.width}-${currentResolution}-${linecut.leftColor}-${linecut.rightColor}`;
     if (linecutCache.has(cacheKey)) {
       return linecutCache.get(cacheKey);
     }
@@ -97,7 +97,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         x: [0, imageWidth],
         y: [scaledPosition, scaledPosition],
         mode: "lines",
-        line: { color: linecut.leftColor, width: 2 },
+        line: { color: linecut.leftColor, width: 1 },
         opacity: 0.75,
         xaxis: "x1",
         yaxis: "y1",
@@ -120,7 +120,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         x: [0, imageWidth],
         y: [scaledPosition, scaledPosition],
         mode: "lines",
-        line: { color: linecut.rightColor, width: 2 },
+        line: { color: linecut.rightColor, width: 1 },
         opacity: 0.75,
         xaxis: "x2",
         yaxis: "y2",
@@ -292,26 +292,45 @@ const handleRelayout = useCallback((relayoutData: any) => {
         const fullArray2 = reconstructFloat32Array(extractBinary(decoded.array_2), decoded.metadata.shape_2);
         const fullDiff = reconstructFloat32Array(extractBinary(decoded.array_diff), decoded.metadata.shape_diff);
 
-        // Create medium and low resolution versions
-        const mediumArray1 = downsampleArray(fullArray1, 2);
-        const mediumArray2 = downsampleArray(fullArray2, 2);
-        const mediumDiff = downsampleArray(fullDiff, 2);
-        const lowArray1 = downsampleArray(fullArray1, 4);
-        const lowArray2 = downsampleArray(fullArray2, 4);
-        const lowDiff = downsampleArray(fullDiff, 4);
-
-        // Update resolution data
-        setResolutionData({
-          low: { array1: lowArray1, array2: lowArray2, diff: lowDiff, factor: 4 },
-          medium: { array1: mediumArray1, array2: mediumArray2, diff: mediumDiff, factor: 2 },
-          full: { array1: fullArray1, array2: fullArray2, diff: fullDiff, factor: 1 }
-        });
-
         // Set dimensions and full resolution data for linecuts
         setImageHeight(fullArray1.length);
         setImageWidth(fullArray1[0].length);
         setImageData1(fullArray1);
         setImageData2(fullArray2);
+
+        // Determine factors based on image width
+        const lowFactor = fullArray1[0].length > 2000 ? 10 : 4;
+        const mediumFactor = fullArray1[0].length > 2000 ? 5 : 2;
+
+        // Create medium and low resolution versions
+        const mediumArray1 = downsampleArray(fullArray1, mediumFactor);
+        const mediumArray2 = downsampleArray(fullArray2, mediumFactor);
+        const mediumDiff = downsampleArray(fullDiff, mediumFactor);
+        const lowArray1 = downsampleArray(fullArray1, lowFactor);
+        const lowArray2 = downsampleArray(fullArray2, lowFactor);
+        const lowDiff = downsampleArray(fullDiff, lowFactor);
+
+        // Update resolution data
+        setResolutionData({
+          low: {
+            array1: lowArray1,
+            array2: lowArray2,
+            diff: lowDiff,
+            factor: lowFactor
+          },
+          medium: {
+            array1: mediumArray1,
+            array2: mediumArray2,
+            diff: mediumDiff,
+            factor: mediumFactor
+          },
+          full: {
+            array1: fullArray1,
+            array2: fullArray2,
+            diff: fullDiff,
+            factor: 1
+          }
+        });
 
         // Initialize plot with low resolution data
         const plotlyData = decoded.metadata.plotly;
@@ -326,7 +345,9 @@ const handleRelayout = useCallback((relayoutData: any) => {
   // Memoize plot components
   const mainPlotData = useMemo(() => plotData?.data || [], [plotData?.data]);
   const linecutOverlays = useMemo(() =>
-    horizontalLinecuts.filter(l => !l.hidden).flatMap(generateLinecutOverlay),
+    horizontalLinecuts
+    .filter(l => !l.hidden)
+    .flatMap(generateLinecutOverlay),
     [horizontalLinecuts, generateLinecutOverlay]
   );
   const layoutOptions = useMemo(() => ({
