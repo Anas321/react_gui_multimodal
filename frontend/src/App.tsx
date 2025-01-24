@@ -59,6 +59,9 @@ function App() {
     toggleVerticalLinecutVisibility,
     zoomedYPixelRange,
     setZoomedYPixelRange,
+    // For the zoom resolution message
+    resolutionMessage,
+    setResolutionMessage,
   } = useMultimodal();
 
 
@@ -259,8 +262,16 @@ function App() {
               classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[2rem] font-bold'}}
             >
               <Accordion.Item value="scatter-images-accordion">
-                <Accordion.Control>Scatter Images</Accordion.Control>
-                <Accordion.Panel className="h-[30vh]">
+                <Accordion.Control>
+                  Scatter Images
+                  {resolutionMessage && (
+                  <div className="text-2xl font-normal text-black mt-5">
+                    {resolutionMessage}
+                  </div>
+                )}
+
+                </Accordion.Control>
+                <Accordion.Panel>
                 <div className="h-full">
                   <ScatterSubplot
                     setImageHeight={setImageHeight}
@@ -274,6 +285,7 @@ function App() {
                     setZoomedXPixelRange={setZoomedXPixelRange}
                     setZoomedYPixelRange={setZoomedYPixelRange}
                     isThirdCollapsed={isThirdCollapsed}
+                    setResolutionMessage={setResolutionMessage}
                   />
                 </div>
                 </Accordion.Panel>

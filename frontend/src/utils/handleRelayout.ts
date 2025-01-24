@@ -14,7 +14,6 @@ interface HandleRelayoutProps {
   setZoomedYPixelRange: (range: [number, number] | null) => void;
   setPlotData: (data: any) => void;
   setDragMode: (mode: string) => void;
-  linecutCache: Map<string, any>;
 }
 
 export const handleRelayout = (
@@ -28,7 +27,6 @@ export const handleRelayout = (
     setZoomedYPixelRange,
     setPlotData,
     setDragMode,
-    linecutCache,
   }: HandleRelayoutProps
 ) => {
   if (!plotData) return;
@@ -44,6 +42,7 @@ export const handleRelayout = (
     setZoomedXPixelRange(null);
     setZoomedYPixelRange(null);
     const height = resolutionData.low.array1.length;
+    const width = resolutionData.low.array1[0].length;
 
     setPlotData(prev => ({
       ...prev,
@@ -52,24 +51,27 @@ export const handleRelayout = (
         { ...prev.data[1], z: resolutionData.low.array2 },
         { ...prev.data[2], z: resolutionData.low.diff },
       ],
-      layout: {
-        ...prev.layout,
-        xaxis: { ...prev.layout.xaxis, range: undefined, autorange: true },
-        xaxis2: { ...prev.layout.xaxis2, range: undefined, autorange: true },
-        xaxis3: { ...prev.layout.xaxis3, range: undefined, autorange: true },
-        yaxis: { ...prev.layout.yaxis, range: [height, 0] },
-        yaxis2: { ...prev.layout.yaxis2, range: [height, 0] },
-        yaxis3: { ...prev.layout.yaxis3, range: [height, 0] },
-      },
+      // layout: {
+      //   ...prev.layout,
+      //   // xaxis: { ...prev.layout.xaxis, range: undefined, autorange: true },
+      //   // xaxis2: { ...prev.layout.xaxis2, range: undefined, autorange: true },
+      //   // xaxis3: { ...prev.layout.xaxis3, range: undefined, autorange: true },
+      //   xaxis: { ...prev.layout.xaxis, range: [0, width], autorange: true },
+      //   xaxis2: { ...prev.layout.xaxis2, range: [0, width], autorange: true },
+      //   xaxis3: { ...prev.layout.xaxis3, range: [0, width], autorange: true },
+      //   yaxis: { ...prev.layout.yaxis, range: [height, 0] },
+      //   yaxis2: { ...prev.layout.yaxis2, range: [height, 0] },
+      //   yaxis3: { ...prev.layout.yaxis3, range: [height, 0] },
+      // },
     }));
     return;
   }
 
   // Extract ranges - check for both zoom and pan events
-  const xStart = relayoutData["xaxis2.range[0]"] ?? relayoutData["xaxis2.range.0"];
-  const xEnd = relayoutData["xaxis2.range[1]"] ?? relayoutData["xaxis2.range.1"];
-  const yStart = relayoutData["yaxis2.range[0]"] ?? relayoutData["yaxis2.range.0"];
-  const yEnd = relayoutData["yaxis2.range[1]"] ?? relayoutData["yaxis2.range.1"];
+  const xStart = relayoutData["xaxis2.range[0]"] // ?? relayoutData["xaxis2.range.0"];
+  const xEnd = relayoutData["xaxis2.range[1]"] // ?? relayoutData["xaxis2.range.1"];
+  const yStart = relayoutData["yaxis2.range[0]"] // ?? relayoutData["yaxis2.range.0"];
+  const yEnd = relayoutData["yaxis2.range[1]"] // ?? relayoutData["yaxis2.range.1"];
 
   if ([xStart, xEnd, yStart, yEnd].some(v => v === undefined)) return;
 
@@ -86,8 +88,8 @@ export const handleRelayout = (
   setZoomedYPixelRange([scaledYStart, scaledYEnd]);
 
   // Determine new resolution based on zoom level
-  const currentWidth = resolutionData[currentResolution].array1[0]?.length || 1;
-  const currentHeight = resolutionData[currentResolution].array1.length || 1;
+  const currentWidth = resolutionData[currentResolution].array1[0].length;
+  const currentHeight = resolutionData[currentResolution].array1.length;
   const zoomWidth = Math.abs(xEnd - xStart);
   const zoomHeight = Math.abs(yEnd - yStart);
 
@@ -136,7 +138,7 @@ export const handleRelayout = (
     }));
 
     // Clear linecut cache when resolution changes
-    linecutCache.clear();
+    // linecutCache.clear();
   } else {
     // Update the plot ranges for pan events without changing resolution
     setPlotData(prev => ({

@@ -1,44 +1,12 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Plot from "react-plotly.js";
-import { decode, ExtData } from "@msgpack/msgpack";
-import { Linecut } from "../types";
+import { decode } from "@msgpack/msgpack";
+import { ResolutionDataType, ScatterSubplotProps } from "../types";
 import { downsampleArray } from "../utils/downsampleArray";
 import { handleRelayout } from '../utils/handleRelayout';
+import { extractBinary, reconstructFloat32Array } from '../utils/dataProcessingScatterSubplot';
+import { generateHorizontalLinecutOverlay, generateVerticalLinecutOverlay } from "../utils/generateLincutsScatterSubplot";
 
-
-// Function to handle ExtType
-function extractBinary(ext: ExtData | Uint8Array): Uint8Array {
-  return ext instanceof Uint8Array ? ext : new Uint8Array(ext.data);
-}
-
-// Function to reconstruct Float32Array
-function reconstructFloat32Array(buffer: Uint8Array, shape: [number, number]): number[][] {
-  const float32Array = new Float32Array(buffer.buffer, buffer.byteOffset, buffer.byteLength / 4);
-  return Array.from({ length: shape[0] }, (_, i) =>
-    Array.from(float32Array.slice(i * shape[1], (i + 1) * shape[1]))
-  );
-}
-
-interface ResolutionDataType {
-  array1: number[][];
-  array2: number[][];
-  diff: number[][];
-  factor: number | null;
-}
-
-interface ScatterSubplotProps {
-  setImageHeight: (height: number) => void;
-  setImageWidth: (width: number) => void;
-  setImageData1: (data: number[][]) => void;
-  setImageData2: (data: number[][]) => void;
-  horizontalLinecuts: Linecut[];
-  verticalLinecuts: Linecut[];
-  leftImageColorPalette: string[];
-  rightImageColorPalette: string[];
-  setZoomedXPixelRange: (range: [number, number] | null) => void;
-  setZoomedYPixelRange: (range: [number, number] | null) => void;
-  isThirdCollapsed: boolean;
-}
 
 const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setImageHeight,
@@ -50,11 +18,13 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setZoomedXPixelRange,
   setZoomedYPixelRange,
   isThirdCollapsed,
+  setResolutionMessage,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
   const [currentResolution, setCurrentResolution] = useState<'low' | 'medium' | 'full'>('low');
   const [dragMode, setDragMode] = useState('zoom');
+
 
   // Resolution-specific states
   const [resolutionData, setResolutionData] = useState<{
@@ -67,195 +37,12 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     full: { array1: [], array2: [], diff: [], factor: 1 }
   });
 
-  // Cache for linecut calculations
-  const linecutCache = useMemo(() => new Map(), []);
 
   // Get current resolution factor
   const getCurrentFactor = useCallback(() => {
     return resolutionData[currentResolution].factor;
   }, [currentResolution, resolutionData]);
 
-  // Generate horizontal linecut overlay with improved annotations
-  const generateHorizontalLinecutOverlay = useCallback((linecut: Linecut) => {
-    if (!plotData) return [];
-
-    const cacheKey = `${linecut.id}-${linecut.position}-${linecut.width}-${currentResolution}-${linecut.leftColor}-${linecut.rightColor}`;
-    if (linecutCache.has(cacheKey)) {
-      return linecutCache.get(cacheKey);
-    }
-
-    const factor = getCurrentFactor();
-    const currentArray = resolutionData[currentResolution].array1;
-    const imageHeight = currentArray.length;
-    const imageWidth = currentArray[0]?.length || 0;
-
-    const scaledPosition = linecut.position / factor;
-    const scaledWidth = (linecut.width || 1) / factor;
-
-    const yTop = Math.max(0, scaledPosition - scaledWidth / 2);
-    const yBottom = Math.min(imageHeight, scaledPosition + scaledWidth / 2);
-
-    const overlays = [
-      // Left image overlays
-      {
-        x: [0, imageWidth, imageWidth, 0],
-        y: [yTop, yTop, yBottom, yBottom],
-        mode: "lines",
-        fill: "toself",
-        fillcolor: linecut.leftColor,
-        line: { color: linecut.leftColor },
-        opacity: 0.3,
-        xaxis: "x1",
-        yaxis: "y1",
-        showlegend: false,
-      },
-      {
-        x: [0, imageWidth],
-        y: [scaledPosition, scaledPosition],
-        mode: "lines",
-        line: { color: linecut.leftColor, width: 1 },
-        opacity: 0.75,
-        xaxis: "x1",
-        yaxis: "y1",
-        showlegend: false,
-      },
-      {
-        x: [-imageWidth * 0.03],  // Position text slightly to the left of the image
-        y: [scaledPosition],
-        mode: "text",
-        text: [`${linecut.position}`],
-        textfont: { size: 25 },  // Larger text
-        textposition: "middle left",
-        xaxis: "x1",
-        yaxis: "y1",
-        showlegend: false,
-      },
-      // Right image overlays
-      {
-        x: [0, imageWidth, imageWidth, 0],
-        y: [yTop, yTop, yBottom, yBottom],
-        mode: "lines",
-        fill: "toself",
-        fillcolor: linecut.rightColor,
-        line: { color: linecut.rightColor },
-        opacity: 0.3,
-        xaxis: "x2",
-        yaxis: "y2",
-        showlegend: false,
-      },
-      {
-        x: [0, imageWidth],
-        y: [scaledPosition, scaledPosition],
-        mode: "lines",
-        line: { color: linecut.rightColor, width: 1 },
-        opacity: 0.75,
-        xaxis: "x2",
-        yaxis: "y2",
-        showlegend: false,
-      },
-      {
-        x: [-imageWidth * 0.03],  // Position text slightly to the left of the image
-        y: [scaledPosition],
-        mode: "text",
-        text: [`${linecut.position}`],
-        textfont: { size: 25 },  // Larger text
-        textposition: "middle left",
-        xaxis: "x2",
-        yaxis: "y2",
-        showlegend: false,
-      }
-    ];
-
-    linecutCache.set(cacheKey, overlays);
-    return overlays;
-  }, [plotData, currentResolution, resolutionData, getCurrentFactor]);
-
-  // Generate vertical linecut overlay with improved annotations
-  const generateVerticalLinecutOverlay = useCallback((linecut: Linecut) => {
-    if (!plotData) return [];
-
-    const factor = getCurrentFactor();
-    const currentArray = resolutionData[currentResolution].array1;
-    const imageHeight = currentArray.length;
-    const imageWidth = currentArray[0]?.length || 0;
-
-    const scaledPosition = linecut.position / factor;
-    const scaledWidth = (linecut.width || 1) / factor;
-
-    const xLeft = Math.max(0, scaledPosition - scaledWidth / 2);
-    const xRight = Math.min(imageWidth, scaledPosition + scaledWidth / 2);
-
-    return [
-      // Left image overlays
-      {
-        x: [xLeft, xRight, xRight, xLeft],
-        y: [0, 0, imageHeight, imageHeight],
-        mode: "lines",
-        fill: "toself",
-        fillcolor: linecut.leftColor,
-        line: { color: linecut.leftColor },
-        opacity: 0.3,
-        xaxis: "x1",
-        yaxis: "y1",
-        showlegend: false,
-      },
-      {
-        x: [scaledPosition, scaledPosition],
-        y: [0, imageHeight],
-        mode: "lines",
-        line: { color: linecut.leftColor, width: 1 },
-        opacity: 0.75,
-        xaxis: "x1",
-        yaxis: "y1",
-        showlegend: false,
-      },
-      {
-        x: [scaledPosition],
-        y: [imageHeight * 1.01],  // Position text slightly above the image
-        mode: "text",
-        text: [`${linecut.position}`],
-        textfont: { size: 25 },  // Larger text
-        textposition: "bottom center",
-        xaxis: "x1",
-        yaxis: "y1",
-        showlegend: false,
-      },
-      // Right image overlays
-      {
-        x: [xLeft, xRight, xRight, xLeft],
-        y: [0, 0, imageHeight, imageHeight],
-        mode: "lines",
-        fill: "toself",
-        fillcolor: linecut.rightColor,
-        line: { color: linecut.rightColor },
-        opacity: 0.3,
-        xaxis: "x2",
-        yaxis: "y2",
-        showlegend: false,
-      },
-      {
-        x: [scaledPosition, scaledPosition],
-        y: [0, imageHeight],
-        mode: "lines",
-        line: { color: linecut.rightColor, width: 1 },
-        opacity: 0.75,
-        xaxis: "x2",
-        yaxis: "y2",
-        showlegend: false,
-      },
-      {
-        x: [scaledPosition],
-        y: [imageHeight * 1.01],  // Position text slightly above the image
-        mode: "text",
-        text: [`${linecut.position}`],
-        textfont: { size: 25 },  // Larger text
-        textposition: "bottom center",
-        xaxis: "x2",
-        yaxis: "y2",
-        showlegend: false,
-      }
-    ];
-  }, [plotData, currentResolution, resolutionData, getCurrentFactor]);
 
   // Update the handleRelayout function in ScatterSubplot
   const relayoutHandler = useCallback((relayoutData: any) => {
@@ -268,7 +55,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       setZoomedYPixelRange,
       setPlotData,
       setDragMode,
-      linecutCache,
     });
   }, [
     plotData,
@@ -279,37 +65,68 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     setZoomedYPixelRange,
     setPlotData,
     setDragMode,
-    linecutCache,
   ]);
 
 
-  // Handle container resizing
+  // This effect handles resizing of the plot container
   useEffect(() => {
-    if (!plotContainer.current) return;
+    // Get the current DOM element reference
+    // We do this inside the effect to ensure we have the latest reference
+    const container = plotContainer.current;
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      if (!plotData || !plotData.layout) return;
+    // If there's no container, exit early
+    // This could happen if the component hasn't mounted yet
+    if (!container) return;
 
+    // Define the resize handler function
+    // ResizeObserverEntry[] is an array of elements that have been resized
+    const handleResize = (entries: ResizeObserverEntry[]) => {
+      // We only observe one element, so we only need the first entry
       const entry = entries[0];
-      if (entry) {
+      if (!entry) return;
+
+      // Update the plot data using the functional setState pattern
+      // This ensures we always work with the latest state
+      setPlotData(prev => {
+        // If there's no previous plot data or layout, return unchanged
+        // This prevents errors when trying to update non-existent layout
+        if (!prev?.layout) return prev;
+
+        // Get the new dimensions from the ResizeObserver entry
+        // contentRect contains the new size of the observed element
         const { width, height } = entry.contentRect;
-        setPlotData(prev => ({
-          ...prev,
+
+        // Return new plot data object with updated dimensions
+        // Using spread operator (...) to maintain all other properties
+        return {
+          ...prev,                  // Keep all existing plot data
           layout: {
-            ...prev.layout,
-            width,
-            height,
+            ...prev.layout,         // Keep all existing layout properties
+            width,                  // Update width to new container width
+            height,                 // Update height to new container height
           },
-        }));
-      }
-    });
+        };
+      });
+    };
 
-    resizeObserver.observe(plotContainer.current);
+    // Create a new ResizeObserver instance
+    // ResizeObserver is a browser API that watches for element size changes
+    const resizeObserver = new ResizeObserver(handleResize);
 
+    // Start observing our container element
+    // This will call handleResize whenever the container size changes
+    resizeObserver.observe(container);
+
+    // Cleanup function that runs when the effect is cleaned up
+    // This happens when the component unmounts or when dependencies change
     return () => {
+      // Stop observing all elements and clean up the observer
       resizeObserver.disconnect();
     };
-  }, [plotData]);
+  }, []); // Empty dependency array means this effect only runs once on mount
+
+
+
 
   // Initial data fetch
   useEffect(() => {
@@ -331,7 +148,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
         // Determine factors based on image width
         const lowFactor = fullArray1[0].length > 2000 ? 10 : 4;
-        const mediumFactor = fullArray1[0].length > 2000 ? 5 : 2;
+        const mediumFactor = fullArray1[0].length > 2000 ? 4 : 2;
 
         // Create medium and low resolution versions
         const mediumArray1 = downsampleArray(fullArray1, mediumFactor);
@@ -377,20 +194,35 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   // Memoize plot components
   const mainPlotData = useMemo(() => plotData?.data || [], [plotData?.data]);
 
-  const linecutOverlays = useMemo(() => [
-    // Horizontal linecut overlays
-    ...horizontalLinecuts
-      .filter(l => !l.hidden)
-      .flatMap(generateHorizontalLinecutOverlay),
-    // Vertical linecut overlays
-    ...verticalLinecuts
-      .filter(l => !l.hidden)
-      .flatMap(generateVerticalLinecutOverlay)
-  ], [
+
+  const linecutOverlays = useMemo(() => {
+    if (!plotData) return [];
+
+    return [
+      // Horizontal linecut overlays
+      ...horizontalLinecuts
+        .filter(l => !l.hidden)
+        .flatMap(linecut => generateHorizontalLinecutOverlay({
+          linecut,
+          currentArray: resolutionData[currentResolution].array1,
+          factor: getCurrentFactor()
+        })),
+      // Vertical linecut overlays
+      ...verticalLinecuts
+        .filter(l => !l.hidden)
+        .flatMap(linecut => generateVerticalLinecutOverlay({
+          linecut,
+          currentArray: resolutionData[currentResolution].array1,
+          factor: getCurrentFactor()
+        }))
+    ];
+  }, [
+    plotData,
     horizontalLinecuts,
     verticalLinecuts,
-    generateHorizontalLinecutOverlay,
-    generateVerticalLinecutOverlay
+    resolutionData,
+    currentResolution,
+    getCurrentFactor
   ]);
 
 
@@ -412,25 +244,28 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     },
   }), [dragMode, isThirdCollapsed, plotData?.layout]);
 
-  // Resolution message helper
-  const getResolutionMessage = () => {
-    const resInfo = {
-      low: {
-        desc: 'Low Resolution (> 50% of image visible)',
-        factor: resolutionData.low.factor
-      },
-      medium: {
-        desc: 'Medium Resolution (20-50% of image visible)',
-        factor: resolutionData.medium.factor
-      },
-      full: {
-        desc: 'Full Resolution (< 20% of image visible)',
-        factor: resolutionData.full.factor
-      }
-    };
-    const info = resInfo[currentResolution];
-    return `${info.desc} - Downsampling Factor: ${info.factor}x`;
-  };
+
+    // Update resolution message whenever resolution changes
+    useEffect(() => {
+      const resInfo = {
+        low: {
+          desc: 'Low Resolution (Full image or > 50% of the image is visible)',
+          factor: resolutionData.low.factor
+        },
+        medium: {
+          desc: 'Medium Resolution (20-50% of the image is visible)',
+          factor: resolutionData.medium.factor
+        },
+        full: {
+          desc: 'Full Resolution (< 20% of the image is visible)',
+          factor: resolutionData.full.factor
+        }
+      };
+      const info = resInfo[currentResolution];
+      setResolutionMessage(`Current Display: ${info.desc} - Downsampling Factor: ${info.factor}x`);
+    }, [currentResolution, resolutionData, setResolutionMessage]);
+
+
 
   return (
     <div className="relative w-full h-full">
@@ -441,6 +276,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
             layout={{
               ...plotData.layout,
               ...layoutOptions,
+              supressplotly: true,
             }}
             config={{
               scrollZoom: true,
@@ -452,7 +288,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
               ],
               showTips: true,
             }}
-            useResizeHandler={true}
+            useResizeHandler={false}  // Disable Plotly's built-in resize handler
             style={{ width: "100%", height: "100%" }}
             onRelayout={(relayoutData) => {
               if (relayoutData.dragmode) {
@@ -470,9 +306,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
             <div className="absolute top-1/2 left-[67%] -translate-y-1/2 text-5xl font-bold">=</div>
           </>
         )}
-      </div>
-      <div className="bg-gray-100 p-2 text-center text-gray-700 border-t border-gray-200 font-medium text-lg">
-      Current Display: {getResolutionMessage()}
       </div>
     </div>
   );

@@ -311,6 +311,7 @@ export default function useMultimodal() {
   // ==================================================== End of vertical linecuts
 
 
+  const [resolutionMessage, setResolutionMessage] = useState('');
 
 
 
@@ -356,6 +357,9 @@ export default function useMultimodal() {
     toggleVerticalLinecutVisibility,
     zoomedYPixelRange,
     setZoomedYPixelRange,
+    // For the zoom display message
+    resolutionMessage,
+    setResolutionMessage,
   };
 
 }
