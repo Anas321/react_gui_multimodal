@@ -68,64 +68,33 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   ]);
 
 
-  // This effect handles resizing of the plot container
-  useEffect(() => {
-    // Get the current DOM element reference
-    // We do this inside the effect to ensure we have the latest reference
-    const container = plotContainer.current;
+    // Handle container resizing
+    useEffect(() => {
+     if (!plotContainer.current) return;
 
-    // If there's no container, exit early
-    // This could happen if the component hasn't mounted yet
-    if (!container) return;
+      const resizeObserver = new ResizeObserver((entries) => {
+        if (!plotData || !plotData.layout) return;
 
-    // Define the resize handler function
-    // ResizeObserverEntry[] is an array of elements that have been resized
-    const handleResize = (entries: ResizeObserverEntry[]) => {
-      // We only observe one element, so we only need the first entry
-      const entry = entries[0];
-      if (!entry) return;
-
-      // Update the plot data using the functional setState pattern
-      // This ensures we always work with the latest state
-      setPlotData(prev => {
-        // If there's no previous plot data or layout, return unchanged
-        // This prevents errors when trying to update non-existent layout
-        if (!prev?.layout) return prev;
-
-        // Get the new dimensions from the ResizeObserver entry
-        // contentRect contains the new size of the observed element
-        const { width, height } = entry.contentRect;
-
-        // Return new plot data object with updated dimensions
-        // Using spread operator (...) to maintain all other properties
-        return {
-          ...prev,                  // Keep all existing plot data
-          layout: {
-            ...prev.layout,         // Keep all existing layout properties
-            width,                  // Update width to new container width
-            height,                 // Update height to new container height
-          },
-        };
+        const entry = entries[0];
+        if (entry) {
+          const { width, height } = entry.contentRect;
+          setPlotData(prev => ({
+            ...prev,
+            layout: {
+              ...prev.layout,
+              width,
+              height,
+            },
+          }));
+        }
       });
-    };
 
-    // Create a new ResizeObserver instance
-    // ResizeObserver is a browser API that watches for element size changes
-    const resizeObserver = new ResizeObserver(handleResize);
+      resizeObserver.observe(plotContainer.current);
 
-    // Start observing our container element
-    // This will call handleResize whenever the container size changes
-    resizeObserver.observe(container);
-
-    // Cleanup function that runs when the effect is cleaned up
-    // This happens when the component unmounts or when dependencies change
-    return () => {
-      // Stop observing all elements and clean up the observer
-      resizeObserver.disconnect();
-    };
-  }, []); // Empty dependency array means this effect only runs once on mount
-
-
+      return () => {
+        resizeObserver.disconnect();
+      };
+    }, [plotData]);
 
 
   // Initial data fetch

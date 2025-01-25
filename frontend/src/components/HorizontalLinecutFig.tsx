@@ -148,9 +148,12 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
       dragmode: dragMode,
       ...zoomedRange,
       yaxis: {
-        title: { text: "Intensity", font: { size: 25 } },
+        title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
         tickfont: { size: 25 },
         autorange: true,
+      },
+      margin: {
+        l: 110
       },
       legend: {
         font: { size: 25 },

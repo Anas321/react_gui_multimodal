@@ -85,8 +85,11 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
         range: zoomedYPixelRange || undefined,
       },
       yaxis: {
-        title: { text: "Intensity", font: { size: 25 } },
+        title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
         tickfont: { size: 25 },
+      },
+      margin:{
+        l: 110,
       },
       legend: {
         font: { size: 25 },

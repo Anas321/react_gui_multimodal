@@ -1,12 +1,11 @@
 import React, { useState } from "react";
 import { SketchPicker, ColorResult } from "react-color";
-import { MdClose } from "react-icons/md"; // Icon for deletion
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // Icons for visibility toggle
+import { FaEye, FaEyeSlash, FaTrash } from "react-icons/fa"; // Icons for visibility toggle
 import { Linecut } from "../types";
 import InputSlider from "./InputSlider";
 import { Accordion } from "@mantine/core";
 
-interface HorizontalLinecutSectionProps {
+interface HorizontalLinecutWidgetProps {
   linecutType: string | null;
   imageHeight: number;
   linecuts: Linecut[];
@@ -17,7 +16,7 @@ interface HorizontalLinecutSectionProps {
   toggleHorizontalLinecutVisibility: (id: number) => void;
 }
 
-const HorizontalLinecutSection: React.FC<HorizontalLinecutSectionProps> = ({
+const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
   linecutType,
   imageHeight,
   linecuts,
@@ -78,65 +77,78 @@ const HorizontalLinecutSection: React.FC<HorizontalLinecutSectionProps> = ({
       classNames={{
         chevron: "text-xl font-bold",
         label: "text-2xl font-bold",
+        content: "p-0",
       }}
+      className="w-full"
     >
-      <Accordion.Item value={`${linecutType}-linecuts`}>
-        <Accordion.Control>{linecutType} Linecuts</Accordion.Control>
+      <Accordion.Item value={`${linecutType}-linecuts`} className="w-full">
+        <Accordion.Control className="pl-0">{linecutType} Linecuts</Accordion.Control>
         <Accordion.Panel>
-          <div className="max-h-96 overflow-y-auto overflow-x-hidden pl-4 pt-6">
+          <div className="max-h-[600px] overflow-y-auto overflow-x-hidden w-full">
             {linecuts.map((linecut) => (
               <div
                 key={linecut.id}
-                className="mb-5 pt-10 pb-5 pl-2 pr-3 relative shadow-lg border-2 h-[290px]"
+                className="mb-5 pt-7 pb-5 pl-2 pr-3 relative shadow-lg border-2 h-[280px] w-full"
               >
-                {/* Delete Button */}
-                <div className="absolute top-0 left-0 group">
-                  <button
-                    className="w-6 h-6 flex items-center justify-center bg-gray-200 text-black-600 hover:bg-red-500 hover:text-white shadow-md rounded"
-                    onClick={() => deleteHorizontalLinecut(linecut.id)}
-                    aria-label={`Delete Linecut ${linecut.id}`}
-                  >
-                    <MdClose size={16} />
-                  </button>
-                  {/* Tooltip */}
-                  <span className="absolute bottom-full mb-0 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
-                    Delete
-                  </span>
-                </div>
 
-                {/* Visibility Toggle with Tooltip */}
-                <div className="absolute top-0 right-0 group">
-                  <button
-                    className="text-blue-500 hover:text-blue-700"
-                    onClick={() => toggleHorizontalLinecutVisibility(linecut.id)}
-                    aria-label={`Toggle Visibility of Linecut ${linecut.id}`}
-                  >
-                    {linecut.hidden ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
-                  </button>
-                  {/* Tooltip */}
-                  <span className="absolute top-0 right-full mr-2 transform -translate-y-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap">
-                    {linecut.hidden ? "Show" : "Hide"}
-                  </span>
-                </div>
-
-                {/* Linecut Title with Color Pickers */}
-                <div className="flex items-center mb-4">
-                  <h3 className="text-xl font-medium">Linecut {linecut.id}</h3>
-                  <div className="flex items-center ml-4">
-                    <div
-                      className="h-3 w-12 mr-2 cursor-pointer"
-                      style={{ backgroundColor: linecut.leftColor }}
-                      onClick={() => handleOpenColorPicker(linecut, "left")}
-                      title="Click to change color"
-                    ></div>
-                    <div
-                      className="h-3 w-12 cursor-pointer"
-                      style={{ backgroundColor: linecut.rightColor }}
-                      onClick={() => handleOpenColorPicker(linecut, "right")}
-                      title="Click to change color"
-                    ></div>
+                  {/* Linecut Title with Color Pickers */}
+                  <div className="flex items-center space-x-4 mb-4">
+                    <h3 className="text-xl font-medium whitespace-nowrap min-w[100px]">
+                      Linecut {linecut.id}
+                      </h3>
+                    <div className="flex items-center ml-4">
+                      {/* Left color bar with tooltip */}
+                      <div className="group relative">
+                        <div
+                          className="h-3 w-12 mr-4 cursor-pointer"
+                          style={{ backgroundColor: linecut.leftColor }}
+                          onClick={() => handleOpenColorPicker(linecut, "left")}
+                        ></div>
+                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                          Click to change color
+                        </span>
+                      </div>
+                      {/* Right color bar with tooltip */}
+                      <div className="group relative">
+                        <div
+                          className="h-3 w-12 mr-2 cursor-pointer"
+                          style={{ backgroundColor: linecut.rightColor }}
+                          onClick={() => handleOpenColorPicker(linecut, "right")}
+                        ></div>
+                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                          Click to change color
+                        </span>
+                      </div>
+                      {/* Visibility Toggle with Tooltip */}
+                      <div className="group relative">
+                        <button
+                          className="text-blue-500 hover:text-blue-700 ml-1 flex items-center pointer-events-auto"
+                          onClick={() => toggleHorizontalLinecutVisibility(linecut.id)}
+                          aria-label={`Toggle Visibility of Linecut ${linecut.id}`}
+                        >
+                          {linecut.hidden ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+                        </button>
+                        {/* Tooltip */}
+                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                        {linecut.hidden ? "Show" : "Hide"}
+                        </span>
+                      </div>
+                    {/* Delete button with tooltip */}
+                    <div className="group relative ml-4" style={{ transform: 'translateY(1px)' }}>
+                      <button
+                        className="w-5 h-5 flex items-center justify-center bg-gray-200 text-gray-600 hover:bg-red-500 hover:text-white rounded"
+                        onClick={() => deleteHorizontalLinecut(linecut.id)}
+                        aria-label={`Delete Linecut ${linecut.id}`}
+                      >
+                        <FaTrash size={14} />
+                      </button>
+                      <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                        Delete
+                      </span>
+                    </div>
                   </div>
                 </div>
+
 
                 {/* Color Picker Popup */}
                 {colorPicker?.visible && colorPicker.id === linecut.id && (
@@ -235,4 +247,4 @@ const HorizontalLinecutSection: React.FC<HorizontalLinecutSectionProps> = ({
   );
 };
 
-export default HorizontalLinecutSection;
+export default HorizontalLinecutWidget;

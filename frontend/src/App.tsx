@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo} from 'react';
+import { useState } from 'react';
 import { MantineProvider, Container, Accordion, Select, Menu} from '@mantine/core';
 // import Plot from 'react-plotly.js';
 import { FiArrowRight, FiArrowLeft } from 'react-icons/fi'; // Collapsing arrows
@@ -6,12 +6,12 @@ import '@mantine/core/styles.css';
 import './index.css'; // Import the CSS file
 import alsLogo from '/public/als_logo.jpeg';
 import ScatterSubplot from './components/ScatterSubplot';
-import HorizontalLinecutSection from './components/HorizontalLinecutSection';
+import HorizontalLinecutWidget from './components/HorizontalLinecutWidget';
 import HorizontalLinecutFig from './components/HorizontalLinecutFig';
 import { handleExperimentTypeChange, addLinecut } from './utils/linecutHandlers';
 import { leftImageColorPalette, rightImageColorPalette } from './utils/constants';
 import useMultimodal from './hooks/useMultimodal';
-import VerticalLinecutSection from './components/VerticalLinecutSection';
+import VerticalLinecutSection from './components/VerticalLinecutWidget';
 import VerticalLinecutFig from './components/VerticalLinecutFig';
 
 
@@ -151,7 +151,7 @@ function App() {
               </Accordion.Control>
                 <Accordion.Panel>
                   {/* Add Linecut Menu */}
-                  <div className="mt-4">
+                  <div className="mt-4 px-2">
                     <Menu>
                       {/* Menu Button */}
                       <Menu.Target>
@@ -200,10 +200,11 @@ function App() {
                     </Menu>
                   </div>
                     {/* Render all selected LinecutSections */}
+                    <div className="w-full"> {/* Add container with full width */}
                     {linecutOrder.filter((linecut) => selectedLinecuts.includes(linecut)).map((linecutType) => {
                     if (linecutType === 'Horizontal' && horizontalLinecuts.length > 0) {
                       return (
-                        <HorizontalLinecutSection
+                        <HorizontalLinecutWidget
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
                           imageHeight={imageHeight}
@@ -235,9 +236,7 @@ function App() {
 
                     return null;
                   })}
-                    {/* {selectedLinecuts.map((linecutType) => (
-                    <LinecutSection key={linecutType} linecutType={linecutType} />
-                  ))} */}
+                  </div>
                 </Accordion.Panel>
               </Accordion.Item>
             </Accordion>
@@ -318,33 +317,29 @@ function App() {
                     chevronPosition="right"
                     classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[1.5rem] font-bold'}}
                   >
-                    {selectedLinecuts.includes('Horizontal') && (
+                    {selectedLinecuts.includes('Horizontal') && horizontalLinecuts.length > 0 && (
                     <Accordion.Item value="horizontal-linecut-accordion">
                       <Accordion.Control>Horizontal Linecut</Accordion.Control>
                       <Accordion.Panel>
-                      {horizontalLinecuts.length > 0 && (
                         <HorizontalLinecutFig
                           linecuts={horizontalLinecuts} // Pass the entire linecuts array
                           imageData1={imageData1} // Data for left scatter image
                           imageData2={imageData2} // Data for right scatter image
                           zoomedXPixelRange={zoomedXPixelRange}
                         />
-                      )}
                       </Accordion.Panel>
                     </Accordion.Item>
                     )}
-                    {selectedLinecuts.includes('Vertical') && (
+                    {selectedLinecuts.includes('Vertical') && verticalLinecuts.length > 0 && (
                       <Accordion.Item value="vertical-linecut-accordion">
                         <Accordion.Control>Vertical Linecut</Accordion.Control>
                         <Accordion.Panel>
-                          {verticalLinecuts.length > 0 && (
                             <VerticalLinecutFig
                               linecuts={verticalLinecuts}
                               imageData1={imageData1}
                               imageData2={imageData2}
                               zoomedYPixelRange={zoomedYPixelRange}
                             />
-                          )}
                         </Accordion.Panel>
                       </Accordion.Item>
                     )}
