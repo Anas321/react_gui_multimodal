@@ -32,6 +32,7 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
     visible: boolean;
     originalColor: string; // Store the original color when opening the picker
     currentColor: string; // Track the current color during picking
+    position: { top: number; left: number }; // Position for the color picker
   } | null>(null);
 
   const handleColorChange = (id: number, side: "left" | "right", color: string) => {
@@ -46,15 +47,23 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
     updateHorizontalLinecutColor(id, side, color);
   };
 
-  const handleOpenColorPicker = (linecut: Linecut, side: "left" | "right") => {
-    const originalColor = side === "left" ? linecut.leftColor : linecut.rightColor;
-    setColorPicker({
-      id: linecut.id,
-      side,
-      visible: true,
-      originalColor,
-      currentColor: originalColor,
-    });
+  const handleOpenColorPicker = (linecut: Linecut, side: "left" | "right", event: React.MouseEvent) => {
+    // Check if the color picker is already open for this linecut and side
+    if (colorPicker?.id === linecut.id && colorPicker?.side === side && colorPicker?.visible) {
+      // If it is, close it and save the current color
+      setColorPicker(null);
+    } else {
+      // If it's not open, or open for a different linecut/side, open it with the new settings
+      const originalColor = side === "left" ? linecut.leftColor : linecut.rightColor;
+      setColorPicker({
+        id: linecut.id,
+        side,
+        visible: true,
+        originalColor,
+        currentColor: originalColor,
+        position: { top: event.clientY + 10, left: event.clientX },
+      });
+    }
   };
 
   const handleCancelColor = () => {
@@ -79,12 +88,12 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
         label: "text-2xl font-bold",
         content: "p-0",
       }}
-      className="w-full"
+      className="w-full relative"
     >
       <Accordion.Item value={`${linecutType}-linecuts`} className="w-full">
         <Accordion.Control className="pl-0">{linecutType} Linecuts</Accordion.Control>
         <Accordion.Panel>
-          <div className="max-h-[600px] overflow-y-auto overflow-x-hidden w-full">
+          <div className="max-h-[800px] overflow-y-auto overflow-x-hidden w-full">
             {linecuts.map((linecut) => (
               <div
                 key={linecut.id}
@@ -92,8 +101,8 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
               >
 
                   {/* Linecut Title with Color Pickers */}
-                  <div className="flex items-center space-x-4 mb-4">
-                    <h3 className="text-xl font-medium whitespace-nowrap min-w[100px]">
+                  <div className="flex items-center justify-between w-full mb-4">
+                    <h3 className="text-xl font-medium">
                       Linecut {linecut.id}
                       </h3>
                     <div className="flex items-center ml-4">
@@ -102,7 +111,7 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
                         <div
                           className="h-3 w-12 mr-4 cursor-pointer"
                           style={{ backgroundColor: linecut.leftColor }}
-                          onClick={() => handleOpenColorPicker(linecut, "left")}
+                          onClick={(e) => handleOpenColorPicker(linecut, "left", e)}
                         ></div>
                         <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
                           Click to change color
@@ -113,7 +122,7 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
                         <div
                           className="h-3 w-12 mr-2 cursor-pointer"
                           style={{ backgroundColor: linecut.rightColor }}
-                          onClick={() => handleOpenColorPicker(linecut, "right")}
+                          onClick={(e) => handleOpenColorPicker(linecut, "right", e)}
                         ></div>
                         <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
                           Click to change color
@@ -150,7 +159,7 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
                 </div>
 
 
-                {/* Color Picker Popup */}
+                {/* Color Picker Popup
                 {colorPicker?.visible && colorPicker.id === linecut.id && (
                   <div className="absolute z-50 bg-white p-4 shadow-lg rounded">
                     <SketchPicker
@@ -174,7 +183,7 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
                       </button>
                     </div>
                   </div>
-                )}
+                )} */}
 
                 {/* Slider and Input Box for Linecut Width */}
                 <div className="mb-6">
@@ -243,6 +252,46 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
           </div>
         </Accordion.Panel>
       </Accordion.Item>
+
+
+            {/* Color Picker Popup */}
+            {colorPicker?.visible && (
+              <div
+                className="fixed z-50"
+                style={{
+                  top: colorPicker.position.top,
+                  left: colorPicker.position.left
+                }}
+              >
+                <div className="bg-white p-4 shadow-lg rounded">
+                  <SketchPicker
+                    color={colorPicker.currentColor}
+                    onChange={(color: ColorResult) =>
+                      handleColorChange(colorPicker.id, colorPicker.side, color.hex)
+                    }
+                  />
+                  <div className="flex justify-end gap-2 mt-2">
+                    <button
+                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                      onClick={() => setColorPicker(null)}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
+                      onClick={handleCancelColor}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
+
+
+
     </Accordion>
   );
 };
