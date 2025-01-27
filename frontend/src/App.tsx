@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { MantineProvider, Container, Accordion, Select, Menu} from '@mantine/core';
-// import Plot from 'react-plotly.js';
+import { MantineProvider, Container, Accordion, Select, Menu } from '@mantine/core';
 import { FiArrowRight, FiArrowLeft } from 'react-icons/fi'; // Collapsing arrows
 import '@mantine/core/styles.css';
 import './index.css'; // Import the CSS file
@@ -263,12 +262,6 @@ function App() {
               <Accordion.Item value="scatter-images-accordion">
                 <Accordion.Control>
                   Scatter Images
-                  {resolutionMessage && (
-                  <div className="text-2xl font-normal text-black mt-5">
-                    {resolutionMessage}
-                  </div>
-                )}
-
                 </Accordion.Control>
                 <Accordion.Panel>
                 <div className="h-full">
@@ -286,6 +279,16 @@ function App() {
                     isThirdCollapsed={isThirdCollapsed}
                     setResolutionMessage={setResolutionMessage}
                   />
+                  {/* {resolutionMessage && (
+                  <div className="text-sm text-gray-500 italic text-left mt-4 mb-1">
+                    {resolutionMessage}
+                  </div>
+                )} */}
+                  {resolutionMessage && (
+                    <div className="text-lg text-gray-500 italic text-left mt-4 mb-1">
+                      {resolutionMessage}
+                    </div>
+                  )}
                 </div>
                 </Accordion.Panel>
               </Accordion.Item>

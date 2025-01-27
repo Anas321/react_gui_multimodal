@@ -93,7 +93,7 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
       <Accordion.Item value={`${linecutType}-linecuts`} className="w-full">
         <Accordion.Control className="pl-0">{linecutType} Linecuts</Accordion.Control>
         <Accordion.Panel>
-          <div className="max-h-[800px] overflow-y-auto overflow-x-hidden w-full">
+          <div className="max-h-[400px] overflow-y-auto overflow-x-hidden w-full">
             {linecuts.map((linecut) => (
               <div
                 key={linecut.id}

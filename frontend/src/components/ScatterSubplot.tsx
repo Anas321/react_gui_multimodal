@@ -234,6 +234,25 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       setResolutionMessage(`Current Display: ${info.desc} - Downsampling Factor: ${info.factor}x`);
     }, [currentResolution, resolutionData, setResolutionMessage]);
 
+  // // Update resolution message whenever resolution changes
+  // useEffect(() => {
+  //   const resInfo = {
+  //     low: {
+  //       factor: resolutionData.low.factor
+  //     },
+  //     medium: {
+  //       factor: resolutionData.medium.factor
+  //     },
+  //     full: {
+  //       factor: resolutionData.full.factor
+  //     }
+  //   };
+
+  //   const info = resInfo[currentResolution];
+  //   setResolutionMessage(
+  //     `Current Display: ${currentResolution.charAt(0).toUpperCase() + currentResolution.slice(1)} Resolution (Downsampling factor = ${info.factor}x)`
+  //   );
+  // }, [currentResolution, resolutionData, setResolutionMessage]);
 
 
   return (

@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+/* Tooltip styling */
+.tooltip-content {
+    max-width: 300px;
+    padding: 1rem;
+    font-size: 0.875rem;
+  }
