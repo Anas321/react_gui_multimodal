@@ -18,7 +18,7 @@ router = APIRouter()
 # @FastAPICache(expire=60) # Cache for 60 seconds
 async def get_initial_scans():
 
-    DEV_MODE = False
+    DEV_MODE = True
 
     # Load the .env file
     load_dotenv("./.env")
@@ -59,7 +59,7 @@ async def get_initial_scans():
 
     # Scatter images subplot
     left_image_index = 0
-    right_image_index = 0
+    right_image_index = 1
 
     image_preprocessing_store = {
         "log_scale": False,

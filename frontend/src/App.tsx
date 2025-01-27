@@ -12,6 +12,9 @@ import { leftImageColorPalette, rightImageColorPalette } from './utils/constants
 import useMultimodal from './hooks/useMultimodal';
 import VerticalLinecutSection from './components/VerticalLinecutWidget';
 import VerticalLinecutFig from './components/VerticalLinecutFig';
+import { Info } from 'lucide-react';
+import { Popover } from '@mantine/core';
+
 
 
 function App() {
@@ -280,13 +283,45 @@ function App() {
                     setResolutionMessage={setResolutionMessage}
                   />
                   {/* {resolutionMessage && (
-                  <div className="text-sm text-gray-500 italic text-left mt-4 mb-1">
-                    {resolutionMessage}
-                  </div>
-                )} */}
+                    <div className="flex items-center text-xl text-gray-500 italic text-left mt-4 mb-1 whitespace-nowrap overflow-x-auto">
+                      <span>{resolutionMessage}</span>
+                      <Info className="ml-2 w-5 h-5" />
+                    </div>
+                  )} */}
                   {resolutionMessage && (
-                    <div className="text-lg text-gray-500 italic text-left mt-4 mb-1">
-                      {resolutionMessage}
+                    <div className="flex items-center text-xl text-gray-500 italic text-left mt-4 mb-1 whitespace-nowrap overflow-x-auto">
+                      <span>{resolutionMessage}</span>
+                      <Popover width={750} position="top"> {/* Increased width to 600px */}
+                        <Popover.Target>
+                          <div className="cursor-pointer">
+                            <Info className="ml-2 w-5 h-5" />
+                          </div>
+                        </Popover.Target>
+                        <Popover.Dropdown>
+                          <div className="text-base space-y-4 whitespace-normal"> {/* Added whitespace-normal to allow natural text wrapping */}
+                            <p className="font-medium mb-2">
+                              The resolution of the displayed image changes based on the zoom level:
+                            </p>
+                            <ul className="space-y-3">
+                              <li className="flex">
+                                <span className="font-medium">• Low Resolution</span>
+                                <span className="ml-1">(Downsampling factor = 4): When viewing &gt;50% of the scattering image.</span>
+                              </li>
+                              <li className="flex">
+                                <span className="font-medium">• Medium Resolution</span>
+                                <span className="ml-1">(Downsampling factor = 2): When viewing 20-50% of the scattering image.</span>
+                              </li>
+                              <li className="flex">
+                                <span className="font-medium">• Full Resolution</span>
+                                <span className="ml-1">(Downsampling factor = 1): When viewing &lt;20% of the scattering image.</span>
+                              </li>
+                            </ul>
+                            <p className="mt-3 text-black-600">
+                              <span className="text-red-600">Note:</span> When the image width or height is &gt;2000 pixels, the downsampling factor is doubled.
+                            </p>
+                          </div>
+                        </Popover.Dropdown>
+                      </Popover>
                     </div>
                   )}
                 </div>

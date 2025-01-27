@@ -25,7 +25,6 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
     width: undefined,
     height: undefined,
   });
-  const [dragMode, setDragMode] = useState('zoom');
 
   // Update dimensions when container size changes
   useEffect(() => {
@@ -145,7 +144,6 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
     return {
       width: dimensions.width,
       height: dimensions.height,
-      dragmode: dragMode,
       ...zoomedRange,
       yaxis: {
         title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
@@ -161,14 +159,8 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
       font: { size: 25 },
       showlegend: true,
     };
-  }, [dimensions, zoomedXPixelRange, dragMode]);
+  }, [dimensions, zoomedXPixelRange]);
 
-  const handleRelayout = (relayoutData: any) => {
-    // Update drag mode if changed
-    if (relayoutData.dragmode) {
-      setDragMode(relayoutData.dragmode);
-    }
-  };
 
   return (
     <div ref={containerRef} className="mt-4 p-4 bg-gray-100 rounded shadow">
@@ -195,7 +187,6 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
         }}
         useResizeHandler
         style={{ width: "100%", height: "100%" }}
-        onRelayout={handleRelayout}
       />
     </div>
   );

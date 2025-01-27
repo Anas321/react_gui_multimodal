@@ -7,6 +7,8 @@ import { handleRelayout } from '../utils/handleRelayout';
 import { extractBinary, reconstructFloat32Array } from '../utils/dataProcessingScatterSubplot';
 import { generateHorizontalLinecutOverlay, generateVerticalLinecutOverlay } from "../utils/generateLincutsScatterSubplot";
 
+import { Info } from 'lucide-react';
+
 
 const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setImageHeight,
@@ -116,8 +118,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         setImageData2(fullArray2);
 
         // Determine factors based on image width
-        const lowFactor = fullArray1[0].length > 2000 ? 10 : 4;
-        const mediumFactor = fullArray1[0].length > 2000 ? 4 : 2;
+        const lowFactor = fullArray1[0].length > 2000 || fullArray1.length > 2000 ? 8 : 4;
+        const mediumFactor = fullArray1[0].length > 2000 || fullArray1.length > 2000 ? 4 : 2;
 
         // Create medium and low resolution versions
         const mediumArray1 = downsampleArray(fullArray1, mediumFactor);
@@ -218,20 +220,25 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     useEffect(() => {
       const resInfo = {
         low: {
-          desc: 'Low Resolution (Full image or > 50% of the image is visible)',
+          // desc: 'Low Resolution (Full image or > 50% of the image is visible)',
+          desc: 'Low Resolution ',
           factor: resolutionData.low.factor
         },
         medium: {
-          desc: 'Medium Resolution (20-50% of the image is visible)',
+          // desc: 'Medium Resolution (20-50% of the image is visible)',
+          desc: 'Medium Resolution ',
           factor: resolutionData.medium.factor
         },
         full: {
-          desc: 'Full Resolution (< 20% of the image is visible)',
+          // desc: 'Full Resolution (< 20% of the image is visible)',
+          desc: 'Full Resolution ',
           factor: resolutionData.full.factor
         }
       };
       const info = resInfo[currentResolution];
-      setResolutionMessage(`Current Display: ${info.desc} - Downsampling Factor: ${info.factor}x`);
+      setResolutionMessage(
+        `Current Display: ${info.desc} - Downsampling Factor: ${info.factor}x`
+      );
     }, [currentResolution, resolutionData, setResolutionMessage]);
 
   // // Update resolution message whenever resolution changes
@@ -264,7 +271,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
             layout={{
               ...plotData.layout,
               ...layoutOptions,
-              supressplotly: true,
+              // suppressPlotly: true,
             }}
             config={{
               scrollZoom: true,
@@ -275,6 +282,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
                 ['pan2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
               ],
               showTips: true,
+              // logging: false,
             }}
             useResizeHandler={false}  // Disable Plotly's built-in resize handler
             style={{ width: "100%", height: "100%" }}

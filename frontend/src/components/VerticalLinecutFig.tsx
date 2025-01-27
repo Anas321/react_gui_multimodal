@@ -25,7 +25,6 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
     width: undefined,
     height: undefined,
   });
-  const [dragMode, setDragMode] = useState('zoom');
 
   // Update dimensions when container size changes
   useEffect(() => {
@@ -77,7 +76,6 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
     return {
       width: dimensions.width,
       height: dimensions.height,
-      dragmode: dragMode,
       xaxis: {
         title: { text: "Pixel Index", font: { size: 25 } },
         tickfont: { size: 25 },
@@ -97,7 +95,7 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
       font: { size: 25 },
       showlegend: true,
     };
-  }, [dimensions, dragMode, zoomedYPixelRange]);
+  }, [dimensions, zoomedYPixelRange]);
 
   // Memoize plot data - Plot as normal x-y but with synchronization on x-axis
   const plotData = useMemo(() =>
@@ -149,11 +147,6 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
     [linecuts, imageData1, imageData2]
   );
 
-  const handleRelayout = (relayoutData: any) => {
-    if (relayoutData.dragmode) {
-      setDragMode(relayoutData.dragmode);
-    }
-  };
 
   return (
     <div ref={containerRef} className="mt-4 p-4 bg-gray-100 rounded shadow">
@@ -180,7 +173,6 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
         }}
         useResizeHandler
         style={{ width: "100%", height: "100%" }}
-        onRelayout={handleRelayout}
       />
     </div>
   );

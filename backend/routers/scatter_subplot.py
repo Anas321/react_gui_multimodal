@@ -117,18 +117,67 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
         plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
         paper_bgcolor="rgba(0,0,0,0)",  # Transparent paper background
     )
+    # scatter_subplot_fig.update_xaxes(
+    #     showticklabels=False,
+    #     showgrid=False,
+    #     zeroline=False,
+    #     matches="x",
+    # )
+
     scatter_subplot_fig.update_xaxes(
         showticklabels=False,
         showgrid=False,
         zeroline=False,
-        matches="x",
     )
-    scatter_subplot_fig.update_yaxes(
-        showticklabels=False,
-        showgrid=False,
-        zeroline=False,
-        scaleanchor="x",
+
+    # Update x-axes matching explicitly
+    scatter_subplot_fig.update_layout(
+        xaxis=dict(domain=[0, 0.26666666666666666], anchor="y"),
+        xaxis2=dict(
+            domain=[0.36666666666666666, 0.63333333333333333],
+            anchor="y2",
+            matches="x",  # Match with first x-axis
+        ),
+        xaxis3=dict(
+            domain=[0.73333333333333333, 1],
+            anchor="y3",
+            matches="x",  # Match with first x-axis
+        ),
+        yaxis=dict(
+            autorange="reversed",
+            domain=[0, 1],
+            anchor="x",
+            scaleanchor="x",
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+        ),
+        yaxis2=dict(
+            autorange="reversed",
+            domain=[0, 1],
+            anchor="x2",
+            matches="y",  # Match with first y-axis
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+        ),
+        yaxis3=dict(
+            autorange="reversed",
+            domain=[0, 1],
+            anchor="x3",
+            matches="y",  # Match with first y-axis
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+        ),
     )
+
+    # scatter_subplot_fig.update_yaxes(
+    #     showticklabels=False,
+    #     showgrid=False,
+    #     zeroline=False,
+    #     scaleanchor="x",
+    # )
 
     # Serialize arrays to bytes
     array_1_bytes = scatter_image_array_1.tobytes()
