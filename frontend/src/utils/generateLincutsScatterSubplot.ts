@@ -1,9 +1,12 @@
 import { Linecut } from "../types";
+import { calculateInclinedLineEndpoints } from "./calculateInclinedLinecutEndpoints";
 
 interface GenerateLinecutParams {
   linecut: Linecut;
   currentArray: number[][];
   factor: number | null;
+  imageWidth?: number;
+  imageHeight?: number;
 }
 
 export function generateHorizontalLinecutOverlay({
@@ -181,5 +184,105 @@ export function generateVerticalLinecutOverlay({
       yaxis: "y2",
       showlegend: false,
     }
+  ];
+}
+
+
+export function generateInclinedLinecutOverlay({
+  linecut,
+  currentArray,
+  factor,
+  imageWidth,
+  imageHeight
+}: GenerateLinecutParams) {
+  if (!currentArray.length || factor === null) return [];
+
+  const radians = (linecut.angle * Math.PI) / 180;
+  const dx = Math.cos(radians);
+  const dy = Math.sin(radians);
+
+  // Scale positions based on resolution factor
+  const scaledX = linecut.position / factor;
+  const scaledY = linecut.positionY / factor;
+  const scaledWidth = (linecut.width || 1) / factor;
+
+  // Calculate endpoints for the main line
+  const endpoints = calculateInclinedLineEndpoints({
+    linecut: {
+      ...linecut,
+      position: scaledX,
+      positionY: scaledY
+    },
+    imageWidth,
+    imageHeight
+  });
+
+  if (!endpoints) return [];
+  const { x0, y0, x1, y1 } = endpoints;
+
+  // Calculate points for the width envelope
+  const perpDx = -dy;  // Perpendicular direction
+  const perpDy = dx;
+  const halfWidth = scaledWidth / 2;
+
+  // Points for the filled envelope
+  const envelopePoints = {
+    x: [
+      x0 + perpDx * halfWidth,
+      x1 + perpDx * halfWidth,
+      x1 - perpDx * halfWidth,
+      x0 - perpDx * halfWidth
+    ],
+    y: [
+      y0 + perpDy * halfWidth,
+      y1 + perpDy * halfWidth,
+      y1 - perpDy * halfWidth,
+      y0 - perpDy * halfWidth
+    ]
+  };
+
+  // Create overlays for both left and right images
+  const createImageOverlay = (color, axis) => [
+    // Filled envelope
+    {
+      x: envelopePoints.x,
+      y: envelopePoints.y,
+      mode: "lines",
+      fill: "toself",
+      fillcolor: color,
+      line: { color: color },
+      opacity: 0.3,
+      xaxis: `x${axis}`,
+      yaxis: `y${axis}`,
+      showlegend: false,
+    },
+    // Center line
+    {
+      x: [x0, x1],
+      y: [y0, y1],
+      mode: "lines",
+      line: { color: color, width: 2 },
+      opacity: 0.75,
+      xaxis: `x${axis}`,
+      yaxis: `y${axis}`,
+      showlegend: false,
+    },
+    // Position and angle text
+    {
+      x: [scaledX],
+      y: [scaledY],
+      mode: "text",
+      text: [`(${linecut.position}, ${linecut.positionY})<br>${linecut.angle}°`],
+      textfont: { size: 20 },
+      textposition: "top right",
+      xaxis: `x${axis}`,
+      yaxis: `y${axis}`,
+      showlegend: false,
+    }
+  ];
+
+  return [
+    ...createImageOverlay(linecut.leftColor, 1),  // Left image
+    ...createImageOverlay(linecut.rightColor, 2)  // Right image
   ];
 }

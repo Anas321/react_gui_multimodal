@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { SketchPicker, ColorResult } from "react-color";
+import React, { useState, useEffect, useCallback } from "react";
 import { FaEye, FaEyeSlash, FaTrash } from "react-icons/fa"; // Icons for visibility toggle
 import { Linecut } from "../types";
 import InputSlider from "./InputSlider";
 import { Accordion } from "@mantine/core";
+import ColorPickerPopup from "./ColorPickerPopup";
 
 interface VerticalLinecutWidgetProps {
   linecutType: string | null;
@@ -26,6 +26,7 @@ const VerticalLinecutWidget: React.FC<VerticalLinecutWidgetProps> = ({
   deleteVerticalLinecut,
   toggleVerticalLinecutVisibility,
 }) => {
+  const colorPickerRef = React.useRef<HTMLDivElement>(null);
   const [colorPicker, setColorPicker] = useState<{
     id: number;
     side: "left" | "right";
@@ -34,6 +35,19 @@ const VerticalLinecutWidget: React.FC<VerticalLinecutWidgetProps> = ({
     currentColor: string; // Track the current color during picking
     position: { top: number; left: number }; // Position for the color picker
   } | null>(null);
+
+
+    const handleCancelColor = useCallback(() => {
+      if (colorPicker) {
+        updateVerticalLinecutColor(
+          colorPicker.id,
+          colorPicker.side,
+          colorPicker.originalColor
+        );
+        setColorPicker(null);
+      }
+    }, [colorPicker, updateVerticalLinecutColor]);
+
 
   const handleColorChange = (id: number, side: "left" | "right", color: string) => {
     // Update the current color in the picker state
@@ -66,17 +80,25 @@ const VerticalLinecutWidget: React.FC<VerticalLinecutWidgetProps> = ({
     }
   };
 
-  const handleCancelColor = () => {
-    if (colorPicker) {
-      // Revert to the original color
-      updateVerticalLinecutColor(
-        colorPicker.id,
-        colorPicker.side,
-        colorPicker.originalColor
-      );
-      setColorPicker(null);
-    }
-  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        colorPicker?.visible &&
+        colorPickerRef.current &&
+        !colorPickerRef.current.contains(event.target as Node)
+      ) {
+        handleCancelColor();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [colorPicker, handleCancelColor]);
+
+
 
   return (
     <Accordion
@@ -227,42 +249,16 @@ const VerticalLinecutWidget: React.FC<VerticalLinecutWidgetProps> = ({
       </Accordion.Item>
 
 
-            {/* Color Picker Popup */}
-            {colorPicker?.visible && (
-              <div
-                className="fixed z-50"
-                style={{
-                  top: colorPicker.position.top,
-                  left: colorPicker.position.left
-                }}
-              >
-                <div className="bg-white p-4 shadow-lg rounded">
-                  <SketchPicker
-                    color={colorPicker.currentColor}
-                    onChange={(color: ColorResult) =>
-                      handleColorChange(colorPicker.id, colorPicker.side, color.hex)
-                    }
-                  />
-                  <div className="flex justify-end gap-2 mt-2">
-                    <button
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                      onClick={() => setColorPicker(null)}
-                    >
-                      Accept
-                    </button>
-                    <button
-                      className="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500"
-                      onClick={handleCancelColor}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-
-
+      {/* Color Picker Popup */}
+      {colorPicker?.visible && (
+        <ColorPickerPopup
+          ref={colorPickerRef}
+          colorPicker={colorPicker}
+          onColorChange={handleColorChange}
+          onAccept={() => setColorPicker(null)}
+          onCancel={handleCancelColor}
+        />
+      )}
 
 
     </Accordion>

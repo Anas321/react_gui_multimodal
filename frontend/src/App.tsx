@@ -10,10 +10,12 @@ import HorizontalLinecutFig from './components/HorizontalLinecutFig';
 import { handleExperimentTypeChange, addLinecut } from './utils/linecutHandlers';
 import { leftImageColorPalette, rightImageColorPalette } from './utils/constants';
 import useMultimodal from './hooks/useMultimodal';
-import VerticalLinecutSection from './components/VerticalLinecutWidget';
+import VerticalLinecutWidget from './components/VerticalLinecutWidget';
 import VerticalLinecutFig from './components/VerticalLinecutFig';
 import { Info } from 'lucide-react';
 import { Popover } from '@mantine/core';
+import InclinedLinecutWidget from './components/InclinedLinecutWidget';
+import InclinedLinecutFig from './components/InclinedLinecutFig';
 
 
 
@@ -64,6 +66,17 @@ function App() {
     // For the zoom resolution message
     resolutionMessage,
     setResolutionMessage,
+    // Inclined linecut
+    inclinedLinecuts,
+    inclinedLinecutData1,
+    inclinedLinecutData2,
+    addInclinedLinecut,
+    updateInclinedLinecutPosition,
+    updateInclinedLinecutAngle,
+    updateInclinedLinecutWidth,
+    updateInclinedLinecutColor,
+    deleteInclinedLinecut,
+    toggleInclinedLinecutVisibility,
   } = useMultimodal();
 
 
@@ -189,7 +202,12 @@ function App() {
                           <span className="text-2xl font-medium">Vertical Linecut</span>
                         </Menu.Item> */}
                         {/* Conditionally render Azimuthal Integration in the menu*/}
-                        <Menu.Item onClick={() => addLinecut('Inclined', selectedLinecuts, setSelectedLinecuts)}>
+                        <Menu.Item
+                        onClick={() => {
+                          addLinecut('Inclined', selectedLinecuts, setSelectedLinecuts)
+                          addInclinedLinecut();
+                        }}
+                        >
                           <span className="text-2xl font-medium">Inclined Linecut</span>
                         </Menu.Item>
                         {/* Conditionally render Azimuthal Integration */}
@@ -222,7 +240,7 @@ function App() {
 
                     if (linecutType === 'Vertical' && verticalLinecuts.length > 0) {
                       return (
-                        <VerticalLinecutSection
+                        <VerticalLinecutWidget
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
                           imageWidth={imageWidth}
@@ -232,6 +250,24 @@ function App() {
                           updateVerticalLinecutColor={updateVerticalLinecutColor}
                           deleteVerticalLinecut={deleteVerticalLinecut}
                           toggleVerticalLinecutVisibility={toggleVerticalLinecutVisibility}
+                        />
+                      );
+                    }
+
+                    if (linecutType === 'Inclined' && inclinedLinecuts.length > 0) {
+                      return (
+                        <InclinedLinecutWidget
+                          key={`linecut-section-${linecutType}`}
+                          linecutType={linecutType}
+                          imageWidth={imageWidth}
+                          imageHeight={imageHeight}
+                          linecuts={inclinedLinecuts}
+                          updateInclinedLinecutPosition={updateInclinedLinecutPosition}
+                          updateInclinedLinecutAngle={updateInclinedLinecutAngle}
+                          updateInclinedLinecutWidth={updateInclinedLinecutWidth}
+                          updateInclinedLinecutColor={updateInclinedLinecutColor}
+                          deleteInclinedLinecut={deleteInclinedLinecut}
+                          toggleInclinedLinecutVisibility={toggleInclinedLinecutVisibility}
                         />
                       );
                     }
@@ -282,23 +318,18 @@ function App() {
                     isThirdCollapsed={isThirdCollapsed}
                     setResolutionMessage={setResolutionMessage}
                   />
-                  {/* {resolutionMessage && (
-                    <div className="flex items-center text-xl text-gray-500 italic text-left mt-4 mb-1 whitespace-nowrap overflow-x-auto">
-                      <span>{resolutionMessage}</span>
-                      <Info className="ml-2 w-5 h-5" />
-                    </div>
-                  )} */}
+
                   {resolutionMessage && (
-                    <div className="flex items-center text-xl text-gray-500 italic text-left mt-4 mb-1 whitespace-nowrap overflow-x-auto">
+                    <div className="flex items-center text-xl text-gray-500 text-left mt-4 mb-1 whitespace-nowrap overflow-x-auto">
                       <span>{resolutionMessage}</span>
-                      <Popover width={750} position="top"> {/* Increased width to 600px */}
+                      <Popover width={900} position="top"> {/* Increased width to 600px */}
                         <Popover.Target>
                           <div className="cursor-pointer">
                             <Info className="ml-2 w-5 h-5" />
                           </div>
                         </Popover.Target>
                         <Popover.Dropdown>
-                          <div className="text-base space-y-4 whitespace-normal"> {/* Added whitespace-normal to allow natural text wrapping */}
+                          <div className="text-xl space-y-4 whitespace-normal"> {/* Added whitespace-normal to allow natural text wrapping */}
                             <p className="font-medium mb-2">
                               The resolution of the displayed image changes based on the zoom level:
                             </p>
@@ -364,6 +395,7 @@ function App() {
                           imageData1={imageData1} // Data for left scatter image
                           imageData2={imageData2} // Data for right scatter image
                           zoomedXPixelRange={zoomedXPixelRange}
+                          zoomedYPixelRange={zoomedYPixelRange}
                         />
                       </Accordion.Panel>
                     </Accordion.Item>
@@ -376,15 +408,26 @@ function App() {
                               linecuts={verticalLinecuts}
                               imageData1={imageData1}
                               imageData2={imageData2}
+                              zoomedXPixelRange={zoomedXPixelRange}
                               zoomedYPixelRange={zoomedYPixelRange}
                             />
                         </Accordion.Panel>
                       </Accordion.Item>
                     )}
-                    {selectedLinecuts.includes('Inclined') && (
+                  {selectedLinecuts.includes('Inclined') && inclinedLinecuts.length > 0 && (
                     <Accordion.Item value="inclined-linecut-accordion">
                       <Accordion.Control>Inclined Linecut</Accordion.Control>
-                      <Accordion.Panel>Placeholder</Accordion.Panel>
+                      <Accordion.Panel>
+                      <InclinedLinecutFig
+                        linecuts={inclinedLinecuts}
+                        imageData1={imageData1}
+                        imageData2={imageData2}
+                        inclinedLinecutData1={inclinedLinecutData1 || []}  // Provide default empty array
+                        inclinedLinecutData2={inclinedLinecutData2 || []}  // Provide default empty array
+                        zoomedXPixelRange={zoomedXPixelRange}
+                        zoomedYPixelRange={zoomedYPixelRange}
+                      />
+                      </Accordion.Panel>
                     </Accordion.Item>
                     )}
                     {experimentType === 'SAXS' && selectedLinecuts.includes('Azimuthal') && (

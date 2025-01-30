@@ -2,10 +2,13 @@
 export interface Linecut {
     id: number; // Unique identifier for the linecut
     position: number; // Current position of the linecut
+    positionY: number // For inclined linecuts
     leftColor: string; // Color of the left image linecut
     rightColor: string; // Color of the right image linecut
-    hidden?: boolean; // Optional property to track if the linecut is hidden
-    width?: number; // Optional property to track the width of the linecut
+    hidden: boolean; // Optional property to track if the linecut is hidden
+    width: number; // Optional property to track the width of the linecut
+    angle: number; // For inclined linecuts
+    type: 'horizontal' | 'vertical' | 'inclined'; // Type of linecut
   }
 
 
@@ -23,6 +26,7 @@ export interface Linecut {
     setImageData2: (data: number[][]) => void;
     horizontalLinecuts: Linecut[];
     verticalLinecuts: Linecut[];
+    inclinedLinecuts: Linecut[];
     leftImageColorPalette: string[];
     rightImageColorPalette: string[];
     setZoomedXPixelRange: (range: [number, number] | null) => void;

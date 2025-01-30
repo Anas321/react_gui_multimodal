@@ -7,6 +7,7 @@ interface HorizontalLinecutFigProps {
   imageData1: number[][];
   imageData2: number[][];
   zoomedXPixelRange: [number, number] | null;
+  zoomedYPixelRange: [number, number] | null;  // Add y-range parameter
 }
 
 interface Dimensions {
@@ -19,6 +20,7 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
   imageData1,
   imageData2,
   zoomedXPixelRange,
+  zoomedYPixelRange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<Dimensions>({
@@ -121,9 +123,66 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
     });
   }, [linecuts, imageData1, imageData2]);
 
-  // Memoize layout to include zoomed range
+
+  // // Memoize layout to include zoomed range
+  // const layout = useMemo(() => {
+  //   // Set default ranges for the plot
+  //   const defaultRange = {
+  //     xaxis: {
+  //       title: { text: "Pixel Index", font: { size: 25 } },
+  //       tickfont: { size: 25 },
+  //       autorange: true,
+  //     },
+  //   };
+
+  //   // If we have a zoomed range, override the default
+  //   const zoomedRange = zoomedXPixelRange ? {
+  //     xaxis: {
+  //       ...defaultRange.xaxis,
+  //       range: zoomedXPixelRange,
+  //       autorange: false,
+  //     },
+  //   } : defaultRange;
+
+  //   return {
+  //     width: dimensions.width,
+  //     height: dimensions.height,
+  //     ...zoomedRange,
+  //     yaxis: {
+  //       title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
+  //       tickfont: { size: 25 },
+  //       autorange: true,
+  //     },
+  //     margin: {
+  //       l: 110
+  //     },
+  //     legend: {
+  //       font: { size: 25 },
+  //     },
+  //     font: { size: 25 },
+  //     showlegend: true,
+  //   };
+  // }, [dimensions, zoomedXPixelRange]);
+
+
+  const isLinecutInRange = (
+    linecut: Linecut,
+    xRange: [number, number] | null,
+    yRange: [number, number] | null  // Add yRange parameter
+  ): boolean => {
+    // If either range is null, consider linecut not in range
+    if (!xRange || !yRange) return false;
+
+    const [yStart, yEnd] = yRange;
+    const position = linecut.position;
+
+    // A linecut is in range if its y-position (linecut.position) falls within the y-range
+    return position <= yStart && position >= yEnd;
+  };
+
+  // Then update the layout useMemo to pass both ranges:
   const layout = useMemo(() => {
-    // Set default ranges for the plot
+
     const defaultRange = {
       xaxis: {
         title: { text: "Pixel Index", font: { size: 25 } },
@@ -132,34 +191,34 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
       },
     };
 
-    // If we have a zoomed range, override the default
-    const zoomedRange = zoomedXPixelRange ? {
-      xaxis: {
-        ...defaultRange.xaxis,
-        range: zoomedXPixelRange,
-        autorange: false,
-      },
-    } : defaultRange;
+    // Check for linecuts in range considering both x and y ranges
+    const hasLinecutInRange = linecuts
+      .filter(linecut => !linecut.hidden)
+      .some(linecut => isLinecutInRange(linecut, zoomedXPixelRange, zoomedYPixelRange));
+
+    const xAxisConfig = (zoomedXPixelRange && hasLinecutInRange)
+      ? {
+          ...defaultRange.xaxis,
+          range: zoomedXPixelRange,
+          autorange: false,
+        }
+      : defaultRange.xaxis;
 
     return {
       width: dimensions.width,
       height: dimensions.height,
-      ...zoomedRange,
+      xaxis: xAxisConfig,
       yaxis: {
         title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
         tickfont: { size: 25 },
         autorange: true,
       },
-      margin: {
-        l: 110
-      },
-      legend: {
-        font: { size: 25 },
-      },
+      margin: { l: 110 },
+      legend: { font: { size: 25 } },
       font: { size: 25 },
       showlegend: true,
     };
-  }, [dimensions, zoomedXPixelRange]);
+  }, [dimensions, zoomedXPixelRange, zoomedYPixelRange, linecuts]);
 
 
   return (

@@ -129,7 +129,7 @@ export default function useMultimodal() {
     const existingIds = horizontalLinecuts.map((linecut) => linecut.id);
     const newId = Math.max(0, ...existingIds) + 1;
 
-    const defaultPosition = 0 // Math.floor(imageHeight / 2); // Default position at the center
+    const defaultPosition = Math.floor((imageHeight - 1) / 2); // Default position at the center
 
     const newLinecut = {
       id: newId,
@@ -208,7 +208,7 @@ export default function useMultimodal() {
     const addVerticalLinecut = throttle(() => {
         const existingIds = verticalLinecuts.map((linecut) => linecut.id);
         const newId = Math.max(0, ...existingIds) + 1;
-        const defaultPosition = 0;
+        const defaultPosition = Math.floor((imageWidth - 1) / 2); // Default position at the center
 
         const newLinecut = {
         id: newId,
@@ -311,6 +311,389 @@ export default function useMultimodal() {
   // ==================================================== End of vertical linecuts
 
 
+  // ====================================================
+  // Inclined Linecuts
+  // ====================================================
+
+  // State declarations for inclined linecuts
+  const [inclinedLinecuts, setInclinedLinecuts] = useState<Linecut[]>([]);
+  const [inclinedLinecutData1, setInclinedLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
+  const [inclinedLinecutData2, setInclinedLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
+
+  // Compute intensity along an inclined line using interpolation
+  const computeInclinedLinecutData = useCallback((
+    imageData: number[][],
+    startX: number,
+    startY: number,
+    angle: number,
+    width: number
+  ): number[] => {
+    // Convert angle to radians for trigonometric calculations
+    const radians = (angle * Math.PI) / 180;
+    const imageWidth = imageData[0].length;
+    const imageHeight = imageData.length;
+
+    // Calculate direction vector components
+    const dx = Math.cos(radians);
+    const dy = Math.sin(radians);
+
+    // Calculate maximum line length based on image boundaries
+    const length = Math.min(
+      Math.abs((imageWidth - startX) / dx),
+      Math.abs((imageHeight - startY) / dy)
+    );
+
+    // Initialize arrays for sampling
+    const numPoints = Math.ceil(length);
+    const intensities = new Array(numPoints).fill(0);
+    const halfWidth = width / 2;
+
+    // Sample points along the line
+    for (let i = 0; i < numPoints; i++) {
+      let sum = 0;
+      let count = 0;
+
+      // Sample perpendicular to the line direction for width
+      for (let w = -halfWidth; w <= halfWidth; w++) {
+        // Calculate sample point coordinates
+        const x = startX + i * dx + w * Math.sin(radians);
+        const y = startY + i * dy - w * Math.cos(radians);
+
+        // Check if point is within image bounds
+        if (x >= 0 && x < imageWidth - 1 && y >= 0 && y < imageHeight - 1) {
+          // Bilinear interpolation
+          const x0 = Math.floor(x);
+          const y0 = Math.floor(y);
+          const x1 = x0 + 1;
+          const y1 = y0 + 1;
+
+          const fx = x - x0;
+          const fy = y - y0;
+
+          // Get corner values
+          const c00 = imageData[y0][x0];
+          const c10 = imageData[y0][x1];
+          const c01 = imageData[y1][x0];
+          const c11 = imageData[y1][x1];
+
+          // Interpolate intensity
+          const intensity =
+            c00 * (1 - fx) * (1 - fy) +
+            c10 * fx * (1 - fy) +
+            c01 * (1 - fx) * fy +
+            c11 * fx * fy;
+
+          sum += intensity;
+          count++;
+        }
+      }
+
+      // Average intensity for this point
+      intensities[i] = count > 0 ? sum / count : 0;
+    }
+
+    return intensities;
+  }, []);
+
+  // Add a new inclined linecut
+  const addInclinedLinecut = useCallback(throttle(() => {
+    const existingIds = inclinedLinecuts.map((linecut) => linecut.id);
+    const newId = Math.max(0, ...existingIds) + 1;
+
+    // Create default linecut at center of image
+    const defaultLinecut: Linecut = {
+      id: newId,
+      position: Math.floor(imageWidth / 2),   // x position
+      positionY: Math.floor(imageHeight / 2), // y position
+      leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
+      rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
+      hidden: false,
+      width: 1,
+      angle: 45, // Default 45-degree angle
+      type: 'inclined'
+    };
+
+    // Add new linecut to state
+    setInclinedLinecuts(prev => [...prev, defaultLinecut]);
+
+    // Compute initial linecut data if images are available
+    if (imageData1.length > 0 && imageData2.length > 0) {
+      const data1 = computeInclinedLinecutData(
+        imageData1,
+        defaultLinecut.position,
+        defaultLinecut.positionY,
+        defaultLinecut.angle,
+        defaultLinecut.width
+      );
+      const data2 = computeInclinedLinecutData(
+        imageData2,
+        defaultLinecut.position,
+        defaultLinecut.positionY,
+        defaultLinecut.angle,
+        defaultLinecut.width
+      );
+
+      // Add computed data to state
+      setInclinedLinecutData1(prev => [...prev, { id: newId, data: data1 }]);
+      setInclinedLinecutData2(prev => [...prev, { id: newId, data: data2 }]);
+    }
+  }, 200), [imageWidth, imageHeight, imageData1, imageData2, inclinedLinecuts, computeInclinedLinecutData]);
+
+  // Update position (x, y) of an inclined linecut
+  const updateInclinedLinecutPosition = useCallback(
+    throttle((id: number, x: number, y: number) => {
+      // Update linecut position
+      setInclinedLinecuts(prev =>
+        prev.map(linecut =>
+          linecut.id === id
+            ? { ...linecut, position: x, positionY: y }
+            : linecut
+        )
+      );
+
+      // Update linecut data if images are available
+      if (imageData1.length > 0 && imageData2.length > 0) {
+        const linecut = inclinedLinecuts.find(l => l.id === id);
+        if (linecut) {
+          // Compute new linecut data
+          const newData1 = computeInclinedLinecutData(
+            imageData1,
+            x,
+            y,
+            linecut.angle,
+            linecut.width
+          );
+          const newData2 = computeInclinedLinecutData(
+            imageData2,
+            x,
+            y,
+            linecut.angle,
+            linecut.width
+          );
+
+          // Update linecut data state
+          setInclinedLinecutData1(prev =>
+            prev.map(data =>
+              data.id === id ? { ...data, data: newData1 } : data
+            )
+          );
+          setInclinedLinecutData2(prev =>
+            prev.map(data =>
+              data.id === id ? { ...data, data: newData2 } : data
+            )
+          );
+        }
+      }
+    }, 200),
+    [imageData1, imageData2, inclinedLinecuts, computeInclinedLinecutData]
+  );
+
+  // Update angle of an inclined linecut
+  const updateInclinedLinecutAngle = useCallback(
+    throttle((id: number, angle: number) => {
+      // Normalize angle to -180 to 180 range
+      const normalizedAngle = ((angle % 360 + 540) % 360) - 180;
+      // Normalize angle to be between -180 and 180 degrees
+      // Why we need this:
+      // 1. Ensures consistent angle representation (e.g., 370° becomes 10°)
+      // 2. Makes angle calculations more predictable
+      // 3. Helps prevent floating-point errors in trigonometric calculations
+      //
+      // How the normalization works:
+      // 1. angle % 360: Gets the remainder when divided by 360 (basic wrap-around)
+      // 2. + 540: Add 540 (360 + 180) to ensure the result is positive
+      // 3. % 360: Another wrap-around to get within 0-360 range
+      // 4. - 180: Shift range from 0-360 to -180-180
+
+      {/**
+        Let me break down the angle normalization formula: ((angle % 360 + 540) % 360) - 180
+        Let's understand why we add 540:
+
+        - 540 = 360 + 180
+        - We add this number to ensure we always get a positive number before the final modulo operation
+
+        Let's see step by step examples:
+
+        1) For angle = -400°:
+
+        javascriptCopy-400 % 360 = -40      // First get remainder
+        -40 + 540 = 500       // Add 540 to make it positive
+        500 % 360 = 140       // Get remainder again
+        140 - 180 = -40       // Shift to -180 to 180 range
+
+        2) For angle = 400°:
+
+        javascriptCopy400 % 360 = 40        // First get remainder
+        40 + 540 = 580        // Add 540
+        580 % 360 = 220       // Get remainder
+        220 - 180 = 40        // Shift to -180 to 180 range
+
+        3) For angle = -190°:
+
+        javascriptCopy-190 % 360 = -190     // First get remainder
+        -190 + 540 = 350      // Make positive
+        350 % 360 = 350       // Get remainder
+        350 - 180 = 170       // Shift to -180 to 180 range
+
+        The reason for 540 specifically:
+
+        - We need at least 360 to handle one full rotation
+        - We need an additional 180 to ensure we can properly shift to the -180 to 180 range
+        - 360 + 180 = 540
+
+        This ensures that any input angle will be correctly normalized to the range [-180, 180]. The formula works because:
+
+        1) First modulo gets the basic remainder
+        2) Adding 540 ensures we're dealing with positive numbers
+        3) Second modulo wraps to [0, 360]
+        4) Subtracting 180 gives us our desired [-180, 180] range
+
+        We could use other numbers greater than 540, but 540 is the smallest number that guarantees our algorithm works for all inputs.
+        */}
+
+      // Update linecut angle
+      setInclinedLinecuts(prev =>
+        prev.map(linecut =>
+          linecut.id === id ? { ...linecut, angle: normalizedAngle } : linecut
+        )
+      );
+
+      // Update linecut data if images are available
+      if (imageData1.length > 0 && imageData2.length > 0) {
+        const linecut = inclinedLinecuts.find(l => l.id === id);
+        if (linecut) {
+          // Compute new linecut data with normalized angle
+          const newData1 = computeInclinedLinecutData(
+            imageData1,
+            linecut.position,
+            linecut.positionY,
+            normalizedAngle,
+            linecut.width
+          );
+          const newData2 = computeInclinedLinecutData(
+            imageData2,
+            linecut.position,
+            linecut.positionY,
+            normalizedAngle,
+            linecut.width
+          );
+
+          // Update linecut data state
+          setInclinedLinecutData1(prev =>
+            prev.map(data =>
+              data.id === id ? { ...data, data: newData1 } : data
+            )
+          );
+          setInclinedLinecutData2(prev =>
+            prev.map(data =>
+              data.id === id ? { ...data, data: newData2 } : data
+            )
+          );
+        }
+      }
+    }, 200),
+    [imageData1, imageData2, inclinedLinecuts, computeInclinedLinecutData]
+  );
+
+  // Update width of an inclined linecut
+  const updateInclinedLinecutWidth = useCallback(
+    throttle((id: number, width: number) => {
+      // Update linecut width
+      setInclinedLinecuts(prev =>
+        prev.map(linecut =>
+          linecut.id === id ? { ...linecut, width } : linecut
+        )
+      );
+
+      // Update linecut data if images are available
+      if (imageData1.length > 0 && imageData2.length > 0) {
+        const linecut = inclinedLinecuts.find(l => l.id === id);
+        if (linecut) {
+          // Compute new linecut data with updated width
+          const newData1 = computeInclinedLinecutData(
+            imageData1,
+            linecut.position,
+            linecut.positionY,
+            linecut.angle,
+            width
+          );
+          const newData2 = computeInclinedLinecutData(
+            imageData2,
+            linecut.position,
+            linecut.positionY,
+            linecut.angle,
+            width
+          );
+
+          // Update linecut data state
+          setInclinedLinecutData1(prev =>
+            prev.map(data =>
+              data.id === id ? { ...data, data: newData1 } : data
+            )
+          );
+          setInclinedLinecutData2(prev =>
+            prev.map(data =>
+              data.id === id ? { ...data, data: newData2 } : data
+            )
+          );
+        }
+      }
+    }, 200),
+    [imageData1, imageData2, inclinedLinecuts, computeInclinedLinecutData]
+  );
+
+  // Update color of an inclined linecut
+  const updateInclinedLinecutColor = useCallback((id: number, side: 'left' | 'right', color: string) => {
+    setInclinedLinecuts(prev =>
+      prev.map(linecut =>
+        linecut.id === id
+          ? { ...linecut, [`${side}Color`]: color }
+          : linecut
+      )
+    );
+  }, []);
+
+  // Delete an inclined linecut
+  const deleteInclinedLinecut = useCallback((id: number) => {
+    // Remove linecut and reindex remaining ones
+    setInclinedLinecuts(prev => {
+      const updatedLinecuts = prev.filter(linecut => linecut.id !== id);
+      return updatedLinecuts.map((linecut, index) => ({
+        ...linecut,
+        id: index + 1,
+      }));
+    });
+
+    // Update corresponding data arrays
+    setInclinedLinecutData1(prev =>
+      prev.filter(data => data.id !== id).map((data, index) => ({
+        ...data,
+        id: index + 1,
+      }))
+    );
+    setInclinedLinecutData2(prev =>
+      prev.filter(data => data.id !== id).map((data, index) => ({
+        ...data,
+        id: index + 1,
+      }))
+    );
+  }, []);
+
+  // Toggle visibility of an inclined linecut
+  const toggleInclinedLinecutVisibility = useCallback((id: number) => {
+    setInclinedLinecuts(prev =>
+      prev.map(linecut =>
+        linecut.id === id ? { ...linecut, hidden: !linecut.hidden } : linecut
+      )
+    );
+  }, []);
+
+
+
+  // ===================================================== End of inclined linecuts
+
+
+
   const [resolutionMessage, setResolutionMessage] = useState('');
 
 
@@ -360,6 +743,17 @@ export default function useMultimodal() {
     // For the zoom display message
     resolutionMessage,
     setResolutionMessage,
+    // Inclined linecut states and functions
+    inclinedLinecuts,
+    inclinedLinecutData1,
+    inclinedLinecutData2,
+    addInclinedLinecut,
+    updateInclinedLinecutPosition,
+    updateInclinedLinecutAngle,
+    updateInclinedLinecutWidth,
+    updateInclinedLinecutColor,
+    deleteInclinedLinecut,
+    toggleInclinedLinecutVisibility,
   };
 
 }

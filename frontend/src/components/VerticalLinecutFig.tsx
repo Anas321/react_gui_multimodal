@@ -6,6 +6,7 @@ interface VerticalLinecutFigProps {
   linecuts: Linecut[];
   imageData1: number[][];
   imageData2: number[][];
+  zoomedXPixelRange: [number, number] | null;
   zoomedYPixelRange: [number, number] | null;
 }
 
@@ -18,6 +19,7 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
   linecuts,
   imageData1,
   imageData2,
+  zoomedXPixelRange,
   zoomedYPixelRange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,32 +73,6 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
     );
   };
 
-  // Memoize layout - Using zoomedPixelRange for y-axis but display on x-axis
-  const layout = useMemo(() => {
-    return {
-      width: dimensions.width,
-      height: dimensions.height,
-      xaxis: {
-        title: { text: "Pixel Index", font: { size: 25 } },
-        tickfont: { size: 25 },
-        autorange: !zoomedYPixelRange,
-        range: zoomedYPixelRange || undefined,
-      },
-      yaxis: {
-        title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
-        tickfont: { size: 25 },
-      },
-      margin:{
-        l: 110,
-      },
-      legend: {
-        font: { size: 25 },
-      },
-      font: { size: 25 },
-      showlegend: true,
-    };
-  }, [dimensions, zoomedYPixelRange]);
-
   // Memoize plot data - Plot as normal x-y but with synchronization on x-axis
   const plotData = useMemo(() =>
     linecuts
@@ -146,6 +122,92 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
       }),
     [linecuts, imageData1, imageData2]
   );
+
+
+  // // Memoize layout - Using zoomedPixelRange for y-axis but display on x-axis
+  // const layout = useMemo(() => {
+  //   return {
+  //     width: dimensions.width,
+  //     height: dimensions.height,
+  //     xaxis: {
+  //       title: { text: "Pixel Index", font: { size: 25 } },
+  //       tickfont: { size: 25 },
+  //       autorange: !zoomedYPixelRange,
+  //       range: zoomedYPixelRange || undefined,
+  //     },
+  //     yaxis: {
+  //       title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
+  //       tickfont: { size: 25 },
+  //     },
+  //     margin:{
+  //       l: 110,
+  //     },
+  //     legend: {
+  //       font: { size: 25 },
+  //     },
+  //     font: { size: 25 },
+  //     showlegend: true,
+  //   };
+  // }, [dimensions, zoomedYPixelRange]);
+
+
+
+  // Add the check for linecuts in range
+  const isLinecutInRange = (
+    linecut: Linecut,
+    xRange: [number, number] | null,
+    yRange: [number, number] | null
+  ): boolean => {
+    if (!xRange || !yRange) return false;
+
+    // For vertical linecuts, we check if the linecut's x-position falls within the x-range
+    const [xStart, xEnd] = xRange;
+    const position = linecut.position;
+
+    return position >= xStart && position <= xEnd;
+  };
+
+  // Update the layout useMemo
+  const layout = useMemo(() => {
+
+    const defaultRange = {
+      xaxis: {
+        title: { text: "Pixel Index", font: { size: 25 } },
+        tickfont: { size: 25 },
+        autorange: true,
+      },
+    };
+
+    // Check for linecuts in range
+    const hasLinecutInRange = linecuts
+      .filter(linecut => !linecut.hidden)
+      .some(linecut => isLinecutInRange(linecut, zoomedXPixelRange, zoomedYPixelRange));
+
+
+    // Only apply zoom range if there are linecuts in range
+    const xAxisConfig = (zoomedYPixelRange && hasLinecutInRange)
+      ? {
+          ...defaultRange.xaxis,
+          range: zoomedYPixelRange,
+          autorange: false,
+        }
+      : defaultRange.xaxis;
+
+    return {
+      width: dimensions.width,
+      height: dimensions.height,
+      xaxis: xAxisConfig,
+      yaxis: {
+        title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
+        tickfont: { size: 25 },
+        autorange: true,
+      },
+      margin: { l: 110 },
+      legend: { font: { size: 25 } },
+      font: { size: 25 },
+      showlegend: true,
+    };
+  }, [dimensions, zoomedYPixelRange, zoomedXPixelRange, linecuts]);
 
 
   return (

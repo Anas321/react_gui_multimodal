@@ -43,7 +43,6 @@ def get_images_arrays_and_names(
     data_local_path,
     DEV_MODE,
     accumulated_data,
-    image_preprocessing_store,
     initialization_mode=False,
 ):
 
@@ -75,7 +74,6 @@ def get_images_arrays_and_names(
             processed_image = get_processed_image(
                 image_array,
                 mask_detector,
-                image_preprocessing_store,
                 normalize=False,
             )
 
@@ -103,7 +101,6 @@ def get_images_arrays_and_names(
             processed_image = get_processed_image(
                 image_array,
                 mask_detector,
-                image_preprocessing_store,
                 normalize=False,
             )
 

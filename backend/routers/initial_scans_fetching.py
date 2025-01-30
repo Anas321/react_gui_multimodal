@@ -61,11 +61,11 @@ async def get_initial_scans():
     left_image_index = 0
     right_image_index = 1
 
-    image_preprocessing_store = {
-        "log_scale": False,
-        "lower_clipping_percentile": 1,
-        "upper_clipping_percentile": 99,
-    }
+    # image_preprocessing_store = {
+    #     "log_scale": False,
+    #     "lower_clipping_percentile": 1,
+    #     "upper_clipping_percentile": 99,
+    # }
     accumulated_data = {
         "max_intensities": [],
         "avg_intensities": [],
@@ -80,7 +80,6 @@ async def get_initial_scans():
         data_local_path,
         DEV_MODE,
         accumulated_data,
-        image_preprocessing_store,
         initialization_mode=False,
     )
 
