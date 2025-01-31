@@ -51,18 +51,15 @@ export const handleRelayout = (
         { ...prev.data[1], z: resolutionData.low.array2 },
         { ...prev.data[2], z: resolutionData.low.diff },
       ],
-      // layout: {
-      //   ...prev.layout,
-      //   // xaxis: { ...prev.layout.xaxis, range: undefined, autorange: true },
-      //   // xaxis2: { ...prev.layout.xaxis2, range: undefined, autorange: true },
-      //   // xaxis3: { ...prev.layout.xaxis3, range: undefined, autorange: true },
-      //   xaxis: { ...prev.layout.xaxis, range: [0, width], autorange: true },
-      //   xaxis2: { ...prev.layout.xaxis2, range: [0, width], autorange: true },
-      //   xaxis3: { ...prev.layout.xaxis3, range: [0, width], autorange: true },
-      //   yaxis: { ...prev.layout.yaxis, range: [height, 0] },
-      //   yaxis2: { ...prev.layout.yaxis2, range: [height, 0] },
-      //   yaxis3: { ...prev.layout.yaxis3, range: [height, 0] },
-      // },
+      layout: {
+        ...prev.layout,
+        xaxis: { ...prev.layout.xaxis, range: [0, width], autorange: false },
+        xaxis2: { ...prev.layout.xaxis2, range: [0, width], autorange: false },
+        xaxis3: { ...prev.layout.xaxis3, range: [0, width], autorange: false },
+        yaxis: { ...prev.layout.yaxis, range: [height + 30, -20], autorange: false },
+        yaxis2: { ...prev.layout.yaxis2, range: [height + 30, -20], autorange: false },
+        yaxis3: { ...prev.layout.yaxis3, range: [height + 30, -20], autorange: false },
+      },
     }));
     return;
   }
@@ -128,12 +125,12 @@ export const handleRelayout = (
       ],
       layout: {
         ...prev.layout,
-        xaxis: { ...prev.layout.xaxis, range: [newXStart, newXEnd] },
-        xaxis2: { ...prev.layout.xaxis2, range: [newXStart, newXEnd] },
-        xaxis3: { ...prev.layout.xaxis3, range: [newXStart, newXEnd] },
-        yaxis: { ...prev.layout.yaxis, range: [newYStart, newYEnd] },
-        yaxis2: { ...prev.layout.yaxis2, range: [newYStart, newYEnd] },
-        yaxis3: { ...prev.layout.yaxis3, range: [newYStart, newYEnd] },
+        xaxis: { ...prev.layout.xaxis, range: [newXStart, newXEnd], autorange: false },
+        xaxis2: { ...prev.layout.xaxis2, range: [newXStart, newXEnd], autorange: false },
+        xaxis3: { ...prev.layout.xaxis3, range: [newXStart, newXEnd], autorange: false },
+        yaxis: { ...prev.layout.yaxis, range: [newYStart, newYEnd], autorange: false },
+        yaxis2: { ...prev.layout.yaxis2, range: [newYStart, newYEnd], autorange: false },
+        yaxis3: { ...prev.layout.yaxis3, range: [newYStart, newYEnd], autorange: false },
       },
     }));
 

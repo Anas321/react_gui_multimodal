@@ -15,6 +15,8 @@ import {
 const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setImageHeight,
   setImageWidth,
+  imageHeight,
+  imageWidth,
   setImageData1,
   setImageData2,
   horizontalLinecuts,
@@ -30,6 +32,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   const [currentResolution, setCurrentResolution] = useState<'low' | 'medium' | 'full'>('low');
   const [dragMode, setDragMode] = useState('zoom');
   const [clippingLimits, setClippingLimits] = useState({ lower: 1, upper: 99 });
+  const isFigureInitialized = useRef(false);
 
 
   // Calculate the actual percentile values from the data
@@ -340,23 +343,69 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
 
 
-  const layoutOptions = {
-    dragmode: dragMode,
-    coloraxis: {
-      ...plotData?.layout.coloraxis,
-      colorbar: {
-        ...plotData?.layout.coloraxis?.colorbar,
-        len: isThirdCollapsed ? 1.0 : 0.53,
-      }
-    },
-    coloraxis2: {
-      ...plotData?.layout.coloraxis2,
-      colorbar: {
-        ...plotData?.layout.coloraxis2?.colorbar,
-        len: isThirdCollapsed ? 1.0 : 0.53,
-      }
-    },
-  };
+  // Memoize layout options
+  const layoutOptions = useMemo(() => {
+    const baseLayout = {
+      dragmode: dragMode,
+      coloraxis: {
+        ...plotData?.layout.coloraxis,
+        colorbar: {
+          ...plotData?.layout.coloraxis?.colorbar,
+          len: isThirdCollapsed ? 1.0 : 0.53,
+        }
+      },
+      coloraxis2: {
+        ...plotData?.layout.coloraxis2,
+        colorbar: {
+          ...plotData?.layout.coloraxis2?.colorbar,
+          len: isThirdCollapsed ? 1.0 : 0.53,
+        }
+      },
+    };
+
+    // Only add the axis configurations when in low resolution
+    // This is to make sure the image does not move when the linecuts are added
+    if (currentResolution === 'low' && plotData) {
+      return {
+        ...baseLayout,
+        xaxis: {
+          ...plotData.layout.xaxis,
+          range: [0, resolutionData[currentResolution].array1[0]?.length || 0],
+          autorange: false,
+        },
+        xaxis2: {
+          ...plotData.layout.xaxis2,
+          range: [0, resolutionData[currentResolution].array1[0]?.length || 0],
+          autorange: false,
+        },
+        xaxis3: {
+          ...plotData.layout.xaxis3,
+          range: [0, resolutionData[currentResolution].array1[0]?.length || 0],
+          autorange: false,
+        },
+        yaxis: {
+          ...plotData.layout.yaxis,
+          range: [resolutionData[currentResolution].array1?.length + 30 || 0, -20],
+          autorange: false,
+        },
+        yaxis2: {
+          ...plotData.layout.yaxis2,
+          range: [resolutionData[currentResolution].array1?.length + 30 || 0, -20],
+          autorange: false,
+        },
+        yaxis3: {
+          ...plotData.layout.yaxis3,
+          range: [resolutionData[currentResolution].array1?.length + 30 || 0, -20],
+          autorange: false,
+        },
+      };
+    }
+
+    // Return only the base layout for medium and full resolution
+    return baseLayout;
+  }, [dragMode, isThirdCollapsed, plotData, resolutionData, currentResolution]);
+
+
 
     // Update resolution message whenever resolution changes
     useEffect(() => {

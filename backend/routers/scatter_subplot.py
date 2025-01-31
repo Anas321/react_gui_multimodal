@@ -132,7 +132,10 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
 
     # Update x-axes matching explicitly
     scatter_subplot_fig.update_layout(
-        xaxis=dict(domain=[0, 0.26666666666666666], anchor="y"),
+        xaxis=dict(
+            domain=[0, 0.26666666666666666],
+            anchor="y",
+        ),
         xaxis2=dict(
             domain=[0.36666666666666666, 0.63333333333333333],
             anchor="y2",

@@ -31,9 +31,10 @@ export function calculateInclinedLineEndpoints({
     imageWidth,
     imageHeight
 }: calculateInclinedLineEndpointsParams) {
+
     // Convert angle to radians and calculate direction vector components
     // dx = cos(θ) gives x-component of unit vector
-    // dy = -sin(θ) gives y-component (negated because y-axis points down in screen coordinates)
+    // dy = -sin(θ) gives y-component (negated because y-axis points down in Plotly's coordinates)
     const radians = (linecut.angle * Math.PI) / 180;
     const dx = Math.cos(radians);
     const dy = -Math.sin(radians);
@@ -105,6 +106,10 @@ export function calculateInclinedLineEndpoints({
     const lastT = validTimes[validTimes.length - 1];
 
     // Calculate final endpoints using parametric equation
+    // The paramterics line equation is P(t) = P0 + t*v
+    // Where P0 is the center point (centerX, centerY)
+    // v is the direction vector (dx, dy)
+    // t is the parameter that gives points along the line
     return {
         x0: centerX + firstT * dx,  // First intersection point
         y0: centerY + firstT * dy,

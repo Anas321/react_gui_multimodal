@@ -33,6 +33,8 @@ export interface Linecut {
   export interface ScatterSubplotProps {
     setImageHeight: (height: number) => void;
     setImageWidth: (width: number) => void;
+    imageHeight: number;
+    imageWidth: number;
     setImageData1: (data: number[][]) => void;
     setImageData2: (data: number[][]) => void;
     horizontalLinecuts: Linecut[];

@@ -196,84 +196,6 @@ interface GenerateInclinedLinecutParams {
   imageHeight: number;
 }
 
-interface calculateInclinedLineEndpointsParams {
-  linecut: InclinedLinecut;
-  imageWidth: number;
-  imageHeight: number;
-}
-
-/**
- * Calculates the intersection points of a line with the image boundaries.
- */
-export function calculateInclinedLineEndpoints({
-    linecut,
-    imageWidth,
-    imageHeight
-}: calculateInclinedLineEndpointsParams) {
-    const radians = (linecut.angle * Math.PI) / 180;
-    const dx = Math.cos(radians);
-    const dy = -Math.sin(radians);
-
-    const centerX = linecut.xPosition;
-    const centerY = linecut.yPosition;
-
-    const isInBounds = (x: number, y: number) =>
-        x >= 0 && x <= imageWidth && y >= 0 && y <= imageHeight;
-
-    const tLeft = (0 - centerX) / dx;
-    const tRight = (imageWidth - centerX) / dx;
-    const tTop = (0 - centerY) / dy;
-    const tBottom = (imageHeight - centerY) / dy;
-
-    const validTimes: number[] = [];
-
-    // Check intersection with each boundary
-    if (isFinite(tLeft)) {
-        const yLeft = centerY + tLeft * dy;
-        if (isInBounds(0, yLeft)) validTimes.push(tLeft);
-    }
-    if (isFinite(tRight)) {
-        const yRight = centerY + tRight * dy;
-        if (isInBounds(imageWidth, yRight)) validTimes.push(tRight);
-    }
-    if (isFinite(tTop)) {
-        const xTop = centerX + tTop * dx;
-        if (isInBounds(xTop, 0)) validTimes.push(tTop);
-    }
-    if (isFinite(tBottom)) {
-        const xBottom = centerX + tBottom * dx;
-        if (isInBounds(xBottom, imageHeight)) validTimes.push(tBottom);
-    }
-
-    // Handle boundary cases
-    if (centerX === 0 || centerX === imageWidth ||
-        centerY === 0 || centerY === imageHeight) {
-        validTimes.push(0);
-    }
-
-    // If not enough intersections found, create a default line
-    const defaultLength = 100;
-    if (validTimes.length < 2) {
-        return {
-            x0: centerX - dx * defaultLength/2,
-            y0: centerY - dy * defaultLength/2,
-            x1: centerX + dx * defaultLength/2,
-            y1: centerY + dy * defaultLength/2
-        };
-    }
-
-    // Get the endpoints from intersection times
-    validTimes.sort((a, b) => a - b);
-    const firstT = validTimes[0];
-    const lastT = validTimes[validTimes.length - 1];
-
-    return {
-        x0: centerX + firstT * dx,
-        y0: centerY + firstT * dy,
-        x1: centerX + lastT * dx,
-        y1: centerY + lastT * dy
-    };
-}
 
 export function generateInclinedLinecutOverlay({
   linecut,
@@ -290,6 +212,7 @@ export function generateInclinedLinecutOverlay({
     imageWidth,
     imageHeight
   });
+
 
   if (!endpoints) return [];
   const { x0, y0, x1, y1 } = endpoints;

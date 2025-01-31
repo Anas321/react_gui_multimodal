@@ -311,6 +311,8 @@ function App() {
                   setImageWidth={setImageWidth}
                   setImageData1={setImageData1}
                   setImageData2={setImageData2}
+                  imageHeight={imageHeight}
+                  imageWidth={imageWidth}
                   horizontalLinecuts={horizontalLinecuts}
                   verticalLinecuts={verticalLinecuts}
                   inclinedLinecuts={inclinedLinecuts}
