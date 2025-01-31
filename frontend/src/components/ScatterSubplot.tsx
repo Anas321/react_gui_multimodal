@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Plot from "react-plotly.js";
 import { decode } from "@msgpack/msgpack";
-import { ResolutionDataType, ScatterSubplotProps } from "../types";
+import { ResolutionDataType, ScatterSubplotProps, InclinedLinecut } from "../types";
 import { downsampleArray } from "../utils/downsampleArray";
 import { handleRelayout } from '../utils/handleRelayout';
 import { extractBinary, reconstructFloat32Array } from '../utils/dataProcessingScatterSubplot';
@@ -277,77 +277,56 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   const mainPlotData = plotData?.data || [];
 
 
-  // const linecutOverlays = useMemo(() => {
-  //   if (!plotData) return [];
-
-  //   return [
-  //     // Horizontal linecut overlays
-  //     ...horizontalLinecuts
-  //       .filter(l => !l.hidden)
-  //       .flatMap(linecut => generateHorizontalLinecutOverlay({
-  //         linecut,
-  //         currentArray: resolutionData[currentResolution].array1,
-  //         factor: getCurrentFactor()
-  //       })),
-  //     // Vertical linecut overlays
-  //     ...verticalLinecuts
-  //       .filter(l => !l.hidden)
-  //       .flatMap(linecut => generateVerticalLinecutOverlay({
-  //         linecut,
-  //         currentArray: resolutionData[currentResolution].array1,
-  //         factor: getCurrentFactor()
-  //       })),
-  //     // Inclined linecut overlays
-  //     ...inclinedLinecuts
-  //     .filter(l => !l.hidden)
-  //     .flatMap(linecut => generateInclinedLinecutOverlay({
-  //         linecut,
-  //         currentArray: resolutionData[currentResolution].array1,
-  //         factor: getCurrentFactor(),
-  //         imageWidth: resolutionData[currentResolution].array1[0].length,
-  //         imageHeight: resolutionData[currentResolution].array1.length
-  //     }))
-  //   ];
-  // }, [
-  //   plotData,
-  //   horizontalLinecuts,
-  //   verticalLinecuts,
-  //   resolutionData,
-  //   currentResolution,
-  //   getCurrentFactor,
-  //   inclinedLinecuts
-  // ]);
-
   const linecutOverlays = useMemo(() => {
     if (!plotData) return [];
 
+    const factor = getCurrentFactor() || 1;
+    const currentArrayData = resolutionData[currentResolution].array1;
+    const imageWidth = currentArrayData[0]?.length || 0;
+    const imageHeight = currentArrayData.length;
+
     return [
-      // Horizontal linecut overlays
       ...(horizontalLinecuts || [])
         .filter(l => !l.hidden)
         .flatMap(linecut => generateHorizontalLinecutOverlay({
           linecut,
-          currentArray: resolutionData[currentResolution].array1,
+          currentArray: currentArrayData,
           factor: getCurrentFactor()
         })),
-      // Vertical linecut overlays
       ...(verticalLinecuts || [])
         .filter(l => !l.hidden)
         .flatMap(linecut => generateVerticalLinecutOverlay({
           linecut,
-          currentArray: resolutionData[currentResolution].array1,
+          currentArray: currentArrayData,
           factor: getCurrentFactor()
         })),
-      // Inclined linecut overlays
+        // Inclined linecuts
       ...(inclinedLinecuts || [])
-        .filter(l => !l.hidden)
-        .flatMap(linecut => generateInclinedLinecutOverlay({
-          linecut,
+      .filter(l => !l.hidden)
+      .flatMap(linecut => {
+        // Scale positions while maintaining the angle
+        const scaledLinecut: InclinedLinecut = {
+          ...linecut,
+          xPosition: linecut.xPosition / factor,
+          yPosition: linecut.yPosition / factor,
+          width: (linecut.width || 1) / factor,
+          // These properties don't need scaling
+          angle: linecut.angle,
+          id: linecut.id,
+          leftColor: linecut.leftColor,
+          rightColor: linecut.rightColor,
+          hidden: linecut.hidden,
+          type: 'inclined'
+        };
+
+        return generateInclinedLinecutOverlay({
+          linecut: scaledLinecut,
           currentArray: resolutionData[currentResolution].array1,
-          factor: getCurrentFactor(),
-          imageWidth: resolutionData[currentResolution].array1[0].length,
-          imageHeight: resolutionData[currentResolution].array1.length
-        }))
+          factor,
+          imageWidth,
+          imageHeight
+        });
+      })
     ];
   }, [
     plotData,
@@ -358,6 +337,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     currentResolution,
     getCurrentFactor
   ]);
+
 
 
   const layoutOptions = {

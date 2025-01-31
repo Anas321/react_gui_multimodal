@@ -71,7 +71,8 @@ function App() {
     inclinedLinecutData1,
     inclinedLinecutData2,
     addInclinedLinecut,
-    updateInclinedLinecutPosition,
+    updateInclinedLinecutXPosition,
+    updateInclinedLinecutYPosition,
     updateInclinedLinecutAngle,
     updateInclinedLinecutWidth,
     updateInclinedLinecutColor,
@@ -262,7 +263,8 @@ function App() {
                           imageWidth={imageWidth}
                           imageHeight={imageHeight}
                           linecuts={inclinedLinecuts}
-                          updateInclinedLinecutPosition={updateInclinedLinecutPosition}
+                          updateInclinedLinecutXPosition={updateInclinedLinecutXPosition}
+                          updateInclinedLinecutYPosition={updateInclinedLinecutYPosition}
                           updateInclinedLinecutAngle={updateInclinedLinecutAngle}
                           updateInclinedLinecutWidth={updateInclinedLinecutWidth}
                           updateInclinedLinecutColor={updateInclinedLinecutColor}
@@ -304,20 +306,21 @@ function App() {
                 </Accordion.Control>
                 <Accordion.Panel>
                 <div className="h-full">
-                  <ScatterSubplot
-                    setImageHeight={setImageHeight}
-                    setImageWidth={setImageWidth}
-                    setImageData1={setImageData1}
-                    setImageData2={setImageData2}
-                    horizontalLinecuts={horizontalLinecuts}
-                    verticalLinecuts={verticalLinecuts}
-                    leftImageColorPalette={leftImageColorPalette}
-                    rightImageColorPalette={rightImageColorPalette}
-                    setZoomedXPixelRange={setZoomedXPixelRange}
-                    setZoomedYPixelRange={setZoomedYPixelRange}
-                    isThirdCollapsed={isThirdCollapsed}
-                    setResolutionMessage={setResolutionMessage}
-                  />
+                <ScatterSubplot
+                  setImageHeight={setImageHeight}
+                  setImageWidth={setImageWidth}
+                  setImageData1={setImageData1}
+                  setImageData2={setImageData2}
+                  horizontalLinecuts={horizontalLinecuts}
+                  verticalLinecuts={verticalLinecuts}
+                  inclinedLinecuts={inclinedLinecuts}
+                  leftImageColorPalette={leftImageColorPalette}
+                  rightImageColorPalette={rightImageColorPalette}
+                  setZoomedXPixelRange={setZoomedXPixelRange}
+                  setZoomedYPixelRange={setZoomedYPixelRange}
+                  isThirdCollapsed={isThirdCollapsed}
+                  setResolutionMessage={setResolutionMessage}
+                />
 
                   {resolutionMessage && (
                     <div className="flex items-center text-xl text-gray-500 text-left mt-4 mb-1 whitespace-nowrap overflow-x-auto">
