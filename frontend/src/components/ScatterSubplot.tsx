@@ -10,13 +10,35 @@ import {
   generateVerticalLinecutOverlay,
   generateInclinedLinecutOverlay,
 } from "../utils/generateLincutsScatterSubplot";
+import { getArrayStats } from "../utils/getArrayMinAndMax";
+
+
+   // Calculate percentile values from data
+   const calculatePercentiles = (data: number[][], lowPercentile: number, highPercentile: number): [number, number] => {
+    const flatData = data.flat();
+    const sortedData = flatData.sort((a, b) => a - b);
+    const lowIndex = Math.ceil((lowPercentile / 100) * sortedData.length);
+    const highIndex = Math.floor((highPercentile / 100) * sortedData.length);
+    return [sortedData[lowIndex], sortedData[highIndex]];
+  };
+
+  // // Clip array to percentile bounds
+  // const clipArray = (arr: number[][], minVal: number, maxVal: number): number[][] => {
+  //   return arr.map(row =>
+  //     row.map(val => Math.min(Math.max(val, minVal), maxVal))
+  //   );
+  // };
+
+  // Clip array to the percentile bounds
+  const clipArray = (arr: number[][], minVal: number, maxVal: number) =>
+    arr.map(row => row.map(val =>
+        val < minVal ? minVal : (val > maxVal ? maxVal : val)
+    ));
 
 
 const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setImageHeight,
   setImageWidth,
-  imageHeight,
-  imageWidth,
   setImageData1,
   setImageData2,
   horizontalLinecuts,
@@ -26,43 +48,19 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setZoomedYPixelRange,
   isThirdCollapsed,
   setResolutionMessage,
+  isLogScale,
+  lowerPercentile,
+  upperPercentile,
+  computeInclinedLinecutData,
+  setInclinedLinecutData1,
+  setInclinedLinecutData2,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
   const [currentResolution, setCurrentResolution] = useState<'low' | 'medium' | 'full'>('low');
   const [dragMode, setDragMode] = useState('zoom');
-  const [clippingLimits, setClippingLimits] = useState({ lower: 1, upper: 99 });
-  const isFigureInitialized = useRef(false);
-
-
-  // Calculate the actual percentile values from the data
-  const calculatePercentiles = (data: number[][], lowPercentile: number, highPercentile: number): [number, number] => {
-    // Flatten the 2D array to 1D
-    const flatData: number[] = [];
-    for (let i = 0; i < data.length; i++) {
-        for (let j = 0; j < data[0].length; j++) {
-            flatData.push(data[i][j]);
-        }
-    }
-
-    // Sort all values
-    const sortedData = flatData.sort((a, b) => a - b);
-
-    // Calculate indices for percentiles
-    // For 1st percentile: we want the value below which 1% of the data falls
-    // For 99th percentile: we want the value below which 99% of the data falls
-    const lowIndex = Math.ceil((lowPercentile / 100) * sortedData.length);
-    const highIndex = Math.floor((highPercentile / 100) * sortedData.length);
-
-    return [sortedData[lowIndex], sortedData[highIndex]];
-  };
-
-  // Clip array to the percentile bounds
-  const clipArray = (arr: number[][], minVal: number, maxVal: number) =>
-    arr.map(row => row.map(val =>
-        val < minVal ? minVal : (val > maxVal ? maxVal : val)
-    ));
-
+  // const [clippingLimits, setClippingLimits] = useState({ lower: 1, upper: 99 });
+  const plotDataRef = useRef<any>(null);
 
 
   // Resolution-specific states
@@ -75,6 +73,215 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     medium: { array1: [], array2: [], diff: [], factor: null },
     full: { array1: [], array2: [], diff: [], factor: 1 }
   });
+
+
+
+  // =====================================================================================================================
+  // Transform data based on log scale and clipping settings
+  // =====================================================================================================================
+
+  // Update the ref whenever plotData changes
+  useEffect(() => {
+    plotDataRef.current = plotData;
+  }, [plotData]);
+
+  // Transform data based on log scale and clipping settings
+  const transformData = useCallback((
+    data: number[][],
+    isLog: boolean,
+    lowerPerc: number,
+    upperPerc: number
+  ): number[][] => {
+    if (!data.length) return [];
+
+    // Calculate percentile values
+    const [minValue, maxValue] = calculatePercentiles(data, lowerPerc, upperPerc);
+
+    // First clip the data
+    const clippedData = clipArray(data, minValue, maxValue);
+
+    // Then apply log transform if needed
+    if (isLog) {
+      // Find minimum positive value for log transform
+      const minPositive = clippedData.flat().reduce((min, val) =>
+        val > 0 ? Math.min(min, val) : min, Number.MAX_VALUE);
+
+      return clippedData.map(row =>
+        row.map(val => val <= 0 ? Math.log10(minPositive) : Math.log10(val))
+      );
+    }
+
+    return clippedData;
+  }, []); // Empty dependency array since this function doesn't depend on any props or state
+
+
+  // Memoize the transformed plot data (current resolution)
+  const transformedPlotData = useMemo(() => {
+    if (!resolutionData[currentResolution]) return null;
+
+    const currentData = resolutionData[currentResolution];
+
+    return {
+      array1: transformData(currentData.array1, isLogScale, lowerPercentile, upperPercentile),
+      array2: transformData(currentData.array2, isLogScale, lowerPercentile, upperPercentile),
+      diff: transformData(currentData.diff, isLogScale, lowerPercentile, upperPercentile)
+    };
+  }, [
+    resolutionData,
+    currentResolution,
+    isLogScale,
+    lowerPercentile,
+    upperPercentile,
+    transformData
+  ]);
+
+  // Memoize the transformed line plot data (full resolution)
+  const transformedLineData = useMemo(() => {
+    if (!resolutionData.full) return null;
+
+    return {
+      array1: transformData(resolutionData.full.array1, isLogScale, lowerPercentile, upperPercentile),
+      array2: transformData(resolutionData.full.array2, isLogScale, lowerPercentile, upperPercentile)
+    };
+  }, [
+    resolutionData.full,
+    isLogScale,
+    lowerPercentile,
+    upperPercentile,
+    transformData
+  ]);
+
+  // Memoize the color scale calculations
+  const colorScales = useMemo(() => {
+    if (!transformedPlotData) return null;
+
+    const [minValue1, maxValue1] = calculatePercentiles(transformedPlotData.array1, lowerPercentile, upperPercentile);
+    const [minValue2, maxValue2] = calculatePercentiles(transformedPlotData.array2, lowerPercentile, upperPercentile);
+    const [minValueDiff, maxValueDiff] = calculatePercentiles(transformedPlotData.diff, lowerPercentile, upperPercentile);
+
+    const globalMinValue = Math.min(minValue1, minValue2);
+    const globalMaxValue = Math.max(maxValue1, maxValue2);
+    const maxAbsDiff = Math.max(Math.abs(minValueDiff), Math.abs(maxValueDiff));
+
+    return {
+      array1: { min: minValue1, max: maxValue1 },
+      array2: { min: minValue2, max: maxValue2 },
+      diff: { min: minValueDiff, max: maxValueDiff },
+      global: { min: globalMinValue, max: globalMaxValue },
+      maxAbsDiff,
+    };
+  }, [transformedPlotData, lowerPercentile, upperPercentile]);
+
+
+    // Updated effect to handle plot visualization
+    useEffect(() => {
+      const currentPlotData = plotDataRef.current;
+
+      if (!currentPlotData?.data || !transformedPlotData || !colorScales) return;
+
+      // Create new data array
+      const newData = currentPlotData.data.map((plotItem: any, index: number) => {
+        const dataKey = index === 0 ? 'array1' : index === 1 ? 'array2' : 'diff';
+        const transformedData = transformedPlotData[dataKey];
+        return {
+          ...plotItem,
+          z: transformedData,
+          zmin: colorScales[dataKey].min,
+          zmax: colorScales[dataKey].max
+        };
+      });
+
+      // Create new layout
+      const newLayout = {
+        ...currentPlotData.layout,
+        coloraxis: currentPlotData.layout.coloraxis ? {
+          ...currentPlotData.layout.coloraxis,
+          cmin: colorScales.global.min,
+          cmax: colorScales.global.max
+        } : undefined,
+        coloraxis2: currentPlotData.layout.coloraxis2 ? {
+          ...currentPlotData.layout.coloraxis2,
+          cmin: -colorScales.maxAbsDiff,
+          cmax: colorScales.maxAbsDiff,
+          cmid: 0
+        } : undefined
+      };
+
+      const hasDataChanged = newData.some((item: any, index: number) => {
+        const oldItem = currentPlotData.data[index];
+        return (
+          !oldItem ||
+          item.z !== oldItem.z ||
+          item.zmin !== oldItem.zmin ||
+          item.zmax !== oldItem.zmax
+        );
+      });
+
+      const hasLayoutChanged =
+        currentPlotData.layout.coloraxis?.cmin !== newLayout.coloraxis?.cmin ||
+        currentPlotData.layout.coloraxis?.cmax !== newLayout.coloraxis?.cmax ||
+        currentPlotData.layout.coloraxis2?.cmin !== newLayout.coloraxis2?.cmin ||
+        currentPlotData.layout.coloraxis2?.cmax !== newLayout.coloraxis2?.cmax ||
+        currentPlotData.layout.coloraxis2?.cmid !== newLayout.coloraxis2?.cmid;
+
+      if (hasDataChanged || hasLayoutChanged) {
+        setPlotData(prev => ({
+          ...prev,
+          data: newData,
+          layout: newLayout
+        }));
+      }
+    }, [transformedPlotData, colorScales]);
+
+
+  // Separate effect for updating line plot data
+  useEffect(() => {
+    if (!transformedLineData) return;
+
+    setImageData1(transformedLineData.array1);
+    setImageData2(transformedLineData.array2);
+
+    // Recalculate all inclined linecuts with the transformed data
+    const updatedData1: { id: number; data: number[] }[] = [];
+    const updatedData2: { id: number; data: number[] }[] = [];
+
+    inclinedLinecuts.forEach(linecut => {
+      // Use transformed data for computations
+      const newData1 = computeInclinedLinecutData(
+        transformedLineData.array1, // Use transformed data
+        linecut.xPosition,
+        linecut.yPosition,
+        linecut.angle,
+        linecut.width
+      );
+
+      const newData2 = computeInclinedLinecutData(
+        transformedLineData.array2, // Use transformed data
+        linecut.xPosition,
+        linecut.yPosition,
+        linecut.angle,
+        linecut.width
+      );
+
+      updatedData1.push({ id: linecut.id, data: newData1 });
+      updatedData2.push({ id: linecut.id, data: newData2 });
+    });
+
+    // Update all linecut data at once
+    setInclinedLinecutData1(updatedData1);
+    setInclinedLinecutData2(updatedData2);
+  }, [
+    transformedLineData,
+    setImageData1,
+    setImageData2,
+    inclinedLinecuts,
+    computeInclinedLinecutData,
+    setInclinedLinecutData1,
+    setInclinedLinecutData2,
+  ]);
+
+
+  // =============================================================================================================== End of Data Transformation
 
 
   // Get current resolution factor
@@ -94,6 +301,11 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       setZoomedYPixelRange,
       setPlotData,
       setDragMode,
+      transformData,
+      isLogScale,
+      lowerPercentile,
+      upperPercentile,
+      calculatePercentiles,
     });
   }, [
     plotData,
@@ -104,49 +316,78 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     setZoomedYPixelRange,
     setPlotData,
     setDragMode,
+    transformData,
+    isLogScale,
+    lowerPercentile,
+    upperPercentile,
   ]);
 
-    // Handle container resizing
-    useEffect(() => {
-     if (!plotContainer.current) return;
+    // // Handle container resizing
+    // useEffect(() => {
+    //  if (!plotContainer.current) return;
 
-      const resizeObserver = new ResizeObserver((entries) => {
-        if (!plotData || !plotData.layout) return;
+    //   const resizeObserver = new ResizeObserver((entries) => {
+    //     if (!plotData || !plotData.layout) return;
 
-        const entry = entries[0];
-        if (entry) {
-          const { width, height } = entry.contentRect;
-          setPlotData(prev => ({
-            ...prev,
-            layout: {
-              ...prev.layout,
-              width,
-              height,
-            },
-          }));
+    //     const entry = entries[0];
+    //     if (entry) {
+    //       const { width, height } = entry.contentRect;
+    //       setPlotData(prev => ({
+    //         ...prev,
+    //         layout: {
+    //           ...prev.layout,
+    //           width,
+    //           height,
+    //         },
+    //       }));
+    //     }
+    //   });
+
+    //   resizeObserver.observe(plotContainer.current);
+
+    //   return () => {
+    //     resizeObserver.disconnect();
+    //   };
+    // }, [plotData]);
+
+
+  // Handle container resizing
+  useEffect(() => {
+    const currentContainer = plotContainer.current;
+    if (!currentContainer) return;
+
+    const handleResize = (entries: ResizeObserverEntry[]) => {
+      const entry = entries[0];
+      if (!entry) return;
+
+      const { width, height } = entry.contentRect;
+      setPlotData(prev => {
+        if (!prev || !prev.layout) return prev;
+
+        // Only update if dimensions have actually changed
+        if (prev.layout.width === width && prev.layout.height === height) {
+          return prev;
         }
+
+        return {
+          ...prev,
+          layout: {
+            ...prev.layout,
+            width,
+            height,
+          },
+        };
       });
+    };
 
-      resizeObserver.observe(plotContainer.current);
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(currentContainer);
 
-      return () => {
-        resizeObserver.disconnect();
-      };
-    }, [plotData]);
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []); // Empty dependency array since we're using refs and closure
 
-
-  // Helper function to get array stats for debugging
-  const getArrayStats = (arr: number[][]) => {
-    let min = arr[0][0];
-    let max = arr[0][0];
-    for (let i = 0; i < arr.length; i++) {
-      for (let j = 0; j < arr[0].length; j++) {
-        if (arr[i][j] < min) min = arr[i][j];
-        if (arr[i][j] > max) max = arr[i][j];
-      }
-    }
-    return { min, max };
-  };
 
 
   // Initial data fetch
@@ -161,47 +402,76 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         const fullArray2 = reconstructFloat32Array(extractBinary(decoded.array_2), decoded.metadata.shape_2);
         const fullDiff = reconstructFloat32Array(extractBinary(decoded.array_diff), decoded.metadata.shape_diff);
 
+        // Determine factors based on image width
+        const lowFactor = fullArray1[0].length > 2000 || fullArray1.length > 2000 ? 8 : 4;
+        const mediumFactor = fullArray1[0].length > 2000 || fullArray1.length > 2000 ? 4 : 2;
+
+        // // Transform the full resolution data
+        // const transformedArray1 = transformData(fullArray1, isLogScale, lowerPercentile, upperPercentile);
+        // const transformedArray2 = transformData(fullArray2, isLogScale, lowerPercentile, upperPercentile);
+        // const transformedDiff = transformData(fullDiff, isLogScale, lowerPercentile, upperPercentile);
+
+
+        // Calculate clip values (1st and 99th percentiles) for each array
+        // Calculate clip values but don't set them in the coloraxis
+        // In the data fetch useEffect, after calculating the percentiles:
+
+        // const [minValue1, maxValue1] = calculatePercentiles(fullArray1, lowerPercentile, upperPercentile);
+        // const [minValue2, maxValue2] = calculatePercentiles(fullArray2, lowerPercentile, upperPercentile);
+        // const [minValueDiff, maxValueDiff] = calculatePercentiles(fullDiff, lowerPercentile, upperPercentile);
+
+        const [minValue1, maxValue1] = getArrayStats(fullArray1);
+        const [minValue2, maxValue2] = getArrayStats(fullArray2);
+        const [minValueDiff, maxValueDiff] = getArrayStats(fullDiff);
+
+        // const fullArray1Clipped = clipArray(fullArray1, minValue1, maxValue1);
+        // const fullArray2Clipped = clipArray(fullArray2, minValue2, maxValue2);
+        // const fullDiffClipped = clipArray(fullDiff, minValueDiff, maxValueDiff);
+
+
         // Set dimensions and full resolution data for linecuts
         setImageHeight(fullArray1.length);
         setImageWidth(fullArray1[0].length);
         setImageData1(fullArray1);
         setImageData2(fullArray2);
+        // setImageData1(fullArray1Clipped);
+        // setImageData2(fullArray2Clipped);
+        // setImageData1(transformedArray1);
+        // setImageData2(transformedArray2);
 
-        // Determine factors based on image width
-        const lowFactor = fullArray1[0].length > 2000 || fullArray1.length > 2000 ? 8 : 4;
-        const mediumFactor = fullArray1[0].length > 2000 || fullArray1.length > 2000 ? 4 : 2;
+        const array1DownsampledLowRes = downsampleArray(fullArray1, lowFactor);
+        const array2DownsampledLowRes = downsampleArray(fullArray2, lowFactor);
+        const diffDownsampledLowRes = downsampleArray(fullDiff, lowFactor);
 
-        // Calculate clip values (1st and 99th percentiles) for each array
-        // Calculate clip values but don't set them in the coloraxis
-        // In the data fetch useEffect, after calculating the percentiles:
-        const upperPercentile = clippingLimits.upper;
-        const lowerPercentile = clippingLimits.lower;
+        const array1DownsampledMediumRes = downsampleArray(fullArray1, mediumFactor);
+        const array2DownsampledMediumRes = downsampleArray(fullArray2, mediumFactor);
+        const diffDownsampledMediumRes = downsampleArray(fullDiff, mediumFactor);
 
-        const [minValue1, maxValue1] = calculatePercentiles(fullArray1, lowerPercentile, upperPercentile);
-        const [minValue2, maxValue2] = calculatePercentiles(fullArray2, lowerPercentile, upperPercentile);
-        const [minValueDiff, maxValueDiff] = calculatePercentiles(fullDiff, lowerPercentile, upperPercentile);
 
-        // Get full data ranges for the colorbars
-        const stats1 = getArrayStats(fullArray1);
-        const stats2 = getArrayStats(fullArray2);
-        const statsDiff = getArrayStats(fullDiff);
+        // const array1DownsampledLowRes = downsampleArray(transformedArray1, lowFactor);
+        // const array2DownsampledLowRes = downsampleArray(transformedArray2, lowFactor);
+        // const diffDownsampledLowRes = downsampleArray(transformedDiff, lowFactor);
+
+        // const array1DownsampledMediumRes = downsampleArray(transformedArray1, mediumFactor);
+        // const array2DownsampledMediumRes = downsampleArray(transformedArray2, mediumFactor);
+        // const diffDownsampledMediumRes = downsampleArray(transformedDiff, mediumFactor);
+
 
         // Update resolution data with clipped arrays for display
         setResolutionData({
           low: {
-            array1: downsampleArray(clipArray(fullArray1, minValue1, maxValue1), lowFactor),
-            array2: downsampleArray(clipArray(fullArray2, minValue2, maxValue2), lowFactor),
-            diff: downsampleArray(clipArray(fullDiff, minValueDiff, maxValueDiff), lowFactor),
+            array1: array1DownsampledLowRes,
+            array2: array2DownsampledLowRes,
+            diff: diffDownsampledLowRes,
             factor: lowFactor
           },
           medium: {
-            array1: downsampleArray(clipArray(fullArray1, minValue1, maxValue1), mediumFactor),
-            array2: downsampleArray(clipArray(fullArray2, minValue2, maxValue2), mediumFactor),
-            diff: downsampleArray(clipArray(fullDiff, minValueDiff, maxValueDiff), mediumFactor),
+            array1: array1DownsampledMediumRes,
+            array2: array2DownsampledMediumRes,
+            diff: diffDownsampledMediumRes,
             factor: mediumFactor
           },
           full: {
-            // Store original data for calculations
             array1: fullArray1,
             array2: fullArray2,
             diff: fullDiff,
@@ -211,9 +481,14 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
         // Initialize plot with clipped low resolution data but full range colorbar
         const plotlyData = decoded.metadata.plotly;
-        plotlyData.data[0].z = downsampleArray(clipArray(fullArray1, minValue1, maxValue1), lowFactor);
-        plotlyData.data[1].z = downsampleArray(clipArray(fullArray2, minValue2, maxValue2), lowFactor);
-        plotlyData.data[2].z = downsampleArray(clipArray(fullDiff, minValueDiff, maxValueDiff), lowFactor);
+        plotlyData.data[0].z = array1DownsampledLowRes;
+        plotlyData.data[1].z = array2DownsampledLowRes;
+        plotlyData.data[2].z = diffDownsampledLowRes;
+
+        // // Calculate min and max values for color scales
+        // const [minValue1, maxValue1] = getArrayStats(array1DownsampledLowRes);
+        // const [minValue2, maxValue2] = getArrayStats(array2DownsampledLowRes);
+        // const [minValueDiff, maxValueDiff] = getArrayStats(diffDownsampledLowRes);
 
         // Set the data range for display
         plotlyData.data[0].zmin = minValue1;
@@ -223,14 +498,33 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         plotlyData.data[2].zmin = minValueDiff;
         plotlyData.data[2].zmax = maxValueDiff;
 
+        const globalMinValue = Math.min(minValue1, minValue2)
+        const globalMaxValue = Math.max(maxValue1, maxValue2)
+
         // Set the colorbar range to show full data range
         if (plotlyData.layout.coloraxis) {
-          plotlyData.layout.coloraxis.cmin = Math.min(minValue1, minValue2) //Math.min(stats1.min, stats2.min);
-          plotlyData.layout.coloraxis.cmax = Math.max(maxValue1, maxValue2) //Math.max(stats1.max, stats2.max);
+          plotlyData.layout.coloraxis.cmin = globalMinValue
+          plotlyData.layout.coloraxis.cmax = globalMaxValue
+          // plotlyData.layout.coloraxis.colorscale = ['viridis']
+          // plotlyData.layout.coloraxis.colorscale = [
+          //   [0, '#440154'],    // dark purple
+          //   [0.25, '#3B528B'], // blue
+          //   [0.5, '#21908C'],  // cyan/green
+          //   [0.99, '#5DC963'], // light green
+          //   [1, '#FDE725']     // yellow
+          // ];
+          // plotlyData.layout.coloraxis.colorscale = [
+          //   // [0, 'rgb(139,0,0)'],        // Dark red for values below 1st percentile
+          //   [0.01, 'rgb(68,1,84)'],     // Start of regular viridis colorscale at 1st percentile
+          //   [0.99, 'rgb(253,231,37)'],  // End of regular viridis colorscale at 99th percentile
+          //   // [1, 'rgb(0,0,139)']         // Dark blue for values above 99th percentile
+          // ];
         }
         if (plotlyData.layout.coloraxis2) {
-          plotlyData.layout.coloraxis2.cmin = minValueDiff //statsDiff.min;
-          plotlyData.layout.coloraxis2.cmax = maxValueDiff //statsDiff.max;
+          const maxAbsDiff = Math.max(Math.abs(minValueDiff), Math.abs(maxValueDiff));
+          plotlyData.layout.coloraxis2.cmin = -maxAbsDiff;
+          plotlyData.layout.coloraxis2.cmax = maxAbsDiff;
+          plotlyData.layout.coloraxis2.cmid = 0;
         }
 
         // // Create medium and low resolution versions
@@ -273,7 +567,16 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
       })
       .catch(error => console.error("Error fetching scatter subplot:", error));
-  }, [setImageHeight, setImageWidth, setImageData1, setImageData2, clippingLimits]);
+  }, [
+    setImageHeight,
+    setImageWidth,
+    setImageData1,
+    setImageData2,
+    // lowerPercentile,
+    // upperPercentile,
+    // transformData,
+    // isLogScale
+  ]);
 
 
   // Memoize plot components
@@ -422,14 +725,39 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       };
       const info = resInfo[currentResolution];
       setResolutionMessage(
-        `Downsampling Factor: ${info.factor}x\u00A0\u00A0|\u00A0\u00A0Images and colorbars are clipped to ${clippingLimits.lower}st-${clippingLimits.upper}th percentile`
+        `Downsampling Factor: ${info.factor}x\u00A0\u00A0|\u00A0\u00A0Images and colorbars are clipped to ${lowerPercentile}st-${upperPercentile}th percentile`
       );
-    }, [currentResolution, resolutionData, setResolutionMessage, clippingLimits]);
+    }, [currentResolution, resolutionData, setResolutionMessage, lowerPercentile, upperPercentile]);
+
+
+    // useEffect(() => {
+    //   if (!plotContainer.current) return;
+
+    //   const options = {
+    //     passive: true
+    //   };
+
+    //   plotContainer.current.addEventListener('wheel', () => {}, options);
+
+    //   return () => {
+    //     if (plotContainer.current) {
+    //       plotContainer.current.removeEventListener('wheel', () => {}, options);
+    //     }
+    //   };
+    // }, []);
 
 
   return (
     <div className="relative w-full h-full">
-      <div ref={plotContainer} className="w-full h-full">
+      <div
+        ref={plotContainer}
+        className="w-full h-full"
+        // // Add wheel event listener with passive option
+        // onWheel={(e) => {
+        //   // The wheel event will be handled by Plotly
+        //   // This just ensures the event is passive
+        // }}
+        >
         {plotData ? (
           <Plot
             data={[...mainPlotData, ...linecutOverlays]}

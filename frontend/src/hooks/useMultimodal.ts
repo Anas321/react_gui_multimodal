@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { debounce, set, throttle } from 'lodash';
 import { Linecut, InclinedLinecut } from '../types';
 import { leftImageColorPalette, rightImageColorPalette } from '../utils/constants';
+import { calculateInclinedLineEndpoints } from '../utils/calculateInclinedLinecutEndpoints';
 
 
 export default function useMultimodal() {
@@ -320,6 +321,8 @@ export default function useMultimodal() {
   const [inclinedLinecutData1, setInclinedLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
   const [inclinedLinecutData2, setInclinedLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
 
+
+
   // Compute intensity along an inclined line using interpolation
   const computeInclinedLinecutData = useCallback((
     imageData: number[][],
@@ -328,72 +331,75 @@ export default function useMultimodal() {
     angle: number,
     width: number
   ): number[] => {
-    // Convert angle to radians for trigonometric calculations
-    const radians = (angle * Math.PI) / 180;
-    const imageWidth = imageData[0].length;
-    const imageHeight = imageData.length;
+    // Get the endpoints
+    const endpoints = calculateInclinedLineEndpoints({
+      linecut: {
+        xPosition: xPos,
+        yPosition: yPos,
+        angle,
+        width,
+        id: 0,
+        leftColor: '',
+        rightColor: '',
+        hidden: false,
+        type: 'inclined'
+      },
+      imageWidth: imageData[0].length,
+      imageHeight: imageData.length
+    });
 
-    // Calculate direction vector components
-    const dx = Math.cos(radians);
-    const dy = Math.sin(radians);
+    if (!endpoints) return [];
+    const { x0, y0, x1, y1 } = endpoints;
 
-    // Calculate maximum line length based on image boundaries
-    const length = Math.min(
-      Math.abs((imageWidth - xPos) / dx),
-      Math.abs((imageHeight - yPos) / dy)
-    );
+    // Calculate the total distance and unit vector
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const length = Math.sqrt(dx * dx + dy * dy);
 
-    // Initialize arrays for sampling
+    // If we have zero length, return empty array
+    if (length === 0) return [];
+
+    // Unit vectors for direction and perpendicular
+    const dirX = dx / length;
+    const dirY = dy / length;
+
+    // Perpendicular unit vector (rotated 90 degrees)
+    const perpX = -dirY;
+    const perpY = dirX;
+
+    // Sample points along the line
     const numPoints = Math.ceil(length);
     const intensities = new Array(numPoints).fill(0);
     const halfWidth = width / 2;
 
-    // Sample points along the line
+    // For each point along the line
     for (let i = 0; i < numPoints; i++) {
       let sum = 0;
       let count = 0;
 
-      // Sample perpendicular to the line direction for width
+      // Base position along the line
+      const baseX = x0 + (i * dirX);
+      const baseY = y0 + (i * dirY);
+
+      // Sample perpendicular to the line for width averaging
       for (let w = -halfWidth; w <= halfWidth; w++) {
-        // Calculate sample point coordinates
-        const x = xPos + i * dx + w * Math.sin(radians);
-        const y = yPos + i * dy - w * Math.cos(radians);
+        const x = Math.round(baseX + (w * perpX));
+        const y = Math.round(baseY + (w * perpY));
 
-        // Check if point is within image bounds
-        if (x >= 0 && x < imageWidth - 1 && y >= 0 && y < imageHeight - 1) {
-          // Bilinear interpolation
-          const x0 = Math.floor(x);
-          const y0 = Math.floor(y);
-          const x1 = x0 + 1;
-          const y1 = y0 + 1;
-
-          const fx = x - x0;
-          const fy = y - y0;
-
-          // Get corner values
-          const c00 = imageData[y0][x0];
-          const c10 = imageData[y0][x1];
-          const c01 = imageData[y1][x0];
-          const c11 = imageData[y1][x1];
-
-          // Interpolate intensity
-          const intensity =
-            c00 * (1 - fx) * (1 - fy) +
-            c10 * fx * (1 - fy) +
-            c01 * (1 - fx) * fy +
-            c11 * fx * fy;
-
-          sum += intensity;
+        // Check if point is within bounds
+        if (x >= 0 && x < imageData[0].length && y >= 0 && y < imageData.length) {
+          sum += imageData[y][x];
           count++;
         }
       }
 
-      // Average intensity for this point
       intensities[i] = count > 0 ? sum / count : 0;
     }
 
     return intensities;
   }, []);
+
+
 
   // Add a new inclined linecut
   const addInclinedLinecut = useCallback(throttle(() => {
@@ -674,6 +680,21 @@ export default function useMultimodal() {
   // ===================================================== End of inclined linecuts
 
 
+  // ====================================================
+  // Data transformation
+  // ====================================================
+
+  const [isLogScale, setIsLogScale] = useState(false);
+  const [lowerPercentile, setLowerPercentile] = useState(0);
+  const [upperPercentile, setUpperPercentile] = useState(100);
+
+  // ==================================================== End of data transformation
+
+
+
+
+
+
 
   const [resolutionMessage, setResolutionMessage] = useState('');
 
@@ -736,6 +757,16 @@ export default function useMultimodal() {
     updateInclinedLinecutColor,
     deleteInclinedLinecut,
     toggleInclinedLinecutVisibility,
+    computeInclinedLinecutData,
+    setInclinedLinecutData1,
+    setInclinedLinecutData2,
+    // Data transformation states and functions
+    isLogScale,
+    setIsLogScale,
+    lowerPercentile,
+    setLowerPercentile,
+    upperPercentile,
+    setUpperPercentile,
   };
 
 }

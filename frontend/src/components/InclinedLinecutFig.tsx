@@ -1,523 +1,203 @@
-// import React, { useEffect, useRef, useState, useMemo } from 'react';
-// import Plot from 'react-plotly.js';
-// import { Linecut } from '../types';
-
-// interface InclinedLinecutFigProps {
-//     linecuts: Linecut[];
-//     imageData1: number[][];
-//     imageData2: number[][];
-//     inclinedLinecutData1: { id: number; data: number[] }[] | undefined;
-//     inclinedLinecutData2: { id: number; data: number[] }[] | undefined;
-//     zoomedXPixelRange: [number, number] | null;
-//     zoomedYPixelRange: [number, number] | null;
-// }
-
-// interface Dimensions {
-//     width: number | undefined;
-//     height: number | undefined;
-// }
-
-// const InclinedLinecutFig: React.FC<InclinedLinecutFigProps> = ({
-//     linecuts,
-//     imageData1,
-//     imageData2,
-//     inclinedLinecutData1,
-//     inclinedLinecutData2,
-//     zoomedXPixelRange,
-//     zoomedYPixelRange,
-// }) => {
-//     const containerRef = useRef<HTMLDivElement>(null);
-//     const [dimensions, setDimensions] = useState<Dimensions>({
-//         width: undefined,
-//         height: undefined,
-//     });
-
-//     // Update dimensions when container size changes
-//     useEffect(() => {
-//         const resizeObserver = new ResizeObserver((entries) => {
-//             if (entries[0]) {
-//                 const { width, height } = entries[0].contentRect;
-//                 setDimensions({
-//                     width: Math.floor(width),
-//                     height: Math.floor(height),
-//                 });
-//             }
-//         });
-
-//         if (containerRef.current) {
-//             resizeObserver.observe(containerRef.current);
-//         }
-
-//         return () => resizeObserver.disconnect();
-//     }, []);
-
-//     // Compute path distance with better precision
-//     const computePathDistance = (lineLength: number): number[] => {
-//         return Array.from({ length: Math.ceil(lineLength) }, (_, i) => i);
-//     };
-
-//     // Memoize plot data
-//     const plotData = useMemo(() => {
-//         // Compute line length considering both images
-//         const computeLineLength = (x: number, y: number, angle: number): number => {
-//             const radians = (angle * Math.PI) / 180;
-//             const dx = Math.cos(radians);
-//             const dy = Math.sin(radians);
-
-//             // Small number to prevent division by zero
-//             const epsilon = 1e-10;
-
-//             // Calculate maximum bounds considering both images
-//             const maxHeight = Math.max(imageData1.length, imageData2.length);
-//             const maxWidth = Math.max(imageData1[0].length, imageData2[0].length);
-
-//             let length;
-//             if (Math.abs(dx) < epsilon) {
-//                 // Nearly vertical line
-//                 length = Math.abs((maxHeight - y) / dy);
-//             } else if (Math.abs(dy) < epsilon) {
-//                 // Nearly horizontal line
-//                 length = Math.abs((maxWidth - x) / dx);
-//             } else {
-//                 // General case
-//                 const lengthX = dx > 0
-//                     ? (maxWidth - x) / dx
-//                     : -x / dx;
-//                 const lengthY = dy > 0
-//                     ? (maxHeight - y) / dy
-//                     : -y / dy;
-//                 length = Math.min(Math.abs(lengthX), Math.abs(lengthY));
-//             }
-
-//             return Math.max(0, length); // Ensure non-negative length
-//         };
-
-//         return linecuts
-//             .filter((linecut) => !linecut.hidden)
-//             .flatMap((linecut) => {
-//                 // Find corresponding data
-//                 const data1 = inclinedLinecutData1?.find(d => d.id === linecut.id)?.data ?? [];
-//                 const data2 = inclinedLinecutData2?.find(d => d.id === linecut.id)?.data ?? [];
-
-//                 const length = computeLineLength(
-//                     linecut.position,
-//                     linecut.positionY ?? 0,
-//                     linecut.angle ?? 0
-//                 );
-
-//                 const pathDistance = computePathDistance(length);
-
-//                 return [
-//                     {
-//                         x: pathDistance,
-//                         y: data1,
-//                         type: 'scatter' as const,
-//                         mode: 'lines' as const,
-//                         name: `Left Linecut ${linecut.id}`,
-//                         line: {
-//                             color: linecut.leftColor,
-//                             width: 2,
-//                         },
-//                         hovertemplate: 'Distance: %{x:.1f}<br>Intensity: %{y:.1f}<extra></extra>'
-//                     },
-//                     {
-//                         x: pathDistance,
-//                         y: data2,
-//                         type: 'scatter' as const,
-//                         mode: 'lines' as const,
-//                         name: `Right Linecut ${linecut.id}`,
-//                         line: {
-//                             color: linecut.rightColor,
-//                             width: 2,
-//                         },
-//                         hovertemplate: 'Distance: %{x:.1f}<br>Intensity: %{y:.1f}<extra></extra>'
-//                     },
-//                 ];
-//             });
-//     }, [linecuts, inclinedLinecutData1, inclinedLinecutData2, imageData1, imageData2]);
-
-//     // Memoize layout with zoom support
-//     const layout = useMemo(() => {
-//         const baseLayout = {
-//             width: dimensions.width,
-//             height: dimensions.height,
-//             xaxis: {
-//                 title: { text: 'Distance Along Line (pixels)', font: { size: 25 } },
-//                 tickfont: { size: 25 },
-//                 autorange: !zoomedXPixelRange,
-//                 range: zoomedXPixelRange ?? undefined,
-//             },
-//             yaxis: {
-//                 title: { text: 'Intensity', font: { size: 25 }, standoff: 50 },
-//                 tickfont: { size: 25 },
-//                 autorange: !zoomedYPixelRange,
-//                 range: zoomedYPixelRange ?? undefined,
-//             },
-//             margin: { l: 110, r: 20, t: 20, b: 80 },
-//             legend: {
-//                 font: { size: 25 },
-//                 xanchor: 'right' as const,
-//                 yanchor: 'top' as const,
-//                 x: 0.98,
-//                 y: 0.98
-//             },
-//             font: { size: 25 },
-//             showlegend: true,
-//             hovermode: 'closest' as const,
-//         };
-
-//         return baseLayout;
-//     }, [dimensions, zoomedXPixelRange, zoomedYPixelRange]);
-
-//     return (
-//         <div ref={containerRef} className="mt-4 p-4 bg-gray-100 rounded shadow min-h-[500px]">
-//             <Plot
-//                 data={plotData}
-//                 layout={layout}
-//                 config={{
-//                     scrollZoom: true,
-//                     responsive: true,
-//                     displayModeBar: true,
-//                     displaylogo: false,
-//                     modeBarButtons: [
-//                         [
-//                             'pan2d',
-//                             'zoom2d',
-//                             'zoomIn2d',
-//                             'zoomOut2d',
-//                             'autoScale2d',
-//                             'resetScale2d',
-//                             'toImage',
-//                         ],
-//                     ],
-//                     showTips: true,
-//                     toImageButtonOptions: {
-//                         format: 'svg',
-//                         filename: 'inclined_linecut_plot',
-//                         height: 1080,
-//                         width: 1920,
-//                         scale: 1
-//                     }
-//                 }}
-//                 useResizeHandler
-//                 style={{ width: '100%', height: '100%' }}
-//             />
-//         </div>
-//     );
-// };
-
-// export default InclinedLinecutFig;
-
-
-
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { FaEye, FaEyeSlash, FaTrash } from 'react-icons/fa';
-import { Accordion } from '@mantine/core';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import Plot from 'react-plotly.js';
 import { InclinedLinecut } from '../types';
-import InputSlider from './InputSlider';
-import ColorPickerPopup from './ColorPickerPopup';
+import { calculateInclinedLineEndpoints } from '../utils/calculateInclinedLinecutEndpoints';
 
-interface InclinedLinecutWidgetProps {
-  linecutType: string;
-  imageWidth: number;
-  imageHeight: number;
-  linecuts: InclinedLinecut[];
-  updateInclinedLinecutXPosition: (id: number, x: number) => void;
-  updateInclinedLinecutYPosition: (id: number, y: number) => void;
-  updateInclinedLinecutAngle: (id: number, angle: number) => void;
-  updateInclinedLinecutWidth: (id: number, width: number) => void;
-  updateInclinedLinecutColor: (id: number, side: 'left' | 'right', color: string) => void;
-  deleteInclinedLinecut: (id: number) => void;
-  toggleInclinedLinecutVisibility: (id: number) => void;
+interface InclinedLinecutFigProps {
+    linecuts: InclinedLinecut[];
+    imageWidth: number;
+    imageHeight: number;
+    inclinedLinecutData1: { id: number; data: number[] }[] | undefined;
+    inclinedLinecutData2: { id: number; data: number[] }[] | undefined;
+    zoomedXPixelRange: [number, number] | null;
+    zoomedYPixelRange: [number, number] | null;
 }
 
-const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
-  linecutType,
-  imageWidth,
-  imageHeight,
-  linecuts,
-  updateInclinedLinecutXPosition,
-  updateInclinedLinecutYPosition,
-  updateInclinedLinecutAngle,
-  updateInclinedLinecutWidth,
-  updateInclinedLinecutColor,
-  deleteInclinedLinecut,
-  toggleInclinedLinecutVisibility,
+interface Dimensions {
+    width: number | undefined;
+    height: number | undefined;
+}
+
+const InclinedLinecutFig: React.FC<InclinedLinecutFigProps> = ({
+    linecuts,
+    imageWidth,
+    imageHeight,
+    inclinedLinecutData1,
+    inclinedLinecutData2,
+    zoomedXPixelRange,
+    zoomedYPixelRange,
 }) => {
-  const colorPickerRef = useRef<HTMLDivElement>(null);
-  const [colorPicker, setColorPicker] = useState<{
-    id: number;
-    side: 'left' | 'right';
-    visible: boolean;
-    originalColor: string;
-    currentColor: string;
-    position: { top: number; left: number };
-  } | null>(null);
-
-  const handleCancelColor = useCallback(() => {
-    if (colorPicker) {
-      updateInclinedLinecutColor(
-        colorPicker.id,
-        colorPicker.side,
-        colorPicker.originalColor
-      );
-      setColorPicker(null);
-    }
-  }, [colorPicker, updateInclinedLinecutColor]);
-
-  const handleColorChange = (id: number, side: 'left' | 'right', color: string) => {
-    if (colorPicker) {
-      setColorPicker({
-        ...colorPicker,
-        currentColor: color,
-      });
-    }
-    updateInclinedLinecutColor(id, side, color);
-  };
-
-  const handleOpenColorPicker = (linecut: InclinedLinecut, side: 'left' | 'right', event: React.MouseEvent) => {
-    if (colorPicker?.id === linecut.id && colorPicker?.side === side && colorPicker?.visible) {
-      setColorPicker(null);
-      return;
-    }
-
-    const originalColor = side === 'left' ? linecut.leftColor : linecut.rightColor;
-    setColorPicker({
-      id: linecut.id,
-      side,
-      visible: true,
-      originalColor,
-      currentColor: originalColor,
-      position: { top: event.clientY + 10, left: event.clientX },
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [dimensions, setDimensions] = useState<Dimensions>({
+        width: undefined,
+        height: undefined,
     });
-  };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        colorPicker?.visible &&
-        colorPickerRef.current &&
-        !colorPickerRef.current.contains(event.target as Node)
-      ) {
-        handleCancelColor();
-      }
+    // Update dimensions when container size changes
+    useEffect(() => {
+        const resizeObserver = new ResizeObserver((entries) => {
+            if (entries[0]) {
+                const { width, height } = entries[0].contentRect;
+                setDimensions({
+                    width: Math.floor(width),
+                    height: Math.floor(height),
+                });
+            }
+        });
+
+        if (containerRef.current) {
+            resizeObserver.observe(containerRef.current);
+        }
+
+        return () => resizeObserver.disconnect();
+    }, []);
+
+    // Compute path distance with better precision
+    const computePathDistance = (lineLength: number): number[] => {
+        return Array.from({ length: Math.ceil(lineLength) }, (_, i) => i);
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+    // Memoize plot data
+    const plotData = useMemo(() => {
+        return linecuts
+            .filter((linecut) => !linecut.hidden)
+            .flatMap((linecut) => {
+                // Find corresponding data
+                const data1 = inclinedLinecutData1?.find(d => d.id === linecut.id)?.data;
+                const data2 = inclinedLinecutData2?.find(d => d.id === linecut.id)?.data;
+
+                // If no data is available, skip this linecut
+                if (!data1 || !data2) return [];
+
+                const endpoints = calculateInclinedLineEndpoints({
+                    linecut: linecut,
+                    imageWidth: imageWidth,
+                    imageHeight: imageHeight,
+                });
+
+                if (!endpoints) return [];
+                const { x0, y0, x1, y1 } = endpoints;
+
+                // Calculate the total distance and unit vector
+                const dx = x1 - x0;
+                const dy = y1 - y0;
+                const length = Math.sqrt(dx * dx + dy * dy);
+
+                // If we have zero length, return empty array
+                if (length === 0) return [];
+
+                const pathDistance = computePathDistance(length);
+
+                return [
+                    {
+                        x: pathDistance,
+                        y: data1,
+                        type: 'scatter' as const,
+                        mode: 'lines' as const,
+                        name: `Left Linecut ${linecut.id}`,
+                        line: {
+                            color: linecut.leftColor,
+                            width: 2,
+                        },
+                        hovertemplate: 'Distance: %{x:.1f}<br>Intensity: %{y:.1f}<extra></extra>'
+                    },
+                    {
+                        x: pathDistance,
+                        y: data2,
+                        type: 'scatter' as const,
+                        mode: 'lines' as const,
+                        name: `Right Linecut ${linecut.id}`,
+                        line: {
+                            color: linecut.rightColor,
+                            width: 2,
+                        },
+                        hovertemplate: 'Distance: %{x:.1f}<br>Intensity: %{y:.1f}<extra></extra>'
+                    },
+                ];
+            });
+    }, [linecuts, inclinedLinecutData1, inclinedLinecutData2, imageWidth, imageHeight]);
+
+    const isLinecutInRange = (
+        linecut: InclinedLinecut,
+        xRange: [number, number] | null,
+        yRange: [number, number] | null
+    ): boolean => {
+        // If either range is null, consider linecut not in range
+        if (!xRange || !yRange) return false;
+
+        const [yStart, yEnd] = yRange;
+        const position = linecut.yPosition;
+
+        // A linecut is in range if its y-position falls within the y-range
+        return position <= yStart && position >= yEnd;
     };
-  }, [colorPicker, handleCancelColor]);
 
-  return (
-    <div className="w-full mb-6">
-      <Accordion
-        multiple={false}
-        defaultValue={linecutType ? `${linecutType}-linecuts` : undefined}
-        chevronPosition="right"
-        classNames={{
-          chevron: "text-xl font-bold",
-          label: "text-2xl font-bold",
-          content: "p-0",
-        }}
-        className="w-full relative"
-      >
-        <Accordion.Item value={`${linecutType}-linecuts`}>
-          <Accordion.Control className="pl-0">
-            {linecutType} Linecuts
-          </Accordion.Control>
-          <Accordion.Panel>
-            <div className="max-h-[600px] overflow-y-auto overflow-x-hidden">
-              {linecuts.map((linecut) => (
-                <div
-                  key={linecut.id}
-                  className="mb-6 p-4 relative shadow-lg border rounded-lg"
-                  role="region"
-                  aria-labelledby={`linecut-${linecut.id}-title`}
-                >
-                  {/* Header Section */}
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-medium" id={`linecut-${linecut.id}-title`}>
-                      Linecut {linecut.id}
-                    </h3>
-                    <div className="flex items-center">
-                      {/* Left color bar with tooltip */}
-                      <div className="group relative">
-                        <div
-                          className="h-3 w-12 mr-4 cursor-pointer"
-                          style={{ backgroundColor: linecut.leftColor }}
-                          onClick={(e) => handleOpenColorPicker(linecut, 'left', e)}
-                        />
-                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
-                          Click to change color
-                        </span>
-                      </div>
-                      {/* Right color bar with tooltip */}
-                      <div className="group relative">
-                        <div
-                          className="h-3 w-12 mr-2 cursor-pointer"
-                          style={{ backgroundColor: linecut.rightColor }}
-                          onClick={(e) => handleOpenColorPicker(linecut, 'right', e)}
-                        />
-                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
-                          Click to change color
-                        </span>
-                      </div>
-                      {/* Visibility Toggle with Tooltip */}
-                      <div className="group relative">
-                        <button
-                          className="text-blue-500 hover:text-blue-700 ml-1 flex items-center pointer-events-auto"
-                          onClick={() => toggleInclinedLinecutVisibility(linecut.id)}
-                          aria-label={`Toggle Visibility of Linecut ${linecut.id}`}
-                        >
-                          {linecut.hidden ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
-                        </button>
-                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
-                          {linecut.hidden ? "Show" : "Hide"}
-                        </span>
-                      </div>
-                      {/* Delete button with tooltip */}
-                      <div className="group relative ml-4" style={{ transform: 'translateY(1px)' }}>
-                        <button
-                          className="w-5 h-5 flex items-center justify-center bg-gray-200 text-gray-600 hover:bg-red-500 hover:text-white rounded"
-                          onClick={() => deleteInclinedLinecut(linecut.id)}
-                          aria-label={`Delete Linecut ${linecut.id}`}
-                        >
-                          <FaTrash size={14} />
-                        </button>
-                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
-                          Delete
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+    // Update the layout useMemo to match HorizontalLinecutFig
+    const layout = useMemo(() => {
+        const defaultRange = {
+            xaxis: {
+                title: { text: "Distance Along Line (pixels)", font: { size: 25 } },
+                tickfont: { size: 25 },
+                autorange: true,
+            },
+        };
 
-                  {/* Controls Section */}
-                  <div className="space-y-4">
-                    {/* Width Control */}
-                    <div>
-                      <h4 className="text-md font-semibold mb-2">Width (pixels)</h4>
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <InputSlider
-                            min={1}
-                            max={100}
-                            marks={[1, 100]}
-                            value={linecut.width}
-                            onChange={(value) => updateInclinedLinecutWidth(linecut.id, value)}
-                            disabled={linecut.hidden}
-                          />
-                        </div>
-                        <input
-                          type="number"
-                          value={linecut.width}
-                          onChange={(e) => updateInclinedLinecutWidth(linecut.id, Number(e.target.value) || 1)}
-                          className="w-20 px-2 py-1 border rounded text-center"
-                          disabled={linecut.hidden}
-                          min={1}
-                          max={100}
-                        />
-                      </div>
-                    </div>
+        // Check for linecuts in range considering both x and y ranges
+        const hasLinecutInRange = linecuts
+            .filter(linecut => !linecut.hidden)
+            .some(linecut => isLinecutInRange(linecut, zoomedXPixelRange, zoomedYPixelRange));
 
-                    {/* X Position Control */}
-                    <div>
-                      <h4 className="text-md font-semibold mb-2">X Position (pixels)</h4>
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <InputSlider
-                            min={0}
-                            max={imageWidth - 1}
-                            marks={[0, imageWidth - 1]}
-                            value={linecut.xPosition}
-                            onChange={(value) => updateInclinedLinecutXPosition(linecut.id, value)}
-                            disabled={linecut.hidden}
-                          />
-                        </div>
-                        <input
-                          type="number"
-                          value={linecut.xPosition}
-                          onChange={(e) => updateInclinedLinecutXPosition(linecut.id, Number(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 border rounded text-center"
-                          disabled={linecut.hidden}
-                          min={0}
-                          max={imageWidth - 1}
-                        />
-                      </div>
-                    </div>
+        const xAxisConfig = (zoomedXPixelRange && hasLinecutInRange)
+            ? {
+                ...defaultRange.xaxis,
+                range: zoomedXPixelRange,
+                autorange: false,
+            }
+            : defaultRange.xaxis;
 
-                    {/* Y Position Control */}
-                    <div>
-                      <h4 className="text-md font-semibold mb-2">Y Position (pixels)</h4>
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <InputSlider
-                            min={0}
-                            max={imageHeight - 1}
-                            marks={[0, imageHeight - 1]}
-                            value={linecut.yPosition}
-                            onChange={(value) => updateInclinedLinecutYPosition(linecut.id, value)}
-                            disabled={linecut.hidden}
-                          />
-                        </div>
-                        <input
-                          type="number"
-                          value={linecut.yPosition}
-                          onChange={(e) => updateInclinedLinecutYPosition(linecut.id, Number(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 border rounded text-center"
-                          disabled={linecut.hidden}
-                          min={0}
-                          max={imageHeight - 1}
-                        />
-                      </div>
-                    </div>
+        return {
+            width: dimensions.width,
+            height: dimensions.height,
+            xaxis: xAxisConfig,
+            yaxis: {
+                title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
+                tickfont: { size: 25 },
+                autorange: true,
+            },
+            margin: { l: 110 },
+            legend: { font: { size: 25 } },
+            font: { size: 25 },
+            showlegend: true,
+        };
+    }, [dimensions, zoomedXPixelRange, zoomedYPixelRange, linecuts]);
 
-                    {/* Angle Control */}
-                    <div>
-                      <h4 className="text-md font-semibold mb-2">Angle (degrees)</h4>
-                      <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <InputSlider
-                            min={-180}
-                            max={180}
-                            marks={[-180, 0, 180]}
-                            value={linecut.angle}
-                            onChange={(value) => updateInclinedLinecutAngle(linecut.id, value)}
-                            disabled={linecut.hidden}
-                          />
-                        </div>
-                        <input
-                          type="number"
-                          value={linecut.angle}
-                          onChange={(e) => updateInclinedLinecutAngle(linecut.id, Number(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 border rounded text-center"
-                          disabled={linecut.hidden}
-                          min={-180}
-                          max={180}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Accordion.Panel>
-        </Accordion.Item>
-      </Accordion>
-
-      {/* Color Picker Popup */}
-      {colorPicker?.visible && (
-        <div ref={colorPickerRef}>
-          <ColorPickerPopup
-            colorPicker={colorPicker}
-            onColorChange={handleColorChange}
-            onAccept={() => setColorPicker(null)}
-            onCancel={handleCancelColor}
-          />
+    return (
+        <div ref={containerRef} className="mt-4 p-4 bg-gray-100 rounded shadow min-h-[500px]">
+            <Plot
+                data={plotData}
+                layout={layout}
+                config={{
+                    scrollZoom: true,
+                    responsive: true,
+                    displayModeBar: true,
+                    displaylogo: false,
+                    modeBarButtons: [
+                        ['pan2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
+                    ],
+                    showTips: true,
+                    toImageButtonOptions: {
+                        format: 'svg',
+                        filename: 'inclined_linecut_plot',
+                        height: 1080,
+                        width: 1920,
+                        scale: 1
+                    }
+                }}
+                useResizeHandler
+                style={{ width: '100%', height: '100%' }}
+            />
         </div>
-      )}
-    </div>
-  );
+    );
 };
 
-export default InclinedLinecutWidget;
+export default InclinedLinecutFig;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MantineProvider, Container, Accordion, Select, Menu } from '@mantine/core';
+import { MantineProvider, Container, Accordion, Select, Menu, Switch, RangeSlider } from '@mantine/core';
 import { FiArrowRight, FiArrowLeft } from 'react-icons/fi'; // Collapsing arrows
 import '@mantine/core/styles.css';
 import './index.css'; // Import the CSS file
@@ -16,6 +16,7 @@ import { Info } from 'lucide-react';
 import { Popover } from '@mantine/core';
 import InclinedLinecutWidget from './components/InclinedLinecutWidget';
 import InclinedLinecutFig from './components/InclinedLinecutFig';
+import DataTransformationWidget from './components/DataTransformationWidget';
 
 
 
@@ -78,6 +79,16 @@ function App() {
     updateInclinedLinecutColor,
     deleteInclinedLinecut,
     toggleInclinedLinecutVisibility,
+    computeInclinedLinecutData,
+    setInclinedLinecutData1,
+    setInclinedLinecutData2,
+    // Data transformation states and functions
+    isLogScale,
+    setIsLogScale,
+    lowerPercentile,
+    setLowerPercentile,
+    upperPercentile,
+    setUpperPercentile,
   } = useMultimodal();
 
 
@@ -279,6 +290,26 @@ function App() {
                   </div>
                 </Accordion.Panel>
               </Accordion.Item>
+
+
+              {/* Data transformation accordion */}
+              <Accordion.Item value="data-transformation-accordion">
+                <Accordion.Control classNames={{label: 'text-3xl font-bold'}}>
+                  Data Transformation
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <DataTransformationWidget
+                    isLogScale={isLogScale}
+                    setIsLogScale={setIsLogScale}
+                    lowerPercentile={lowerPercentile}
+                    setLowerPercentile={setLowerPercentile}
+                    upperPercentile={upperPercentile}
+                    setUpperPercentile={setUpperPercentile}
+                  />
+                </Accordion.Panel>
+              </Accordion.Item>
+
+
             </Accordion>
           </div>
 
@@ -311,8 +342,6 @@ function App() {
                   setImageWidth={setImageWidth}
                   setImageData1={setImageData1}
                   setImageData2={setImageData2}
-                  imageHeight={imageHeight}
-                  imageWidth={imageWidth}
                   horizontalLinecuts={horizontalLinecuts}
                   verticalLinecuts={verticalLinecuts}
                   inclinedLinecuts={inclinedLinecuts}
@@ -322,6 +351,12 @@ function App() {
                   setZoomedYPixelRange={setZoomedYPixelRange}
                   isThirdCollapsed={isThirdCollapsed}
                   setResolutionMessage={setResolutionMessage}
+                  isLogScale={isLogScale}
+                  lowerPercentile={lowerPercentile}
+                  upperPercentile={upperPercentile}
+                  computeInclinedLinecutData={computeInclinedLinecutData}
+                  setInclinedLinecutData1={setInclinedLinecutData1}
+                  setInclinedLinecutData2={setInclinedLinecutData2}
                 />
 
                   {resolutionMessage && (
@@ -425,8 +460,8 @@ function App() {
                       <Accordion.Panel>
                       <InclinedLinecutFig
                         linecuts={inclinedLinecuts}
-                        imageData1={imageData1}
-                        imageData2={imageData2}
+                        imageWidth={imageWidth}
+                        imageHeight={imageHeight}
                         inclinedLinecutData1={inclinedLinecutData1 || []}  // Provide default empty array
                         inclinedLinecutData2={inclinedLinecutData2 || []}  // Provide default empty array
                         zoomedXPixelRange={zoomedXPixelRange}

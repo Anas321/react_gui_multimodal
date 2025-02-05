@@ -100,6 +100,7 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
             colorscale="RdBu",
             cmin=diff_min,
             cmax=diff_max,
+            cmid=0,
             colorbar=dict(
                 len=1.0,  # Adjust the height of the colorbar
                 thickness=30,  # Adjust the thickness of the colorbar

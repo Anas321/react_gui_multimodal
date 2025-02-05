@@ -119,7 +119,10 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
             {linecuts.map((linecut) => (
               <div
                 key={linecut.id}
-                className="mb-5 pt-7 pb-5 pl-2 pr-3 relative shadow-lg border-2 h-[280px] w-full"
+                // className="mb-5 pt-7 pb-5 pl-2 pr-3 relative shadow-lg border-2 h-[280px] w-full"
+                className="mb-5 pt-7 pb-5 pl-2 pr-3 relative shadow-lg border rounded-lg"
+                role="region"
+                aria-labelledby={`linecut-${linecut.id}`}
               >
 
                   {/* Linecut Title with Color Pickers */}
