@@ -351,34 +351,21 @@ export default function useMultimodal() {
     if (!endpoints) return [];
     const { x0, y0, x1, y1 } = endpoints;
 
-    // // Calculate the total distance and unit vector
-    // const dx = x1 - x0;
-    // const dy = y1 - y0;
-    // const length = Math.sqrt(dx * dx + dy * dy);
-
-    // Calculate direction vectors using the same convention as calculateInclinedLineEndpoints
-    const angleRad = (angle * Math.PI) / 180;
-    const dirX = Math.cos(angleRad);
-    const dirY = -Math.sin(angleRad);  // Match the negative sign convention
-
-    // Perpendicular vector (rotated 90 degrees counter-clockwise)
-    const perpX = -dirY;  // This becomes sin(angleRad)
-    const perpY = -dirX;  // This becomes -cos(angleRad)
-
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const length = Math.sqrt(dx * dx + dy * dy);
+    // Calculate the total distance and unit vector
+    const distanceInX = x1 - x0;
+    const distanceInY = y1 - y0;
+    const length = Math.sqrt(distanceInX * distanceInX + distanceInY * distanceInY);
 
     // If we have zero length, return empty array
     if (length === 0) return [];
 
-    // // Unit vectors for direction and perpendicular
-    // const dirX = dx / length;
-    // const dirY = dy / length;
+    // Unit vectors for direction and perpendicular
+    const dirX = distanceInX / length;
+    const dirY = distanceInY / length;
 
-    // // Perpendicular unit vector (rotated 90 degrees)
-    // const perpX = -dirY;
-    // const perpY = dirX;
+    // Perpendicular unit vector (rotated 90 degrees)
+    const perpX = -dirY;
+    const perpY = dirX;
 
     // Sample points along the line
     const numPoints = Math.ceil(length);
