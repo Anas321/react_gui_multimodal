@@ -98,6 +98,26 @@ export const handleRelayout = (
         },
       },
     }));
+
+    // // Use the already transformed data from the resolutionData
+    // setPlotData(prev => ({
+    //   ...prev,
+    //   data: [
+    //     { ...prev.data[0], z: resolutionData.low.array1 },
+    //     { ...prev.data[1], z: resolutionData.low.array2 },
+    //     { ...prev.data[2], z: resolutionData.low.diff },
+    //   ],
+    //   layout: {
+    //     ...prev.layout,
+    //     xaxis: { ...prev.layout.xaxis, range: [0, width], autorange: false },
+    //     xaxis2: { ...prev.layout.xaxis2, range: [0, width], autorange: false },
+    //     xaxis3: { ...prev.layout.xaxis3, range: [0, width], autorange: false },
+    //     yaxis: { ...prev.layout.yaxis, range: [height + 30, -20], autorange: false },
+    //     yaxis2: { ...prev.layout.yaxis2, range: [height + 30, -20], autorange: false },
+    //     yaxis3: { ...prev.layout.yaxis3, range: [height + 30, -20], autorange: false },
+    //   },
+    // }));
+
     return;
   }
 

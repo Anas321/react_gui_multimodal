@@ -138,7 +138,7 @@ export default function useMultimodal() {
       leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
       rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
       hidden: false,
-      width: 1, // Default width
+      width: 0, // Default width
     };
 
     // Add the new linecut
@@ -217,7 +217,7 @@ export default function useMultimodal() {
         leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
         rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
         hidden: false,
-        width: 1,
+        width: 0,
         };
 
         setVerticalLinecuts((prev) => [...prev, newLinecut]);
@@ -351,7 +351,20 @@ export default function useMultimodal() {
     if (!endpoints) return [];
     const { x0, y0, x1, y1 } = endpoints;
 
-    // Calculate the total distance and unit vector
+    // // Calculate the total distance and unit vector
+    // const distanceInX = x1 - x0;
+    // const distanceInY = y1 - y0;
+    // const length = Math.sqrt(distanceInX * distanceInX + distanceInY * distanceInY);
+
+    // Calculate direction vectors using the same convention as calculateInclinedLineEndpoints
+    const angleRad = (angle * Math.PI) / 180;
+    const dirX = Math.cos(angleRad);
+    const dirY = -Math.sin(angleRad);  // Match the negative sign convention
+
+    // Perpendicular vector (rotated 90 degrees counter-clockwise)
+    const perpX = -dirY;  // This becomes sin(angleRad)
+    const perpY = -dirX;  // This becomes -cos(angleRad)
+
     const distanceInX = x1 - x0;
     const distanceInY = y1 - y0;
     const length = Math.sqrt(distanceInX * distanceInX + distanceInY * distanceInY);
@@ -359,13 +372,13 @@ export default function useMultimodal() {
     // If we have zero length, return empty array
     if (length === 0) return [];
 
-    // Unit vectors for direction and perpendicular
-    const dirX = distanceInX / length;
-    const dirY = distanceInY / length;
+    // // Unit vectors for direction and perpendicular
+    // const dirX = distanceInX / length;
+    // const dirY = distanceInY / length;
 
-    // Perpendicular unit vector (rotated 90 degrees)
-    const perpX = -dirY;
-    const perpY = dirX;
+    // // Perpendicular unit vector (rotated 90 degrees)
+    // const perpX = -dirY;
+    // const perpY = dirX;
 
     // Sample points along the line
     const numPoints = Math.ceil(length);
@@ -416,7 +429,7 @@ export default function useMultimodal() {
       leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
       rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
       hidden: false,
-      width: 1,
+      width: 0,
       angle: 45,  // Default 45-degree angle
       type: 'inclined'
     };

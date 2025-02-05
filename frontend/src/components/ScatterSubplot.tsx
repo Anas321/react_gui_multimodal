@@ -85,7 +85,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     plotDataRef.current = plotData;
   }, [plotData]);
 
-  // Transform data based on log scale and clipping settings
   const transformData = useCallback((
     data: number[][],
     isLog: boolean,
@@ -94,25 +93,23 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   ): number[][] => {
     if (!data.length) return [];
 
-    // Calculate percentile values
-    const [minValue, maxValue] = calculatePercentiles(data, lowerPerc, upperPerc);
-
-    // First clip the data
-    const clippedData = clipArray(data, minValue, maxValue);
-
-    // Then apply log transform if needed
+    // First apply log transform if needed
+    let transformedData = data;
     if (isLog) {
       // Find minimum positive value for log transform
-      const minPositive = clippedData.flat().reduce((min, val) =>
+      const minPositive = data.flat().reduce((min, val) =>
         val > 0 ? Math.min(min, val) : min, Number.MAX_VALUE);
 
-      return clippedData.map(row =>
+      transformedData = data.map(row =>
         row.map(val => val <= 0 ? Math.log10(minPositive) : Math.log10(val))
       );
     }
 
-    return clippedData;
+    // Then calculate percentiles and clip
+    const [minValue, maxValue] = calculatePercentiles(transformedData, lowerPerc, upperPerc);
+    return clipArray(transformedData, minValue, maxValue);
   }, []); // Empty dependency array since this function doesn't depend on any props or state
+
 
 
   // Memoize the transformed plot data (current resolution)
