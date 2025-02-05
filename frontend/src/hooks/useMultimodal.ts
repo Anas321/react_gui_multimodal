@@ -351,7 +351,20 @@ export default function useMultimodal() {
     if (!endpoints) return [];
     const { x0, y0, x1, y1 } = endpoints;
 
-    // Calculate the total distance and unit vector
+    // // Calculate the total distance and unit vector
+    // const dx = x1 - x0;
+    // const dy = y1 - y0;
+    // const length = Math.sqrt(dx * dx + dy * dy);
+
+    // Calculate direction vectors using the same convention as calculateInclinedLineEndpoints
+    const angleRad = (angle * Math.PI) / 180;
+    const dirX = Math.cos(angleRad);
+    const dirY = -Math.sin(angleRad);  // Match the negative sign convention
+
+    // Perpendicular vector (rotated 90 degrees counter-clockwise)
+    const perpX = -dirY;  // This becomes sin(angleRad)
+    const perpY = -dirX;  // This becomes -cos(angleRad)
+
     const dx = x1 - x0;
     const dy = y1 - y0;
     const length = Math.sqrt(dx * dx + dy * dy);
@@ -359,13 +372,13 @@ export default function useMultimodal() {
     // If we have zero length, return empty array
     if (length === 0) return [];
 
-    // Unit vectors for direction and perpendicular
-    const dirX = dx / length;
-    const dirY = dy / length;
+    // // Unit vectors for direction and perpendicular
+    // const dirX = dx / length;
+    // const dirY = dy / length;
 
-    // Perpendicular unit vector (rotated 90 degrees)
-    const perpX = -dirY;
-    const perpY = dirX;
+    // // Perpendicular unit vector (rotated 90 degrees)
+    // const perpX = -dirY;
+    // const perpY = dirX;
 
     // Sample points along the line
     const numPoints = Math.ceil(length);
@@ -385,6 +398,8 @@ export default function useMultimodal() {
       for (let w = -halfWidth; w <= halfWidth; w++) {
         const x = Math.round(baseX + (w * perpX));
         const y = Math.round(baseY + (w * perpY));
+
+        // console.log(x, y);
 
         // Check if point is within bounds
         if (x >= 0 && x < imageData[0].length && y >= 0 && y < imageData.length) {
@@ -685,8 +700,8 @@ export default function useMultimodal() {
   // ====================================================
 
   const [isLogScale, setIsLogScale] = useState(false);
-  const [lowerPercentile, setLowerPercentile] = useState(0);
-  const [upperPercentile, setUpperPercentile] = useState(100);
+  const [lowerPercentile, setLowerPercentile] = useState(1);
+  const [upperPercentile, setUpperPercentile] = useState(99);
 
   // ==================================================== End of data transformation
 

@@ -54,7 +54,7 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
     width: number
   ) => {
     const halfWidth = width / 2;
-    const startCol = Math.max(0, Math.floor(position - halfWidth));
+    const startCol = Math.max(0, Math.round(position - halfWidth));
     const endCol = Math.min(imageData[0].length - 1, Math.ceil(position + halfWidth));
 
     return Array.from(

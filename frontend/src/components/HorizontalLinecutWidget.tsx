@@ -189,24 +189,24 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <InputSlider
-                        min={1}
+                        min={0}
                         max={100}
-                        value={linecut.width || 1}
+                        value={linecut.width || 0}
                         step={0.1}
                         onChange={(value) => updateHorizontalLinecutWidth(linecut.id, value)}
-                        marks={[1, 100]}
+                        marks={[0, 100]}
                         styles="w-full"
                         disabled={linecut.hidden}
                       />
                     </div>
                     <input
                       type="number"
-                      value={linecut.width || 1}
-                      min={1}
+                      value={linecut.width || 0}
+                      min={0}
                       max={100}
                       step={0.1}
                       onChange={(e) =>
-                        updateHorizontalLinecutWidth(linecut.id, parseFloat(e.target.value) || 1)
+                        updateHorizontalLinecutWidth(linecut.id, parseFloat(e.target.value) || 0)
                       }
                       className="border rounded w-20 text-center"
                       disabled={linecut.hidden}

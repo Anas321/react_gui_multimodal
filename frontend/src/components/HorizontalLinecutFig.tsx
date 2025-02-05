@@ -54,8 +54,11 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
     width: number
   ) => {
     const halfWidth = width / 2;
-    const startRow = Math.max(0, Math.floor(position - halfWidth));
+    const startRow = Math.max(0, Math.round(position - halfWidth));
     const endRow = Math.min(imageData.length - 1, Math.ceil(position + halfWidth));
+
+    // console.log("startRow", startRow);
+    // console.log("endRow", endRow);
 
     return Array.from(
       { length: imageData[0].length },
@@ -82,12 +85,12 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
       const averagedDataLeft = computeAveragedIntensity(
         imageData1,
         linecut.position,
-        linecut.width ?? 1
+        linecut.width
       );
       const averagedDataRight = computeAveragedIntensity(
         imageData2,
         linecut.position,
-        linecut.width ?? 1
+        linecut.width
       );
 
       // Generate x-values at full resolution

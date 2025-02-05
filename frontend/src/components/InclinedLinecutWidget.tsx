@@ -184,9 +184,9 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
                       <div className="flex items-center gap-4">
                         <div className="flex-1">
                           <InputSlider
-                            min={1}
+                            min={0}
                             max={100}
-                            marks={[1, 100]}
+                            marks={[0, 100]}
                             value={linecut.width}
                             onChange={(value) => updateInclinedLinecutWidth(linecut.id, value)}
                             disabled={linecut.hidden}
@@ -195,10 +195,10 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
                         <input
                           type="number"
                           value={linecut.width}
-                          onChange={(e) => updateInclinedLinecutWidth(linecut.id, Number(e.target.value) || 1)}
+                          onChange={(e) => updateInclinedLinecutWidth(linecut.id, Number(e.target.value) || 0)}
                           className="w-20 px-2 py-1 border rounded text-center"
                           disabled={linecut.hidden}
-                          min={1}
+                          min={0}
                           max={100}
                         />
                       </div>
