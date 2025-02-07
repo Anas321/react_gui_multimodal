@@ -1,5 +1,5 @@
 import React from 'react';
-import { Switch, RangeSlider } from '@mantine/core';
+import { Switch, RangeSlider, Select } from '@mantine/core';
 
 interface DataTransformationWidgetProps {
   isLogScale: boolean;
@@ -8,6 +8,8 @@ interface DataTransformationWidgetProps {
   setLowerPercentile: (value: number) => void;
   upperPercentile: number;
   setUpperPercentile: (value: number) => void;
+  normalization: string;
+  setNormalization: (value: string) => void;
 }
 
 const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
@@ -17,6 +19,8 @@ const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
   setLowerPercentile,
   upperPercentile,
   setUpperPercentile,
+  normalization,
+  setNormalization,
 }) => {
   return (
     <div className="p-4">
@@ -100,6 +104,44 @@ const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
             max="100"
           />
         </div>
+
+        {/* Normalization Dropdown */}
+        <div className="mt-8 mb-8">
+            <span className="text-3xl mb-4 block">Normalization</span>
+            <Select
+                value={normalization}
+                onChange={(value) => setNormalization(value || 'none')}
+                data={[
+                    { value: 'none', label: 'None' },
+                    { value: 'minmax', label: 'Min-Max' },
+                    { value: 'mean', label: 'Mean' },
+                ]}
+                className="text-2xl"
+                size="xl"
+                styles={{
+                    // Style for the main input/button that shows the selected value
+                    input: {
+                        fontSize: '1.75rem',  // Text size of the selected value (rem: Root Element)
+                        height: '3rem'        // Height of the input box
+                    },
+                    // Style for the dropdown container that appears when clicked
+                    dropdown: {
+                        fontSize: '1.75rem'   // Text size for the entire dropdown menu
+                    },
+                    // Style for individual options in the dropdown list
+                    option: {
+                        fontSize: '1.75rem'   // Text size for each selectable option
+                    },
+                    // Style for any labels associated with the select component
+                    label: {
+                        fontSize: '1.75rem'   // Text size for labels (if used)
+                    }
+                }}
+            />
+        </div>
+
+
+
       </div>
     </div>
   );

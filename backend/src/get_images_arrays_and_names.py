@@ -74,7 +74,6 @@ def get_images_arrays_and_names(
             processed_image = get_processed_image(
                 image_array,
                 mask_detector,
-                normalize=False,
             )
 
             image_arrays.append(processed_image)
@@ -101,7 +100,6 @@ def get_images_arrays_and_names(
             processed_image = get_processed_image(
                 image_array,
                 mask_detector,
-                normalize=False,
             )
 
             image_arrays.append(processed_image)

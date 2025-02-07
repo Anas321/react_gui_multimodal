@@ -89,6 +89,8 @@ function App() {
     setLowerPercentile,
     upperPercentile,
     setUpperPercentile,
+    normalization,
+    setNormalization,
   } = useMultimodal();
 
 
@@ -140,11 +142,16 @@ function App() {
       {/* <div className="flex flex-row h-[150vh] w-[100vw] p-0"> */}
         {/* First Column */}
         {!isSecondCollapsed && (
-          <div className={`border border-gray-300 shadow-lg h-full bg-gray-100 relative transition-all duration-300 flex-shrink-0
+          <div className={`border border-gray-300 shadow-lg h-full bg-gray-100 relative transition-all duration-300 flex-shrink-0 flex flex-col
             ${isSecondCollapsed ? 'w-0' : 'w-[15%]'}`}
           >
-            <h1 className="text-3xl font-bold mb-4 mt-4 text-center">Scatter Controls</h1>
-            <hr className="w-full border border-gray-300" />
+            {/* Fixed Header Section */}
+            <div className="flex-shrink-0">
+              <h1 className="text-3xl font-bold mb-4 mt-4 text-center">Scatter Controls</h1>
+              <hr className="w-full border border-gray-300" />
+            </div>
+          {/* Scrollable Content Section */}
+          <div className="flex-1 overflow-y-auto">
             {/* Dropdown for Experiment Type */}
             <Select
               label="Select Experiment Type"
@@ -305,12 +312,15 @@ function App() {
                     setLowerPercentile={setLowerPercentile}
                     upperPercentile={upperPercentile}
                     setUpperPercentile={setUpperPercentile}
+                    normalization={normalization}
+                    setNormalization={setNormalization}
                   />
                 </Accordion.Panel>
               </Accordion.Item>
 
 
             </Accordion>
+            </div>
           </div>
 
       )}
@@ -327,7 +337,7 @@ function App() {
           {/* {!isSecondCollapsed && ( */}
             <Accordion
               multiple
-              defaultValue={['scatter-images-accordion', 'intensity-spectrum-accordion', 'linecuts-accordion']} // Expanded by default
+              defaultValue={['scatter-images-accordion', 'intensity-spectrum-accordion', 'linecuts-accordion-second-col']} // Expanded by default
               chevronPosition="right"
               classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[2rem] font-bold'}}
             >
@@ -357,6 +367,7 @@ function App() {
                   computeInclinedLinecutData={computeInclinedLinecutData}
                   setInclinedLinecutData1={setInclinedLinecutData1}
                   setInclinedLinecutData2={setInclinedLinecutData2}
+                  normalization={normalization}
                 />
 
                   {resolutionMessage && (
@@ -404,9 +415,10 @@ function App() {
                 <div>Placeholder for Intensity Spectrum</div>
                 </Accordion.Panel>
               </Accordion.Item>
-              <Accordion.Item value="linecuts-accordion">
+              <Accordion.Item value="linecuts-accordion-second-col">
                 <Accordion.Control>Linecuts</Accordion.Control>
                 <Accordion.Panel>
+                <div className="max-h-[60vh] overflow-y-auto">
                   <Accordion
                     multiple
                     defaultValue={
@@ -480,6 +492,7 @@ function App() {
                     )}
 
                   </Accordion>
+                </div>
                 </Accordion.Panel>
               </Accordion.Item>
             </Accordion>

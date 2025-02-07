@@ -61,21 +61,12 @@ export const handleRelayout = (
       diff: transformData(resolutionData.low.diff, isLogScale, lowerPercentile, upperPercentile)
     };
 
-    // Calculate new color scales based on transformed data
-    const [minValue1, maxValue1] = calculatePercentiles(transformedData.array1, lowerPercentile, upperPercentile);
-    const [minValue2, maxValue2] = calculatePercentiles(transformedData.array2, lowerPercentile, upperPercentile);
-    const [minValueDiff, maxValueDiff] = calculatePercentiles(transformedData.diff, lowerPercentile, upperPercentile);
-
-    const globalMinValue = Math.min(minValue1, minValue2);
-    const globalMaxValue = Math.max(maxValue1, maxValue2);
-    const maxAbsDiff = Math.max(Math.abs(minValueDiff), Math.abs(maxValueDiff));
-
     setPlotData(prev => ({
       ...prev,
       data: [
-        { ...prev.data[0], z: transformedData.array1, zmin: minValue1, zmax: maxValue1 },
-        { ...prev.data[1], z: transformedData.array2, zmin: minValue2, zmax: maxValue2 },
-        { ...prev.data[2], z: transformedData.diff, zmin: minValueDiff, zmax: maxValueDiff },
+        { ...prev.data[0], z: transformedData.array1 },
+        { ...prev.data[1], z: transformedData.array2 },
+        { ...prev.data[2], z: transformedData.diff },
       ],
       layout: {
         ...prev.layout,
@@ -85,19 +76,46 @@ export const handleRelayout = (
         yaxis: { ...prev.layout.yaxis, range: [height + 30, -20], autorange: false },
         yaxis2: { ...prev.layout.yaxis2, range: [height + 30, -20], autorange: false },
         yaxis3: { ...prev.layout.yaxis3, range: [height + 30, -20], autorange: false },
-        coloraxis: {
-          ...prev.layout.coloraxis,
-          cmin: globalMinValue,
-          cmax: globalMaxValue
-        },
-        coloraxis2: {
-          ...prev.layout.coloraxis2,
-          cmin: -maxAbsDiff,
-          cmax: maxAbsDiff,
-          cmid: 0
-        },
       },
     }));
+
+    // // Calculate new color scales based on transformed data
+    // const [minValue1, maxValue1] = calculatePercentiles(transformedData.array1, lowerPercentile, upperPercentile);
+    // const [minValue2, maxValue2] = calculatePercentiles(transformedData.array2, lowerPercentile, upperPercentile);
+    // const [minValueDiff, maxValueDiff] = calculatePercentiles(transformedData.diff, lowerPercentile, upperPercentile);
+
+    // const globalMinValue = Math.min(minValue1, minValue2);
+    // const globalMaxValue = Math.max(maxValue1, maxValue2);
+    // const maxAbsDiff = Math.max(Math.abs(minValueDiff), Math.abs(maxValueDiff));
+
+    // setPlotData(prev => ({
+    //   ...prev,
+    //   data: [
+    //     { ...prev.data[0], z: transformedData.array1, zmin: minValue1, zmax: maxValue1 },
+    //     { ...prev.data[1], z: transformedData.array2, zmin: minValue2, zmax: maxValue2 },
+    //     { ...prev.data[2], z: transformedData.diff, zmin: minValueDiff, zmax: maxValueDiff },
+    //   ],
+    //   layout: {
+    //     ...prev.layout,
+    //     xaxis: { ...prev.layout.xaxis, range: [0, width], autorange: false },
+    //     xaxis2: { ...prev.layout.xaxis2, range: [0, width], autorange: false },
+    //     xaxis3: { ...prev.layout.xaxis3, range: [0, width], autorange: false },
+    //     yaxis: { ...prev.layout.yaxis, range: [height + 30, -20], autorange: false },
+    //     yaxis2: { ...prev.layout.yaxis2, range: [height + 30, -20], autorange: false },
+    //     yaxis3: { ...prev.layout.yaxis3, range: [height + 30, -20], autorange: false },
+    //     coloraxis: {
+    //       ...prev.layout.coloraxis,
+    //       cmin: globalMinValue,
+    //       cmax: globalMaxValue
+    //     },
+    //     coloraxis2: {
+    //       ...prev.layout.coloraxis2,
+    //       cmin: -maxAbsDiff,
+    //       cmax: maxAbsDiff,
+    //       cmid: 0
+    //     },
+    //   },
+    // }));
 
     // // Use the already transformed data from the resolutionData
     // setPlotData(prev => ({

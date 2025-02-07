@@ -702,6 +702,8 @@ export default function useMultimodal() {
   const [isLogScale, setIsLogScale] = useState(false);
   const [lowerPercentile, setLowerPercentile] = useState(1);
   const [upperPercentile, setUpperPercentile] = useState(99);
+  const [normalization, setNormalization] = useState<string>('none');
+
 
   // ==================================================== End of data transformation
 
@@ -782,6 +784,8 @@ export default function useMultimodal() {
     setLowerPercentile,
     upperPercentile,
     setUpperPercentile,
+    normalization,
+    setNormalization,
   };
 
 }

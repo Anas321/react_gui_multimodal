@@ -186,7 +186,7 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
     # Serialize arrays to bytes
     array_1_bytes = scatter_image_array_1.tobytes()
     array_2_bytes = scatter_image_array_2.tobytes()
-    diff_bytes = difference_array.tobytes()
+    # diff_bytes = difference_array.tobytes()
 
     # Prepare metadata for reconstruction
     metadata = {
@@ -194,8 +194,8 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
         "dtype_1": str(scatter_image_array_1.dtype),
         "shape_2": scatter_image_array_2.shape,
         "dtype_2": str(scatter_image_array_2.dtype),
-        "shape_diff": difference_array.shape,
-        "dtype_diff": str(difference_array.dtype),
+        # "shape_diff": difference_array.shape,
+        # "dtype_diff": str(difference_array.dtype),
         "plotly": scatter_subplot_fig.to_plotly_json(),  # Serialize Plotly structure
     }
 
@@ -205,7 +205,7 @@ def create_scatter_subplot(scans=Depends(get_initial_scans)):
             "metadata": metadata,
             "array_1": msgpack.ExtType(1, array_1_bytes),
             "array_2": msgpack.ExtType(2, array_2_bytes),
-            "array_diff": msgpack.ExtType(3, diff_bytes),
+            # "array_diff": msgpack.ExtType(3, diff_bytes),
             # "array_1_down": msgpack.ExtType(4, array_1_down_bytes),
             # "array_2_down": msgpack.ExtType(5, array_2_down_bytes),
             # "array_diff_down": msgpack.ExtType(6, abs_diff_down_bytes),
