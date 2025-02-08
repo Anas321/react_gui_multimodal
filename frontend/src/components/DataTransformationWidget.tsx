@@ -10,7 +10,43 @@ interface DataTransformationWidgetProps {
   setUpperPercentile: (value: number) => void;
   normalization: string;
   setNormalization: (value: string) => void;
+  imageColormap: string;
+  setImageColormap: (value: string) => void;
+  differenceColormap: string;
+  setDifferenceColormap: (value: string) => void;
 }
+
+/**
+    ['aggrnyl', 'agsunset', 'algae', 'amp', 'armyrose', 'balance',
+             'blackbody', 'bluered', 'blues', 'blugrn', 'bluyl', 'brbg',
+             'brwnyl', 'bugn', 'bupu', 'burg', 'burgyl', 'cividis', 'curl',
+             'darkmint', 'deep', 'delta', 'dense', 'earth', 'edge', 'electric',
+             'emrld', 'fall', 'geyser', 'gnbu', 'gray', 'greens', 'greys',
+             'haline', 'hot', 'hsv', 'ice', 'icefire', 'inferno', 'jet',
+             'magenta', 'magma', 'matter', 'mint', 'mrybm', 'mygbm', 'oranges',
+             'orrd', 'oryel', 'oxy', 'peach', 'phase', 'picnic', 'pinkyl',
+             'piyg', 'plasma', 'plotly3', 'portland', 'prgn', 'pubu', 'pubugn',
+             'puor', 'purd', 'purp', 'purples', 'purpor', 'rainbow', 'rdbu',
+             'rdgy', 'rdpu', 'rdylbu', 'rdylgn', 'redor', 'reds', 'solar',
+             'spectral', 'speed', 'sunset', 'sunsetdark', 'teal', 'tealgrn',
+             'tealrose', 'tempo', 'temps', 'thermal', 'tropic', 'turbid',
+             'turbo', 'twilight', 'viridis', 'ylgn', 'ylgnbu', 'ylorbr',
+             'ylorrd'].
+ */
+
+// Colormaps for main images
+const SEQUENTIAL_COLORMAP_OPTIONS = [
+    // Continuous Sequential
+    { value: 'Viridis', label: 'Viridis' },
+    { value: 'Jet', label: 'Jet' },
+    { value: 'Greys', label: 'Greys' },
+    { value: 'Plasma', label: 'Plasma' },
+    { value: 'Hot', label: 'Hot' },
+    { value: 'YlOrRd', label: 'Yellow-Orange-Red' },
+    { value: 'YlGnBu', label: 'Yellow-Green-Blue' },
+    { value: 'RdBu', label: 'Red-Blue' },
+];
+
 
 const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
   isLogScale,
@@ -21,6 +57,10 @@ const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
   setUpperPercentile,
   normalization,
   setNormalization,
+  imageColormap,
+  setImageColormap,
+  differenceColormap,
+  setDifferenceColormap,
 }) => {
   return (
     <div className="p-4">
@@ -126,7 +166,7 @@ const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
                     },
                     // Style for the dropdown container that appears when clicked
                     dropdown: {
-                        fontSize: '1.75rem'   // Text size for the entire dropdown menu
+                        fontSize: '1.75rem',   // Text size for the entire dropdown menu
                     },
                     // Style for individual options in the dropdown list
                     option: {
@@ -139,6 +179,63 @@ const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
                 }}
             />
         </div>
+
+
+        {/* Colormap Selection Dropdowns */}
+        <div className="mt-8 mb-8">
+          <span className="text-3xl mb-4 block">Image Colormap</span>
+          <Select
+            value={imageColormap}
+            onChange={(value) => setImageColormap(value || 'Viridis')}
+            data={SEQUENTIAL_COLORMAP_OPTIONS}
+            className="text-2xl"
+            size="xl"
+            maxDropdownHeight={650}
+            styles={{
+              input: {
+                fontSize: '1.75rem',
+                height: '3rem'
+              },
+              dropdown: {
+                fontSize: '1.75rem',
+              },
+              option: {
+                fontSize: '1.75rem'
+              },
+              label: {
+                fontSize: '1.75rem'
+              }
+            }}
+          />
+        </div>
+
+        <div className="mt-8 mb-8">
+          <span className="text-3xl mb-4 block">Difference Colormap</span>
+          <Select
+            value={differenceColormap}
+            onChange={(value) => setDifferenceColormap(value || 'RdBu')}
+            data={SEQUENTIAL_COLORMAP_OPTIONS}
+            className="text-2xl"
+            size="xl"
+            maxDropdownHeight={650}
+            styles={{
+              input: {
+                fontSize: '1.75rem',
+                height: '3rem'
+              },
+              dropdown: {
+                fontSize: '1.75rem'
+              },
+              option: {
+                fontSize: '1.75rem'
+              },
+              label: {
+                fontSize: '1.75rem'
+              }
+            }}
+          />
+        </div>
+
 
 
 

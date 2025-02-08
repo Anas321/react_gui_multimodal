@@ -703,6 +703,8 @@ export default function useMultimodal() {
   const [lowerPercentile, setLowerPercentile] = useState(1);
   const [upperPercentile, setUpperPercentile] = useState(99);
   const [normalization, setNormalization] = useState<string>('none');
+  const [imageColormap, setImageColormap] = useState('Viridis');
+  const [differenceColormap, setDifferenceColormap] = useState('RdBu');
 
 
   // ==================================================== End of data transformation
@@ -786,6 +788,10 @@ export default function useMultimodal() {
     setUpperPercentile,
     normalization,
     setNormalization,
+    imageColormap,
+    setImageColormap,
+    differenceColormap,
+    setDifferenceColormap,
   };
 
 }

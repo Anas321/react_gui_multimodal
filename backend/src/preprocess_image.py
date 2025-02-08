@@ -17,7 +17,7 @@ def get_processed_image(image, mask_detector):
     mask_nan = np.isnan(processed_image)
     mask = (
         mask_nan | mask_neg | (inverted_mask == 0)
-    )  # Now looking for zeros in inverted mask
+    )  # Now looking for nans, negatives, and zeros in inverted mask
 
     # Apply mask by setting masked values to NaN
     processed_image[mask] = np.nan  # 0

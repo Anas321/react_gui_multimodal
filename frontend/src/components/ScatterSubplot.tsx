@@ -41,25 +41,27 @@ export interface ScatterSubplotProps {
   setInclinedLinecutData1: (data: { id: number; data: number[] }[]) => void;
   setInclinedLinecutData2: (data: { id: number; data: number[] }[]) => void;
   normalization: string;
+  imageColormap: string;
+  differenceColormap: string;
 }
 
 
-   // Calculate percentile values from data
-   const calculatePercentiles = (data: number[][], lowPercentile: number, highPercentile: number): [number, number] => {
-    // Filter out NaN values before calculating percentiles
-    const flatData = data.flat().filter(val => !Number.isNaN(val));
-    const sortedData = flatData.sort((a, b) => a - b);
-    const lowIndex = Math.ceil((lowPercentile / 100) * sortedData.length);
-    const highIndex = Math.floor((highPercentile / 100) * sortedData.length);
-    return [sortedData[lowIndex], sortedData[highIndex]];
-  };
+  //  // Calculate percentile values from data
+  //  const calculatePercentiles = (data: number[][], lowPercentile: number, highPercentile: number): [number, number] => {
+  //   // Filter out NaN values before calculating percentiles
+  //   const flatData = data.flat().filter(val => !Number.isNaN(val));
+  //   const sortedData = flatData.sort((a, b) => a - b);
+  //   const lowIndex = Math.ceil((lowPercentile / 100) * sortedData.length);
+  //   const highIndex = Math.floor((highPercentile / 100) * sortedData.length);
+  //   return [sortedData[lowIndex], sortedData[highIndex]];
+  // };
 
-  // Clip array to the percentile bounds
-  const clipArray = (arr: number[][], minVal: number, maxVal: number) =>
-    arr.map(row => row.map(val =>
-      Number.isNaN(val) ? val :  // Preserve NaN values
-      val < minVal ? minVal : (val > maxVal ? maxVal : val)
-    ));
+  // // Clip array to the percentile bounds
+  // const clipArray = (arr: number[][], minVal: number, maxVal: number) =>
+  //   arr.map(row => row.map(val =>
+  //     Number.isNaN(val) ? val :  // Preserve NaN values
+  //     val < minVal ? minVal : (val > maxVal ? maxVal : val)
+  //   ));
 
 
 const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
@@ -81,6 +83,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   setInclinedLinecutData1,
   setInclinedLinecutData2,
   normalization,
+  imageColormap,
+  differenceColormap,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
@@ -112,108 +116,265 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     plotDataRef.current = plotData;
   }, [plotData]);
 
-  // Main data transformation function that handles both log scaling and percentile clipping
+  const calculateGlobalPercentiles = (
+    data1: number[][],
+    data2: number[][],
+    lowPercentile: number,
+    highPercentile: number
+  ): [number, number] => {
+    // Calculate total length first
+    let totalLength = 0;
+    for (let i = 0; i < data1.length; i++) {
+      for (let j = 0; j < data1[i].length; j++) {
+        if (!Number.isNaN(data1[i][j])) totalLength++;
+      }
+    }
+    for (let i = 0; i < data2.length; i++) {
+      for (let j = 0; j < data2[i].length; j++) {
+        if (!Number.isNaN(data2[i][j])) totalLength++;
+      }
+    }
+
+    // Pre-allocate array
+    const values = new Float32Array(totalLength);
+    let idx = 0;
+
+    // Fill array with non-NaN values
+    for (let i = 0; i < data1.length; i++) {
+      for (let j = 0; j < data1[i].length; j++) {
+        if (!Number.isNaN(data1[i][j])) {
+          values[idx++] = data1[i][j];
+        }
+      }
+    }
+    for (let i = 0; i < data2.length; i++) {
+      for (let j = 0; j < data2[i].length; j++) {
+        if (!Number.isNaN(data2[i][j])) {
+          values[idx++] = data2[i][j];
+        }
+      }
+    }
+
+    // Sort the values
+    values.sort();
+
+    // Calculate percentile indices
+    const lowIndex = Math.ceil((lowPercentile / 100) * totalLength);
+    const highIndex = Math.floor((highPercentile / 100) * totalLength);
+
+    return [values[lowIndex], values[highIndex]];
+  };
+
+  const calculateMinMax = (data1: number[][], data2: number[][]) => {
+    let min = Infinity;
+    let max = -Infinity;
+
+    // Calculate min and max across both arrays
+    for (let i = 0; i < data1.length; i++) {
+        for (let j = 0; j < data1[i].length; j++) {
+            const val = data1[i][j];
+            if (!Number.isNaN(val)) {
+                min = Math.min(min, val);
+                max = Math.max(max, val);
+            }
+        }
+    }
+    for (let i = 0; i < data2.length; i++) {
+        for (let j = 0; j < data2[i].length; j++) {
+            const val = data2[i][j];
+            if (!Number.isNaN(val)) {
+                min = Math.min(min, val);
+                max = Math.max(max, val);
+            }
+        }
+    }
+
+    return { min, max };
+  };
+
+  const calculateMeanStd = (data1: number[][], data2: number[][]) => {
+      let sum = 0;
+      let count = 0;
+
+      // First pass: calculate mean
+      for (let i = 0; i < data1.length; i++) {
+          for (let j = 0; j < data1[i].length; j++) {
+              const val = data1[i][j];
+              if (!Number.isNaN(val)) {
+                  sum += val;
+                  count++;
+              }
+          }
+      }
+      for (let i = 0; i < data2.length; i++) {
+          for (let j = 0; j < data2[i].length; j++) {
+              const val = data2[i][j];
+              if (!Number.isNaN(val)) {
+                  sum += val;
+                  count++;
+              }
+          }
+      }
+
+      const mean = sum / count;
+
+      // Second pass: calculate variance
+      let variance = 0;
+      for (let i = 0; i < data1.length; i++) {
+          for (let j = 0; j < data1[i].length; j++) {
+              const val = data1[i][j];
+              if (!Number.isNaN(val)) {
+                  variance += Math.pow(val - mean, 2);
+              }
+          }
+      }
+      for (let i = 0; i < data2.length; i++) {
+          for (let j = 0; j < data2[i].length; j++) {
+              const val = data2[i][j];
+              if (!Number.isNaN(val)) {
+                  variance += Math.pow(val - mean, 2);
+              }
+          }
+      }
+
+      const std = Math.sqrt(variance / count);
+
+      return { mean, std };
+  };
+
+  // Clip array to the percentile bounds
+  const clipArray = (arr: number[][], minVal: number, maxVal: number) =>
+    arr.map(row => row.map(val =>
+      Number.isNaN(val) ? val :  // Preserve NaN values
+      val < minVal ? minVal : (val > maxVal ? maxVal : val)
+    ));
+
+  // Main data transformation function
   const transformData = useCallback((
-    data: number[][],
+    data1: number[][],
+    data2: number[][],
     isLog: boolean,
     lowerPerc: number,
     upperPerc: number,
     normalization: string = 'none'
-  ): number[][] => {
-    if (!data.length) return [];
+  ): { array1: number[][], array2: number[][] } => {
+    if (!data1.length || !data2.length) return { array1: [], array2: [] };
 
     // First apply log transform if needed
-    let transformedData = data;
-    if (isLog) {
-      // Find the smallest positive value, excluding NaN values
-      const minPositive = data.flat()
-        .filter(val => !Number.isNaN(val) && val > 0)
-        .reduce((min, val) => Math.min(min, val), Number.MAX_VALUE);
+    let transformed1 = data1;
+    let transformed2 = data2;
 
-      // Transform data to log scale, preserving NaN values
-      transformedData = data.map(row =>
+    if (isLog) {
+      // Find the smallest positive value across both arrays
+      let minPositive = Infinity;
+      for (let i = 0; i < data1.length; i++) {
+        for (let j = 0; j < data1[i].length; j++) {
+          const val = data1[i][j];
+          if (!Number.isNaN(val) && val > 0) {
+            minPositive = Math.min(minPositive, val);
+          }
+        }
+      }
+      for (let i = 0; i < data2.length; i++) {
+        for (let j = 0; j < data2[i].length; j++) {
+          const val = data2[i][j];
+          if (!Number.isNaN(val) && val > 0) {
+            minPositive = Math.min(minPositive, val);
+          }
+        }
+      }
+
+      // Transform both arrays to log scale
+      transformed1 = data1.map(row =>
         row.map(val =>
-          Number.isNaN(val) ? val :  // Preserve NaN values
+          Number.isNaN(val) ? val :
+          val <= 0 ? Math.log10(minPositive) : Math.log10(val)
+        )
+      );
+      transformed2 = data2.map(row =>
+        row.map(val =>
+          Number.isNaN(val) ? val :
           val <= 0 ? Math.log10(minPositive) : Math.log10(val)
         )
       );
     }
 
-    // After log transform, clip the data to the specified percentile range
-    const [minValue, maxValue] = calculatePercentiles(transformedData, lowerPerc, upperPerc);
-    transformedData = clipArray(transformedData, minValue, maxValue);
+    // Calculate global percentiles from both transformed arrays
+    const [minValue, maxValue] = calculateGlobalPercentiles(
+      transformed1,
+      transformed2,
+      lowerPerc,
+      upperPerc
+    );
 
-    // Apply normalization to the clipped data
+    // Clip both arrays using the global limits
+    transformed1 = clipArray(transformed1, minValue, maxValue);
+    transformed2 = clipArray(transformed2, minValue, maxValue);
+
+    // Apply normalization if needed
     switch (normalization) {
       case 'minmax': {
-        // Get min/max excluding NaN values
-        const unmaskedData = transformedData.flat().filter(val => !Number.isNaN(val));
-        const min = unmaskedData.reduce((min, val) => Math.min(min, val), Infinity);
-        const max = unmaskedData.reduce((max, val) => Math.max(max, val), -Infinity);
+        const { min, max } = calculateMinMax(transformed1, transformed2);
         const range = max - min;
 
-        return transformedData.map(row =>
+        const normalize = (arr: number[][]) => arr.map(row =>
           row.map(val =>
-            Number.isNaN(val) ? 0 :  // Replace NaN values with 0
+            Number.isNaN(val) ? 0 :
             range === 0 ? 0 : (val - min) / range
           )
         );
+
+        transformed1 = normalize(transformed1);
+        transformed2 = normalize(transformed2);
+        break;
       }
 
       case 'mean': {
-        // Calculate statistics excluding NaN values
-        const unmaskedData = transformedData.flat().filter(val => !Number.isNaN(val));
-        const mean = unmaskedData.reduce((sum, val) => sum + val, 0) / unmaskedData.length;
-        const variance = unmaskedData.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / unmaskedData.length;
-        const std = Math.sqrt(variance);
+        const { mean, std } = calculateMeanStd(transformed1, transformed2);
 
-        return transformedData.map(row =>
+        const normalize = (arr: number[][]) => arr.map(row =>
           row.map(val =>
-            Number.isNaN(val) ? 0 :  // Replace NaN values with 0
+            Number.isNaN(val) ? 0 :
             std === 0 ? 0 : (val - mean) / std
           )
         );
+
+        transformed1 = normalize(transformed1);
+        transformed2 = normalize(transformed2);
+        break;
       }
 
       default:
         // Replace NaN values with 0
-        return transformedData.map(row =>
-          row.map(val => Number.isNaN(val) ? 0 : val)
-        );
-
+        transformed1 = transformed1.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+        transformed2 = transformed2.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
     }
 
+    return { array1: transformed1, array2: transformed2 };
   }, []);
 
   // Transform the data for the current resolution level (low, medium, or full)
-  // This is used for the main plot display
   const transformedPlotData = useMemo(() => {
     if (!resolutionData[currentResolution]) return null;
 
     const currentData = resolutionData[currentResolution];
 
-  // First transform both arrays
-  const transformedArray1 = transformData(
-    currentData.array1,
-    isLogScale,
-    lowerPercentile,
-    upperPercentile,
-    normalization
-  );
-  const transformedArray2 = transformData(
-    currentData.array2,
-    isLogScale,
-    lowerPercentile,
-    upperPercentile,
-    normalization
-  );
+    // Transform both arrays together
+    const { array1: transformedArray1, array2: transformedArray2 } = transformData(
+      currentData.array1,
+      currentData.array2,
+      isLogScale,
+      lowerPercentile,
+      upperPercentile,
+      normalization
+    );
 
-  // Then calculate difference using transformed data
-  return {
-    array1: transformedArray1,
-    array2: transformedArray2,
-    diff: calculateDifferenceArray(transformedArray1, transformedArray2)
-  };
+    // Then calculate difference using transformed data
+    return {
+      array1: transformedArray1,
+      array2: transformedArray2,
+      diff: calculateDifferenceArray(transformedArray1, transformedArray2)
+    };
   }, [
     resolutionData,
     currentResolution,
@@ -225,26 +386,19 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   ]);
 
   // Transform the full resolution data for linecut calculations
-  // This ensures linecuts are calculated using full resolution data
   const transformedLineData = useMemo(() => {
     if (!resolutionData.full) return null;
 
-    return {
-      array1: transformData(
-        resolutionData.full.array1,
-        isLogScale,
-        lowerPercentile,
-        upperPercentile,
-        normalization
-      ),
-      array2: transformData(
-        resolutionData.full.array2,
-        isLogScale,
-        lowerPercentile,
-        upperPercentile,
-        normalization
-      )
-    };
+    const { array1, array2 } = transformData(
+      resolutionData.full.array1,
+      resolutionData.full.array2,
+      isLogScale,
+      lowerPercentile,
+      upperPercentile,
+      normalization
+    );
+
+    return { array1, array2 };
   }, [
     resolutionData.full,
     isLogScale,
@@ -254,7 +408,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     transformData
   ]);
 
-  // Calculate color scales for all three plots (array1, array2, and diff)
+  // Calculate color scales for all three plots
   const colorScales = useMemo(() => {
     if (
       !transformedPlotData ||
@@ -294,28 +448,45 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     const newData = currentPlotData.data.map((plotItem: any, index: number) => {
       const dataKey = index === 0 ? 'array1' : index === 1 ? 'array2' : 'diff';
       const transformedData = transformedPlotData[dataKey];
-      return {
-        ...plotItem,
-        z: transformedData,
-        zmin: colorScales[dataKey].min,
-        zmax: colorScales[dataKey].max,
-        nancolor: 'rgb(0,0,0)',  // Set NaN values to black
-      };
+
+      // Use global min/max for the first two plots (array1 and array2)
+      if (index <= 1) {
+        return {
+          ...plotItem,
+          z: transformedData,
+          zmin: colorScales.global.min,  // Use global min
+          zmax: colorScales.global.max,  // Use global max
+          coloraxis: 'coloraxis',  // Link to the first coloraxis
+        };
+      } else {
+        // For difference plot, use symmetric min/max
+        return {
+          ...plotItem,
+          z: transformedData,
+          zmin: -colorScales.maxAbsDiff,
+          zmax: colorScales.maxAbsDiff,
+          coloraxis: 'coloraxis2',  // Link to the second coloraxis
+        };
+      }
     });
 
-    // Update the color axis settings in the layout
+    console.log("imageColormap", imageColormap);
+    console.log("differenceColormap", differenceColormap);
+    // Update the coloraxis settings in the layout
     const newLayout = {
       ...currentPlotData.layout,
       coloraxis: currentPlotData.layout.coloraxis ? {
         ...currentPlotData.layout.coloraxis,
         cmin: colorScales.global.min,
-        cmax: colorScales.global.max
+        cmax: colorScales.global.max,
+        colorscale: imageColormap,
       } : undefined,
       coloraxis2: currentPlotData.layout.coloraxis2 ? {
         ...currentPlotData.layout.coloraxis2,
         cmin: -colorScales.maxAbsDiff,
         cmax: colorScales.maxAbsDiff,
-        cmid: 0
+        cmid: 0,
+        colorscale: differenceColormap,
       } : undefined
     };
 
@@ -326,7 +497,12 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         !oldItem ||
         item.z !== oldItem.z ||
         item.zmin !== oldItem.zmin ||
-        item.zmax !== oldItem.zmax
+        item.zmax !== oldItem.zmax ||
+        item.coloraxis !== oldItem.coloraxis ||
+        item.coloraxis2 !== oldItem.coloraxis2 ||
+        item.colorscale !== oldItem.colorscale ||
+        item.showscale !== oldItem.showscale ||
+        item.colorbar !== oldItem.colorbar
       );
     });
 
@@ -334,9 +510,11 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     const hasLayoutChanged =
       currentPlotData.layout.coloraxis?.cmin !== newLayout.coloraxis?.cmin ||
       currentPlotData.layout.coloraxis?.cmax !== newLayout.coloraxis?.cmax ||
+      currentPlotData.layout.coloraxis?.colorscale !== newLayout.coloraxis?.colorscale ||
       currentPlotData.layout.coloraxis2?.cmin !== newLayout.coloraxis2?.cmin ||
       currentPlotData.layout.coloraxis2?.cmax !== newLayout.coloraxis2?.cmax ||
-      currentPlotData.layout.coloraxis2?.cmid !== newLayout.coloraxis2?.cmid;
+      currentPlotData.layout.coloraxis2?.cmid !== newLayout.coloraxis2?.cmid ||
+      currentPlotData.layout.coloraxis2?.colorscale !== newLayout.coloraxis2?.colorscale;
 
     // Only update if something has changed
     if (hasDataChanged || hasLayoutChanged) {
@@ -346,7 +524,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         layout: newLayout
       }));
     }
-  }, [transformedPlotData, colorScales]);
+  }, [transformedPlotData, colorScales, imageColormap, differenceColormap]);
+
 
   // Effect to update linecut data when transformations change
   useEffect(() => {
@@ -392,9 +571,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     inclinedLinecuts,
     computeInclinedLinecutData,
     setInclinedLinecutData1,
-    setInclinedLinecutData2,
+    setInclinedLinecutData2
   ]);
-
 
 
 
@@ -422,7 +600,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       isLogScale,
       lowerPercentile,
       upperPercentile,
-      calculatePercentiles,
+      normalization,
     });
   }, [
     plotData,
@@ -437,6 +615,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     isLogScale,
     lowerPercentile,
     upperPercentile,
+    normalization,
   ]);
 
     // // Handle container resizing
@@ -608,35 +787,21 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         // const [minValue2, maxValue2] = getArrayMinMax(array2DownsampledLowRes);
         // const [minValueDiff, maxValueDiff] = getArrayMinMax(diffDownsampledLowRes);
 
+        const globalMinValue = Math.min(minValue1, minValue2);
+        const globalMaxValue = Math.max(maxValue1, maxValue2);
+
         // Set the data range for display
-        plotlyData.data[0].zmin = minValue1;
-        plotlyData.data[0].zmax = maxValue1;
-        plotlyData.data[1].zmin = minValue2;
-        plotlyData.data[1].zmax = maxValue2;
+        plotlyData.data[0].zmin = globalMinValue;
+        plotlyData.data[0].zmax = globalMaxValue;
+        plotlyData.data[1].zmin = globalMinValue;
+        plotlyData.data[1].zmax = globalMaxValue;
         plotlyData.data[2].zmin = minValueDiff;
         plotlyData.data[2].zmax = maxValueDiff;
 
-        const globalMinValue = Math.min(minValue1, minValue2)
-        const globalMaxValue = Math.max(maxValue1, maxValue2)
-
         // Set the colorbar range to show full data range
         if (plotlyData.layout.coloraxis) {
-          plotlyData.layout.coloraxis.cmin = globalMinValue
-          plotlyData.layout.coloraxis.cmax = globalMaxValue
-          // plotlyData.layout.coloraxis.colorscale = ['viridis']
-          // plotlyData.layout.coloraxis.colorscale = [
-          //   [0, '#440154'],    // dark purple
-          //   [0.25, '#3B528B'], // blue
-          //   [0.5, '#21908C'],  // cyan/green
-          //   [0.99, '#5DC963'], // light green
-          //   [1, '#FDE725']     // yellow
-          // ];
-          // plotlyData.layout.coloraxis.colorscale = [
-          //   // [0, 'rgb(139,0,0)'],        // Dark red for values below 1st percentile
-          //   [0.01, 'rgb(68,1,84)'],     // Start of regular viridis colorscale at 1st percentile
-          //   [0.99, 'rgb(253,231,37)'],  // End of regular viridis colorscale at 99th percentile
-          //   // [1, 'rgb(0,0,139)']         // Dark blue for values above 99th percentile
-          // ];
+          plotlyData.layout.coloraxis.cmin = globalMinValue;
+          plotlyData.layout.coloraxis.cmax = globalMaxValue;
         }
         if (plotlyData.layout.coloraxis2) {
           const maxAbsDiff = Math.max(Math.abs(minValueDiff), Math.abs(maxValueDiff));

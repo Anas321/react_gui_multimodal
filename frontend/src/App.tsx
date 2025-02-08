@@ -91,6 +91,10 @@ function App() {
     setUpperPercentile,
     normalization,
     setNormalization,
+    imageColormap,
+    setImageColormap,
+    differenceColormap,
+    setDifferenceColormap,
   } = useMultimodal();
 
 
@@ -314,6 +318,10 @@ function App() {
                     setUpperPercentile={setUpperPercentile}
                     normalization={normalization}
                     setNormalization={setNormalization}
+                    imageColormap={imageColormap}
+                    setImageColormap={setImageColormap}
+                    differenceColormap={differenceColormap}
+                    setDifferenceColormap={setDifferenceColormap}
                   />
                 </Accordion.Panel>
               </Accordion.Item>
@@ -368,6 +376,8 @@ function App() {
                   setInclinedLinecutData1={setInclinedLinecutData1}
                   setInclinedLinecutData2={setInclinedLinecutData2}
                   normalization={normalization}
+                  imageColormap={imageColormap}
+                  differenceColormap={differenceColormap}
                 />
 
                   {resolutionMessage && (
