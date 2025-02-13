@@ -1,7 +1,13 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import Plot from "react-plotly.js";
 import { decode } from "@msgpack/msgpack";
-import { ResolutionDataType, InclinedLinecut, Linecut } from "../types";
+import {
+  ResolutionDataType,
+  InclinedLinecut,
+  Linecut,
+  AzimuthalIntegration,
+  AzimuthalData
+} from "../types";
 import { downsampleArray } from "../utils/downsampleArray";
 import { handleRelayout } from '../utils/handleRelayout';
 import { extractBinary, reconstructFloat32Array } from '../utils/dataProcessingScatterSubplot';
@@ -10,11 +16,12 @@ import {
   generateVerticalLinecutOverlay,
   generateInclinedLinecutOverlay,
 } from "../utils/generateLincutsScatterSubplot";
+import { generateAzimuthalOverlay } from "../utils/generateAzimuthalOverlay";
 import { getArrayMinMax } from "../utils/getArrayMinAndMax";
 import { calculateDifferenceArray } from "../utils/calculateDifferenceArray";
 
 
-export interface ScatterSubplotProps {
+interface ScatterSubplotProps {
   setImageHeight: (height: number) => void;
   setImageWidth: (width: number) => void;
   setImageData1: (data: number[][]) => void;
@@ -43,25 +50,11 @@ export interface ScatterSubplotProps {
   normalization: string;
   imageColormap: string;
   differenceColormap: string;
+  normalizationMode: string;
+  azimuthalIntegrations: AzimuthalIntegration[];  // List of active integrations
+  azimuthalData1: AzimuthalData[];               // Integration data for first image
+  azimuthalData2: AzimuthalData[];               // Integration data for second image
 }
-
-
-  //  // Calculate percentile values from data
-  //  const calculatePercentiles = (data: number[][], lowPercentile: number, highPercentile: number): [number, number] => {
-  //   // Filter out NaN values before calculating percentiles
-  //   const flatData = data.flat().filter(val => !Number.isNaN(val));
-  //   const sortedData = flatData.sort((a, b) => a - b);
-  //   const lowIndex = Math.ceil((lowPercentile / 100) * sortedData.length);
-  //   const highIndex = Math.floor((highPercentile / 100) * sortedData.length);
-  //   return [sortedData[lowIndex], sortedData[highIndex]];
-  // };
-
-  // // Clip array to the percentile bounds
-  // const clipArray = (arr: number[][], minVal: number, maxVal: number) =>
-  //   arr.map(row => row.map(val =>
-  //     Number.isNaN(val) ? val :  // Preserve NaN values
-  //     val < minVal ? minVal : (val > maxVal ? maxVal : val)
-  //   ));
 
 
 const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
@@ -85,6 +78,10 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   normalization,
   imageColormap,
   differenceColormap,
+  normalizationMode,
+  azimuthalIntegrations,
+  azimuthalData1,
+  azimuthalData2,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
@@ -249,6 +246,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       val < minVal ? minVal : (val > maxVal ? maxVal : val)
     ));
 
+
+
   // Main data transformation function
   const transformData = useCallback((
     data1: number[][],
@@ -256,102 +255,209 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     isLog: boolean,
     lowerPerc: number,
     upperPerc: number,
-    normalization: string = 'none'
+    normalization: string = 'none',
+    normalizationMode: string = 'together'
   ): { array1: number[][], array2: number[][] } => {
     if (!data1.length || !data2.length) return { array1: [], array2: [] };
 
-    // First apply log transform if needed
-    let transformed1 = data1;
-    let transformed2 = data2;
-
-    if (isLog) {
-      // Find the smallest positive value across both arrays
+    // Function to process a single array with log scale
+    const applyLogScale = (data: number[][]) => {
       let minPositive = Infinity;
-      for (let i = 0; i < data1.length; i++) {
-        for (let j = 0; j < data1[i].length; j++) {
-          const val = data1[i][j];
-          if (!Number.isNaN(val) && val > 0) {
-            minPositive = Math.min(minPositive, val);
-          }
-        }
-      }
-      for (let i = 0; i < data2.length; i++) {
-        for (let j = 0; j < data2[i].length; j++) {
-          const val = data2[i][j];
+      for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+          const val = data[i][j];
           if (!Number.isNaN(val) && val > 0) {
             minPositive = Math.min(minPositive, val);
           }
         }
       }
 
-      // Transform both arrays to log scale
-      transformed1 = data1.map(row =>
+      return data.map(row =>
         row.map(val =>
           Number.isNaN(val) ? val :
           val <= 0 ? Math.log10(minPositive) : Math.log10(val)
         )
       );
-      transformed2 = data2.map(row =>
-        row.map(val =>
-          Number.isNaN(val) ? val :
-          val <= 0 ? Math.log10(minPositive) : Math.log10(val)
-        )
-      );
-    }
+    };
 
-    // Calculate global percentiles from both transformed arrays
-    const [minValue, maxValue] = calculateGlobalPercentiles(
-      transformed1,
-      transformed2,
-      lowerPerc,
-      upperPerc
-    );
-
-    // Clip both arrays using the global limits
-    transformed1 = clipArray(transformed1, minValue, maxValue);
-    transformed2 = clipArray(transformed2, minValue, maxValue);
-
-    // Apply normalization if needed
-    switch (normalization) {
-      case 'minmax': {
-        const { min, max } = calculateMinMax(transformed1, transformed2);
-        const range = max - min;
-
-        const normalize = (arr: number[][]) => arr.map(row =>
-          row.map(val =>
-            Number.isNaN(val) ? 0 :
-            range === 0 ? 0 : (val - min) / range
-          )
-        );
-
-        transformed1 = normalize(transformed1);
-        transformed2 = normalize(transformed2);
-        break;
+    // Function to process percentiles for a single array
+    const calculateSingleArrayPercentiles = (data: number[][], lowPercentile: number, highPercentile: number): [number, number] => {
+      let totalLength = 0;
+      for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+          if (!Number.isNaN(data[i][j])) totalLength++;
+        }
       }
 
-      case 'mean': {
-        const { mean, std } = calculateMeanStd(transformed1, transformed2);
+      const values = new Float32Array(totalLength);
+      let idx = 0;
 
-        const normalize = (arr: number[][]) => arr.map(row =>
-          row.map(val =>
-            Number.isNaN(val) ? 0 :
-            std === 0 ? 0 : (val - mean) / std
-          )
-        );
-
-        transformed1 = normalize(transformed1);
-        transformed2 = normalize(transformed2);
-        break;
+      for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+          if (!Number.isNaN(data[i][j])) {
+            values[idx++] = data[i][j];
+          }
+        }
       }
 
-      default:
-        // Replace NaN values with 0
-        transformed1 = transformed1.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
-        transformed2 = transformed2.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+      values.sort();
+      const lowIndex = Math.ceil((lowPercentile / 100) * totalLength);
+      const highIndex = Math.floor((highPercentile / 100) * totalLength);
+      return [values[lowIndex], values[highIndex]];
+    };
+
+    // Function to calculate min-max for a single array
+    const calculateSingleArrayMinMax = (data: number[][]) => {
+      let min = Infinity;
+      let max = -Infinity;
+
+      for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+          const val = data[i][j];
+          if (!Number.isNaN(val)) {
+            min = Math.min(min, val);
+            max = Math.max(max, val);
+          }
+        }
+      }
+
+      return { min, max };
+    };
+
+    // Function to calculate mean-std for a single array
+    const calculateSingleArrayMeanStd = (data: number[][]) => {
+      let sum = 0;
+      let count = 0;
+
+      // First pass: calculate mean
+      for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+          const val = data[i][j];
+          if (!Number.isNaN(val)) {
+            sum += val;
+            count++;
+          }
+        }
+      }
+
+      const mean = sum / count;
+
+      // Second pass: calculate variance
+      let variance = 0;
+      for (let i = 0; i < data.length; i++) {
+        for (let j = 0; j < data[i].length; j++) {
+          const val = data[i][j];
+          if (!Number.isNaN(val)) {
+            variance += Math.pow(val - mean, 2);
+          }
+        }
+      }
+
+      const std = Math.sqrt(variance / count);
+      return { mean, std };
+    };
+
+    // First apply log transform if needed
+    let transformed1 = isLog ? applyLogScale(data1) : data1;
+    let transformed2 = isLog ? applyLogScale(data2) : data2;
+
+    if (normalizationMode === 'together') {
+      // Calculate global percentiles and clip both arrays using the global limits
+      const [minValue, maxValue] = calculateGlobalPercentiles(transformed1, transformed2, lowerPerc, upperPerc);
+      transformed1 = clipArray(transformed1, minValue, maxValue);
+      transformed2 = clipArray(transformed2, minValue, maxValue);
+
+      // Apply normalization if needed
+      switch (normalization) {
+        case 'minmax': {
+          const { min, max } = calculateMinMax(transformed1, transformed2);
+          const range = max - min;
+          const normalize = (arr: number[][]) => arr.map(row =>
+            row.map(val =>
+              Number.isNaN(val) ? 0 : range === 0 ? 0 : (val - min) / range
+            )
+          );
+          transformed1 = normalize(transformed1);
+          transformed2 = normalize(transformed2);
+          break;
+        }
+        case 'mean': {
+          const { mean, std } = calculateMeanStd(transformed1, transformed2);
+          const normalize = (arr: number[][]) => arr.map(row =>
+            row.map(val =>
+              Number.isNaN(val) ? 0 : std === 0 ? 0 : (val - mean) / std
+            )
+          );
+          transformed1 = normalize(transformed1);
+          transformed2 = normalize(transformed2);
+          break;
+        }
+        default:
+          transformed1 = transformed1.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+          transformed2 = transformed2.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+      }
+    } else {
+      // Process each array individually
+      // Apply percentile clipping individually
+      const [minValue1, maxValue1] = calculateSingleArrayPercentiles(transformed1, lowerPerc, upperPerc);
+      const [minValue2, maxValue2] = calculateSingleArrayPercentiles(transformed2, lowerPerc, upperPerc);
+      transformed1 = clipArray(transformed1, minValue1, maxValue1);
+      transformed2 = clipArray(transformed2, minValue2, maxValue2);
+
+      // Apply normalization individually
+      switch (normalization) {
+        case 'minmax': {
+          // Normalize array1
+          const { min: min1, max: max1 } = calculateSingleArrayMinMax(transformed1);
+          const range1 = max1 - min1;
+          transformed1 = transformed1.map(row =>
+            row.map(val =>
+              Number.isNaN(val) ? 0 : range1 === 0 ? 0 : (val - min1) / range1
+            )
+          );
+
+          // Normalize array2
+          const { min: min2, max: max2 } = calculateSingleArrayMinMax(transformed2);
+          const range2 = max2 - min2;
+          transformed2 = transformed2.map(row =>
+            row.map(val =>
+              Number.isNaN(val) ? 0 : range2 === 0 ? 0 : (val - min2) / range2
+            )
+          );
+          break;
+        }
+        case 'mean': {
+          // Normalize array1
+          const { mean: mean1, std: std1 } = calculateSingleArrayMeanStd(transformed1);
+          transformed1 = transformed1.map(row =>
+            row.map(val =>
+              Number.isNaN(val) ? 0 : std1 === 0 ? 0 : (val - mean1) / std1
+            )
+          );
+
+          // Normalize array2
+          const { mean: mean2, std: std2 } = calculateSingleArrayMeanStd(transformed2);
+          transformed2 = transformed2.map(row =>
+            row.map(val =>
+              Number.isNaN(val) ? 0 : std2 === 0 ? 0 : (val - mean2) / std2
+            )
+          );
+          break;
+        }
+        default:
+          transformed1 = transformed1.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+          transformed2 = transformed2.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+      }
     }
 
     return { array1: transformed1, array2: transformed2 };
   }, []);
+
+
+
+
+
+
 
   // Transform the data for the current resolution level (low, medium, or full)
   const transformedPlotData = useMemo(() => {
@@ -366,7 +472,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       isLogScale,
       lowerPercentile,
       upperPercentile,
-      normalization
+      normalization,
+      normalizationMode,
     );
 
     // Then calculate difference using transformed data
@@ -382,6 +489,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     lowerPercentile,
     upperPercentile,
     normalization,
+    normalizationMode,
     transformData
   ]);
 
@@ -395,7 +503,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       isLogScale,
       lowerPercentile,
       upperPercentile,
-      normalization
+      normalization,
+      normalizationMode,
     );
 
     return { array1, array2 };
@@ -405,6 +514,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     lowerPercentile,
     upperPercentile,
     normalization,
+    normalizationMode,
     transformData
   ]);
 
@@ -470,8 +580,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       }
     });
 
-    console.log("imageColormap", imageColormap);
-    console.log("differenceColormap", differenceColormap);
     // Update the coloraxis settings in the layout
     const newLayout = {
       ...currentPlotData.layout,
@@ -915,13 +1023,46 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           imageWidth,
           imageHeight
         });
+      }),
+
+      // Azimuthal integration overlays
+      ...(azimuthalIntegrations || [])
+      .filter(integration => !integration.hidden)
+      .flatMap(integration => {
+        // Get the data for this integration
+        const data1 = azimuthalData1.find(d => d.id === integration.id);
+        const data2 = azimuthalData2.find(d => d.id === integration.id);
+
+        if (!data1 || !data2) return [];  // Skip if data not available
+
+        // Generate and spread both overlays' traces
+        return [
+          ...generateAzimuthalOverlay({
+            integration,
+            azimuthalData: data1,
+            axisNumber: 1,
+            factor,
+            currentArray: currentArrayData
+          }),
+          ...generateAzimuthalOverlay({
+            integration,
+            azimuthalData: data2,
+            axisNumber: 2,
+            factor,
+            currentArray: currentArrayData
+          })
+        ];
       })
+
     ];
   }, [
     plotData,
     horizontalLinecuts,
     verticalLinecuts,
     inclinedLinecuts,
+    azimuthalIntegrations,
+    azimuthalData1,
+    azimuthalData2,
     resolutionData,
     currentResolution,
     getCurrentFactor

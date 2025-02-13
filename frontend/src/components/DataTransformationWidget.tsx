@@ -14,6 +14,8 @@ interface DataTransformationWidgetProps {
   setImageColormap: (value: string) => void;
   differenceColormap: string;
   setDifferenceColormap: (value: string) => void;
+  normalizationMode: string;
+  setNormalizationMode: (value: string) => void;
 }
 
 /**
@@ -34,17 +36,43 @@ interface DataTransformationWidgetProps {
              'ylorrd'].
  */
 
-// Colormaps for main images
+// // Colormaps for main images
+// const SEQUENTIAL_COLORMAP_OPTIONS = [
+//     // Continuous Sequential
+//     { value: 'Viridis', label: 'Viridis' },
+//     { value: 'Jet', label: 'Jet' },
+//     { value: 'Greys', label: 'Greys' },
+//     { value: 'Plasma', label: 'Plasma' },
+//     { value: 'Hot', label: 'Hot' },
+//     { value: 'YlOrRd', label: 'Yellow-Orange-Red' },
+//     { value: 'YlGnBu', label: 'Yellow-Green-Blue' },
+//     { value: 'RdBu', label: 'Red-Blue (diverging)' },
+//     { value: 'rdgy', label: 'Red-Grey (diverging)' },
+
+// ];
+
 const SEQUENTIAL_COLORMAP_OPTIONS = [
-    // Continuous Sequential
+    // Sequential
     { value: 'Viridis', label: 'Viridis' },
+    { value: 'RdBu', label: 'Red-Blue' },
     { value: 'Jet', label: 'Jet' },
     { value: 'Greys', label: 'Greys' },
+    { value: 'Blackbody', label: 'Blackbody' },
+    { value: 'Portland', label: 'Portland' },
     { value: 'Plasma', label: 'Plasma' },
+    { value: 'Rainbow', label: 'Rainbow' },
+    { value: 'Cividis', label: 'Cividis' },
+    { value: 'Electric', label: 'Electric' },
+    { value: 'Earth', label: 'Earth' },
     { value: 'Hot', label: 'Hot' },
+    { value: 'Picnic', label: 'Picnic' },
+    { value: 'Bluered', label: 'Blue-Red' },
     { value: 'YlOrRd', label: 'Yellow-Orange-Red' },
     { value: 'YlGnBu', label: 'Yellow-Green-Blue' },
-    { value: 'RdBu', label: 'Red-Blue' },
+    { value: 'Blues', label: 'Blues' },
+    { value: 'Greens', label: 'Greens' },
+    { value: 'Reds', label: 'Reds' },
+
 ];
 
 
@@ -61,9 +89,43 @@ const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
   setImageColormap,
   differenceColormap,
   setDifferenceColormap,
+  normalizationMode,
+  setNormalizationMode,
 }) => {
   return (
     <div className="p-4">
+
+      {/* Normalization Mode Dropdown */}
+      <div className="mt-8 mb-8">
+        <span className="text-3xl mb-4 block">Transformation Mode</span>
+        <Select
+            value={normalizationMode}
+            onChange={(value) => setNormalizationMode(value || 'together')}
+            data={[
+                { value: 'together', label: 'Transform both images together' },
+                { value: 'individual', label: 'Transform each image individually' },
+            ]}
+            className="text-2xl"
+            size="xl"
+            styles={{
+                input: {
+                    fontSize: '1.75rem',
+                    height: '3rem'
+                },
+                dropdown: {
+                    fontSize: '1.75rem',
+                },
+                option: {
+                    fontSize: '1.75rem'
+                },
+                label: {
+                    fontSize: '1.75rem'
+                }
+            }}
+        />
+      </div>
+
+
       {/* Log Scale Toggle */}
       <div className="flex items-center justify-between mb-8">
         <span className="text-3xl mb-4">Log Scale</span>
@@ -190,7 +252,7 @@ const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
             data={SEQUENTIAL_COLORMAP_OPTIONS}
             className="text-2xl"
             size="xl"
-            maxDropdownHeight={650}
+            maxDropdownHeight={400}
             styles={{
               input: {
                 fontSize: '1.75rem',
@@ -217,7 +279,7 @@ const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
             data={SEQUENTIAL_COLORMAP_OPTIONS}
             className="text-2xl"
             size="xl"
-            maxDropdownHeight={650}
+            maxDropdownHeight={400}
             styles={{
               input: {
                 fontSize: '1.75rem',

@@ -1,21 +1,25 @@
 import { useState } from 'react';
-import { MantineProvider, Container, Accordion, Select, Menu, Switch, RangeSlider } from '@mantine/core';
+import { MantineProvider, Container, Accordion, Select, Menu} from '@mantine/core';
 import { FiArrowRight, FiArrowLeft } from 'react-icons/fi'; // Collapsing arrows
 import '@mantine/core/styles.css';
 import './index.css'; // Import the CSS file
 import alsLogo from '/public/als_logo.jpeg';
 import ScatterSubplot from './components/ScatterSubplot';
+
 import HorizontalLinecutWidget from './components/HorizontalLinecutWidget';
+import VerticalLinecutWidget from './components/VerticalLinecutWidget';
+import InclinedLinecutWidget from './components/InclinedLinecutWidget';
+import AzimuthalIntegrationWidget from './components/AzimuthalIntegrationWidget';
+
 import HorizontalLinecutFig from './components/HorizontalLinecutFig';
+import VerticalLinecutFig from './components/VerticalLinecutFig';
+import InclinedLinecutFig from './components/InclinedLinecutFig';
+
 import { handleExperimentTypeChange, addLinecut } from './utils/linecutHandlers';
 import { leftImageColorPalette, rightImageColorPalette } from './utils/constants';
 import useMultimodal from './hooks/useMultimodal';
-import VerticalLinecutWidget from './components/VerticalLinecutWidget';
-import VerticalLinecutFig from './components/VerticalLinecutFig';
 import { Info } from 'lucide-react';
 import { Popover } from '@mantine/core';
-import InclinedLinecutWidget from './components/InclinedLinecutWidget';
-import InclinedLinecutFig from './components/InclinedLinecutFig';
 import DataTransformationWidget from './components/DataTransformationWidget';
 
 
@@ -95,6 +99,19 @@ function App() {
     setImageColormap,
     differenceColormap,
     setDifferenceColormap,
+    normalizationMode,
+    setNormalizationMode,
+    // Azimuthal integration states and functions
+    azimuthalIntegrations,
+    azimuthalData1,
+    azimuthalData2,
+    maxQValue,
+    addAzimuthalIntegration,
+    updateAzimuthalQRange,
+    updateAzimuthalRange,
+    updateAzimuthalColor,
+    deleteAzimuthalIntegration,
+    toggleAzimuthalVisibility,
   } = useMultimodal();
 
 
@@ -235,8 +252,13 @@ function App() {
                         </Menu.Item>
                         {/* Conditionally render Azimuthal Integration */}
                         {experimentType === 'SAXS' && (
-                          <Menu.Item onClick={() => addLinecut('Azimuthal', selectedLinecuts, setSelectedLinecuts)}>
-                            <span className="text-2xl font-medium">Azimuthal Integration</span>
+                          <Menu.Item
+                          onClick={() => {
+                            addLinecut('Azimuthal', selectedLinecuts, setSelectedLinecuts)
+                            addAzimuthalIntegration();
+                          }}
+                          >
+                          <span className="text-2xl font-medium">Azimuthal Integration</span>
                           </Menu.Item>
                         )}
                       </Menu.Dropdown>
@@ -296,6 +318,22 @@ function App() {
                       );
                     }
 
+                    // Azimuthal integration
+                    if (linecutType === 'Azimuthal' && azimuthalIntegrations.length > 0) {
+                      return (
+                        <AzimuthalIntegrationWidget
+                          key={`linecut-section-${linecutType}`}
+                          integrations={azimuthalIntegrations}
+                          maxQValue={maxQValue}
+                          updateAzimuthalQRange={updateAzimuthalQRange}
+                          updateAzimuthalRange={updateAzimuthalRange}
+                          updateAzimuthalColor={updateAzimuthalColor}
+                          deleteAzimuthalIntegration={deleteAzimuthalIntegration}
+                          toggleAzimuthalVisibility={toggleAzimuthalVisibility}
+                        />
+                      );
+                    }
+
                     return null;
                   })}
                   </div>
@@ -322,6 +360,8 @@ function App() {
                     setImageColormap={setImageColormap}
                     differenceColormap={differenceColormap}
                     setDifferenceColormap={setDifferenceColormap}
+                    normalizationMode={normalizationMode}
+                    setNormalizationMode={setNormalizationMode}
                   />
                 </Accordion.Panel>
               </Accordion.Item>
@@ -378,6 +418,10 @@ function App() {
                   normalization={normalization}
                   imageColormap={imageColormap}
                   differenceColormap={differenceColormap}
+                  normalizationMode={normalizationMode}
+                  azimuthalIntegrations={azimuthalIntegrations}
+                  azimuthalData1={azimuthalData1}
+                  azimuthalData2={azimuthalData2}
                 />
 
                   {resolutionMessage && (

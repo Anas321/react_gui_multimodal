@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.get("/scatter-subplot")
-def create_scatter_subplot(scans=Depends(get_initial_scans)):
+async def create_scatter_subplot(scans=Depends(get_initial_scans)):
 
     # Convert arrays to NumPy
     scatter_image_array_1 = np.array(scans["scatter_image_array_1_full_res"])

@@ -291,19 +291,6 @@ export function generateInclinedLinecutOverlay({
       showlegend: false,
       hoverinfo: 'skip'
     },
-    // Position label
-    // {
-    //   x: [linecut.xPosition],
-    //   y: [linecut.yPosition],
-    //   mode: 'text',
-    //   text: [`(${Math.round(linecut.xPosition)}, ${Math.round(linecut.yPosition)})<br>${Math.round(linecut.angle)}°`],
-    //   textfont: { size: 12 },
-    //   textposition: 'top right',
-    //   xaxis: `x${axisNumber}`,
-    //   yaxis: `y${axisNumber}`,
-    //   showlegend: false,
-    //   hoverinfo: 'skip'
-    // }
   ];
 
   return [

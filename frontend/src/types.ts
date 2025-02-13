@@ -10,7 +10,7 @@ export interface Linecut {
     type: 'horizontal' | 'vertical'; // Type of linecut
   }
 
-  export interface InclinedLinecut {
+export interface InclinedLinecut {
     id: number;
     xPosition: number;
     yPosition: number;
@@ -22,10 +22,25 @@ export interface Linecut {
     type: 'inclined';
   }
 
-
-  export interface ResolutionDataType {
+export interface ResolutionDataType {
     array1: number[][];
     array2: number[][];
     diff: number[][];
     factor: number | null;
   }
+
+export interface AzimuthalIntegration {
+        id: number;
+        qRange: [number, number] | null;  // q-range for integration
+        azimuthRange: [number, number];  // azimuthal range in degrees
+        leftColor: string;
+        rightColor: string;
+        hidden: boolean;
+      }
+
+export interface AzimuthalData {
+        id: number;
+        q: number[];  // q values
+        intensity: number[];  // integrated intensities
+        qArray: number[][];  // 2D array of q values for visualization
+      }
