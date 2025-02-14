@@ -54,6 +54,7 @@ interface ScatterSubplotProps {
   azimuthalIntegrations: AzimuthalIntegration[];  // List of active integrations
   azimuthalData1: AzimuthalData[];               // Integration data for first image
   azimuthalData2: AzimuthalData[];               // Integration data for second image
+  maxQValue: number;
 }
 
 
@@ -82,6 +83,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   azimuthalIntegrations,
   azimuthalData1,
   azimuthalData2,
+  maxQValue,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
@@ -262,22 +264,65 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
     // Function to process a single array with log scale
     const applyLogScale = (data: number[][]) => {
+      // Get dimensions of the image
+      const rows = data.length;
+      const cols = data[0]?.length || 0;
+      const totalSize = rows * cols;
+
+      // Create TypedArrays for input and output
+      // Float32Array is chosen because:
+      // - It's more memory efficient than Float64Array
+      // - Provides enough precision for image processing
+      // - Is commonly used in WebGL and image processing
+      const flatInput = new Float32Array(totalSize);
+      const result = new Float32Array(totalSize);
+
+      // First pass: Flatten 2D array and find minimum positive value
+      // We flatten the array because:
+      // - Sequential memory access is faster than jumping between array rows
+      // - CPU cache can better predict and prefetch sequential data
+      // - Reduces memory fragmentation
       let minPositive = Infinity;
-      for (let i = 0; i < data.length; i++) {
-        for (let j = 0; j < data[i].length; j++) {
+      let idx = 0;
+
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
           const val = data[i][j];
-          if (!Number.isNaN(val) && val > 0) {
+          flatInput[idx++] = val;
+          // Track minimum positive value for log scaling
+          // We need this to handle values <= 0 which can't be log scaled
+          if (val > 0) {
             minPositive = Math.min(minPositive, val);
           }
         }
       }
 
-      return data.map(row =>
-        row.map(val =>
-          Number.isNaN(val) ? val :
-          val <= 0 ? Math.log10(minPositive) : Math.log10(val)
-        )
-      );
+      // Calculate log of minimum positive value once
+      // This will be used as replacement for values <= 0
+      const logMinPositive = Math.log10(minPositive);
+
+      // Second pass: Apply log scaling to all values
+      // Process linearly through the TypedArray for better performance
+      // This is faster than processing the 2D array because:
+      // - Better memory locality
+      // - Simpler array bounds checking
+      // - Better CPU branch prediction
+      for (let i = 0; i < totalSize; i++) {
+        const val = flatInput[i];
+        result[i] = val <= 0 ? logMinPositive : Math.log10(val);
+      }
+
+      // Convert back to 2D array if required by the calling code
+      // Note: If possible, modifying the code to work with flat arrays
+      // would be more efficient than this conversion
+      const output: number[][] = new Array(rows);
+      for (let i = 0; i < rows; i++) {
+        // subarray creates a view into the existing array
+        // This is more efficient than copying the data
+        output[i] = Array.from(result.subarray(i * cols, (i + 1) * cols));
+      }
+
+      return output;
     };
 
     // Function to process percentiles for a single array
@@ -1042,14 +1087,20 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
             azimuthalData: data1,
             axisNumber: 1,
             factor,
-            currentArray: currentArrayData
+            currentArray: currentArrayData,
+            maxQValue: maxQValue,
+            // beamCenterX: integration.beamCenterX,
+            // beamCenterY: integration.beamCenterY
           }),
           ...generateAzimuthalOverlay({
             integration,
             azimuthalData: data2,
             axisNumber: 2,
             factor,
-            currentArray: currentArrayData
+            currentArray: currentArrayData,
+            maxQValue: maxQValue,
+            // beamCenterX: integration.beamCenterX,
+            // beamCenterY: integration.beamCenterY
           })
         ];
       })
@@ -1065,7 +1116,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     azimuthalData2,
     resolutionData,
     currentResolution,
-    getCurrentFactor
+    getCurrentFactor,
+    maxQValue,
   ]);
 
 

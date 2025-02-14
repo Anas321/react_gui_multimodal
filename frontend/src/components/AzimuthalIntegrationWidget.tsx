@@ -1,104 +1,312 @@
-import { Card, ColorInput, RangeSlider, Switch } from '@mantine/core';
+import React, { useRef, useState, useCallback } from 'react';
+import { Accordion, RangeSlider } from '@mantine/core';
+import { FaEye, FaEyeSlash, FaTrash } from 'react-icons/fa';
 import { AzimuthalIntegration } from '../types';
+import ColorPickerPopup from './ColorPickerPopup';
 
 interface AzimuthalIntegrationWidgetProps {
-  integrations: AzimuthalIntegration[];
-  maxQValue: number;  // Add maxQValue prop
-  updateAzimuthalQRange: (id: number, range: [number, number]) => void;
-  updateAzimuthalRange: (id: number, range: [number, number]) => void;
-  updateAzimuthalColor: (id: number, side: 'left' | 'right', color: string) => void;
-  deleteAzimuthalIntegration: (id: number) => void;
-  toggleAzimuthalVisibility: (id: number) => void;
+    integrations: AzimuthalIntegration[];
+    maxQValue: number;
+    updateAzimuthalQRange: (id: number, range: [number, number]) => void;
+    updateAzimuthalRange: (id: number, range: [number, number]) => void;
+    updateAzimuthalColor: (id: number, side: 'left' | 'right', color: string) => void;
+    deleteAzimuthalIntegration: (id: number) => void;
+    toggleAzimuthalVisibility: (id: number) => void;
 }
 
 export default function AzimuthalIntegrationWidget({
-  integrations,
-  maxQValue,  // Receive maxQValue from parent
-  updateAzimuthalQRange,
-  updateAzimuthalRange,
-  updateAzimuthalColor,
-  deleteAzimuthalIntegration,
-  toggleAzimuthalVisibility
+    integrations,
+    maxQValue,
+    updateAzimuthalQRange,
+    updateAzimuthalRange,
+    updateAzimuthalColor,
+    deleteAzimuthalIntegration,
+    toggleAzimuthalVisibility
 }: AzimuthalIntegrationWidgetProps) {
-  // Function to get Q-range values safely
+  const colorPickerRef = useRef<HTMLDivElement>(null);
+  const [colorPicker, setColorPicker] = useState<{
+    id: number;
+    side: "left" | "right";
+    visible: boolean;
+    originalColor: string;
+    currentColor: string;
+    position: { top: number; left: number };
+  } | null>(null);
+
   const getQRangeValues = (integration: AzimuthalIntegration): [number, number] => {
     if (integration.qRange === null) {
-      return [0, maxQValue];  // Use maxQValue from backend
+      return [0, maxQValue];
     }
     return integration.qRange;
   };
 
+  const handleOpenColorPicker = (integration: AzimuthalIntegration, side: "left" | "right", event: React.MouseEvent) => {
+    if (colorPicker?.id === integration.id && colorPicker?.side === side && colorPicker?.visible) {
+      setColorPicker(null);
+    } else {
+      const originalColor = side === "left" ? integration.leftColor : integration.rightColor;
+      setColorPicker({
+        id: integration.id,
+        side,
+        visible: true,
+        originalColor,
+        currentColor: originalColor,
+        position: { top: event.clientY + 10, left: event.clientX },
+      });
+    }
+  };
+
+  const handleColorChange = (id: number, side: "left" | "right", color: string) => {
+    if (colorPicker) {
+      setColorPicker({
+        ...colorPicker,
+        currentColor: color,
+      });
+    }
+    updateAzimuthalColor(id, side, color);
+  };
+
+  const handleCancelColor = useCallback(() => {
+    if (colorPicker) {
+      updateAzimuthalColor(
+        colorPicker.id,
+        colorPicker.side,
+        colorPicker.originalColor
+      );
+      setColorPicker(null);
+    }
+  }, [colorPicker, updateAzimuthalColor]);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        colorPicker?.visible &&
+        colorPickerRef.current &&
+        !colorPickerRef.current.contains(event.target as Node)
+      ) {
+        handleCancelColor();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [colorPicker, handleCancelColor]);
+
   return (
-    <div className="space-y-4 p-4">
-      {integrations.map((integration) => {
-        const qRangeValues = getQRangeValues(integration);
+    <Accordion
+      multiple={false}
+      defaultValue="azimuthal-integrations"
+      chevronPosition="right"
+      classNames={{
+        chevron: "text-xl font-bold",
+        label: "text-2xl font-bold",
+        content: "p-0",
+      }}
+      className="w-full relative"
+    >
+      <Accordion.Item value="azimuthal-integrations" className="w-full">
+        <Accordion.Control className="pl-0">Azimuthal Integrations</Accordion.Control>
+        <Accordion.Panel>
+          <div className="max-h-[400px] overflow-y-auto overflow-x-hidden w-full">
+            {integrations.map((integration) => {
+              const currentQRange = getQRangeValues(integration);
 
-        return (
-          <Card key={integration.id} className="bg-white shadow-sm">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold">
-                  Integration {integration.id}
-                </h3>
-                <div className="flex space-x-2">
-                  <Switch
-                    checked={!integration.hidden}
-                    onChange={() => toggleAzimuthalVisibility(integration.id)}
-                    size="md"
-                  />
-                  <button
-                    onClick={() => deleteAzimuthalIntegration(integration.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Q-Range (Å⁻¹)</label>
-                <RangeSlider
-                  value={[qRangeValues[0], qRangeValues[1]]}
-                  onChange={(value) => updateAzimuthalQRange(integration.id, [value[0], value[1]])}
-                  min={0}
-                  max={maxQValue}  // Use maxQValue from backend
-                  step={maxQValue / 200}  // Adjust step size based on range
-                  label={(value) => value.toFixed(2)}
-                />
-
-                <label className="text-sm font-medium">Azimuthal Range (degrees)</label>
-                <RangeSlider
-                  value={[integration.azimuthRange[0], integration.azimuthRange[1]]}
-                  onChange={(value) => updateAzimuthalRange(integration.id, [value[0], value[1]])}
-                  min={-180}
-                  max={180}
-                  step={1}
-                  label={(value) => `${value}°`}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Left Image Color</label>
-                    <ColorInput
-                      value={integration.leftColor}
-                      onChange={(color) => updateAzimuthalColor(integration.id, 'left', color)}
-                      format="hex"
-                    />
+              return (
+                <div
+                  key={integration.id}
+                  className="mb-5 pt-7 pb-5 pl-2 pr-3 relative shadow-lg border rounded-lg"
+                  role="region"
+                  aria-labelledby={`integration-${integration.id}`}
+                >
+                  <div className="w-full mb-4">
+                    <h3 className="text-xl font-medium mb-2 text-left">
+                      Integral {integration.id}
+                    </h3>
+                    <div className="flex items-center justify-end">
+                      <div className="group relative">
+                        <div
+                          className="h-3 w-12 mr-4 cursor-pointer"
+                          style={{ backgroundColor: integration.leftColor }}
+                          onClick={(e) => handleOpenColorPicker(integration, 'left', e)}
+                        ></div>
+                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                          Click to change color
+                        </span>
+                      </div>
+                      <div className="group relative">
+                        <div
+                          className="h-3 w-12 mr-2 cursor-pointer"
+                          style={{ backgroundColor: integration.rightColor }}
+                          onClick={(e) => handleOpenColorPicker(integration, 'right', e)}
+                        ></div>
+                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                          Click to change color
+                        </span>
+                      </div>
+                      <div className="group relative">
+                        <button
+                          className="text-blue-500 hover:text-blue-700 ml-1 flex items-center pointer-events-auto"
+                          onClick={() => toggleAzimuthalVisibility(integration.id)}
+                          aria-label={`Toggle Visibility of Integration ${integration.id}`}
+                        >
+                          {integration.hidden ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+                        </button>
+                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                          {integration.hidden ? "Show" : "Hide"}
+                        </span>
+                      </div>
+                      <div className="group relative ml-4" style={{ transform: 'translateY(1px)' }}>
+                        <button
+                          className="w-5 h-5 flex items-center justify-center bg-gray-200 text-gray-600 hover:bg-red-500 hover:text-white rounded"
+                          onClick={() => deleteAzimuthalIntegration(integration.id)}
+                          aria-label={`Delete Integration ${integration.id}`}
+                        >
+                          <FaTrash size={14} />
+                        </button>
+                        <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+                          Delete
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium">Right Image Color</label>
-                    <ColorInput
-                      value={integration.rightColor}
-                      onChange={(color) => updateAzimuthalColor(integration.id, 'right', color)}
-                      format="hex"
-                    />
+
+                  <div className="mb-6">
+                    <h4 className="text-md font-semibold mb-2">Q-Range (nm⁻¹)</h4>
+                    <div className="space-y-2">
+                      <RangeSlider
+                        value={[currentQRange[0], currentQRange[1]]}
+                        onChange={(value) => updateAzimuthalQRange(integration.id, [value[0], value[1]])}
+                        min={0}
+                        max={maxQValue}
+                        step={maxQValue / 200}
+                        label={(value) => value.toFixed(2)}
+                        disabled={integration.hidden}
+                        className="w-full"
+                      />
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center justify-between w-full">
+                          <label className="text-xl text-gray-600">Min:</label>
+                          <input
+                            type="number"
+                            value={currentQRange[0].toFixed(2)}
+                            onChange={(e) => {
+                              const newValue = parseFloat(e.target.value);
+                              if (!isNaN(newValue)) {
+                                updateAzimuthalQRange(integration.id, [
+                                  Math.min(newValue, currentQRange[1]),
+                                  currentQRange[1]
+                                ]);
+                              }
+                            }}
+                            disabled={integration.hidden}
+                            className="w-28 p-2 border border-gray-300 rounded text-center text-sm"
+                            step={maxQValue / 200}
+                            min={0}
+                            max={currentQRange[1]}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between w-full">
+                          <label className="text-xl text-gray-600">Max:</label>
+                          <input
+                            type="number"
+                            value={currentQRange[1].toFixed(2)}
+                            onChange={(e) => {
+                              const newValue = parseFloat(e.target.value);
+                              if (!isNaN(newValue)) {
+                                updateAzimuthalQRange(integration.id, [
+                                  currentQRange[0],
+                                  Math.max(newValue, currentQRange[0])
+                                ]);
+                              }
+                            }}
+                            disabled={integration.hidden}
+                            className="w-28 p-2 border border-gray-300 rounded text-center text-sm"
+                            step={maxQValue / 200}
+                            min={currentQRange[0]}
+                            max={maxQValue}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <h4 className="text-md font-semibold mb-2">Azimuthal Range (degrees)</h4>
+                    <div className="space-y-2">
+                      <RangeSlider
+                        value={[integration.azimuthRange[0], integration.azimuthRange[1]]}
+                        onChange={(value) => updateAzimuthalRange(integration.id, [value[0], value[1]])}
+                        min={-180}
+                        max={180}
+                        step={1}
+                        label={(value) => `${value}°`}
+                        disabled={integration.hidden}
+                        className="w-full"
+                      />
+                      <div className="flex flex-col space-y-2">
+                        <div className="flex items-center justify-between w-full">
+                          <label className="text-xl text-gray-600">Min:</label>
+                          <input
+                            type="number"
+                            value={integration.azimuthRange[0]}
+                            onChange={(e) => {
+                              const newValue = parseInt(e.target.value);
+                              if (!isNaN(newValue)) {
+                                updateAzimuthalRange(integration.id, [
+                                  Math.min(newValue, integration.azimuthRange[1]),
+                                  integration.azimuthRange[1]
+                                ]);
+                              }
+                            }}
+                            disabled={integration.hidden}
+                            className="w-28 p-2 border border-gray-300 rounded text-center text-sm"
+                            step={1}
+                            min={-180}
+                            max={integration.azimuthRange[1]}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between w-full">
+                          <label className="text-xl text-gray-600">Max:</label>
+                          <input
+                            type="number"
+                            value={integration.azimuthRange[1]}
+                            onChange={(e) => {
+                              const newValue = parseInt(e.target.value);
+                              if (!isNaN(newValue)) {
+                                updateAzimuthalRange(integration.id, [
+                                  integration.azimuthRange[0],
+                                  Math.max(newValue, integration.azimuthRange[0])
+                                ]);
+                              }
+                            }}
+                            disabled={integration.hidden}
+                            className="w-28 p-2 border border-gray-300 rounded text-center text-sm"
+                            step={1}
+                            min={integration.azimuthRange[0]}
+                            max={180}
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </Card>
-        );
-      })}
-    </div>
+              );
+            })}
+          </div>
+        </Accordion.Panel>
+      </Accordion.Item>
+
+      {colorPicker?.visible && (
+        <ColorPickerPopup
+          ref={colorPickerRef}
+          colorPicker={colorPicker}
+          onColorChange={handleColorChange}
+          onAccept={() => setColorPicker(null)}
+          onCancel={handleCancelColor}
+        />
+      )}
+    </Accordion>
   );
 }

@@ -1,173 +1,133 @@
 import { AzimuthalIntegration, AzimuthalData } from '../types';
 
 interface GenerateAzimuthalOverlayParams {
-  integration: AzimuthalIntegration;
-  azimuthalData: AzimuthalData;
-  axisNumber: 1 | 2;
-  factor: number;
-  currentArray: number[][];
-}
+    integration: AzimuthalIntegration;
+    azimuthalData: AzimuthalData;
+    axisNumber: number;
+    factor: number;
+    currentArray: number[][];
+    maxQValue: number;
+    beamCenterX?: number;  // Add beam center parameters
+    beamCenterY?: number;
+  }
 
-export function generateAzimuthalOverlay({
+
+  // Helper function to find indices in 2D array
+function findWhere(array2D: number[][], condition: (val: number) => boolean): [number[], number[]] {
+    const xIndices = [];
+    const yIndices = [];
+
+    for (let i = 0; i < array2D.length; i++) {
+      for (let j = 0; j < array2D[i].length; j++) {
+        if (condition(array2D[i][j])) {
+          yIndices.push(i);
+          xIndices.push(j);
+        }
+      }
+    }
+
+    return [yIndices, xIndices];
+  }
+
+
+
+ export function generateAzimuthalOverlay({
   integration,
   azimuthalData,
   axisNumber,
   factor,
-  currentArray
+  currentArray,
+  maxQValue,
+  beamCenterX = 0,
+  beamCenterY = 0
 }: GenerateAzimuthalOverlayParams) {
-  // Early validation to prevent processing with invalid data
-  if (!azimuthalData?.qArray || !currentArray.length || factor === null) {
-    console.warn('Invalid data for azimuthal overlay');
-    return [];
-  }
+  if (!currentArray.length || !azimuthalData) return [];
 
-  // Select color based on which image we're overlaying (left or right)
-  const color = axisNumber === 1 ? integration.leftColor : integration.rightColor;
+  const qArray = azimuthalData.qArray;
+  const tolerance = 0.1;
 
-  // Scale the q-array to match current resolution level
-  const scaledQArray = azimuthalData.qArray.map((row, i) =>
-    row.map((q, j) => {
-      const fullResI = i * factor;
-      const fullResJ = j * factor;
+  const innerQ = integration.qRange ? integration.qRange[0] : 0;
+  const outerQ = integration.qRange ? integration.qRange[1] : maxQValue;
 
-      return fullResI < currentArray.length && fullResJ < currentArray[0].length
-        ? q
-        : NaN;
-    })
-  );
+  const [innerY, innerX] = findWhere(qArray, val => Math.abs(val - innerQ) < tolerance);
+  const [outerY, outerX] = findWhere(qArray, val => Math.abs(val - outerQ) < tolerance);
 
-  // Get q-range boundaries, handling null case
-  let qMin = 0;
-  let qMax = Math.max(...azimuthalData.q);  // Use maximum q value from data if qRange is null
+  const scalePoint = (x: number, y: number) => ({
+    x: x / factor,
+    y: y / factor
+  });
 
-  if (integration.qRange !== null) {
-    [qMin, qMax] = integration.qRange;
-  }
-
-  // Create binary mask indicating which pixels are within the desired q-range
-  const mask = scaledQArray.map(row =>
-    row.map(q => !isNaN(q) && q >= qMin && q <= qMax ? 1 : 0)
-  );
-
-  // Generate contour points that trace the boundary of the q-range region
-  const contourPoints = findContourPoints(mask);
-
-  // Scale the contour points back to match current display resolution
-  const scaledContourPoints = {
-    x: contourPoints.x.map(x => x / factor),
-    y: contourPoints.y.map(y => y / factor)
+  // Calculate angles for each point relative to beam center
+  const getAngle = (x: number, y: number) => {
+    const dx = x - beamCenterX;
+    const dy = y - beamCenterY;
+    // Get angle in degrees, shifted to [-180, 180] range
+    const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+    return angle;
   };
 
-  // Calculate a good position for the label (25% along the contour)
-  const labelIndex = Math.floor(scaledContourPoints.x.length * 0.25);
-  const labelX = scaledContourPoints.x[labelIndex];
-  const labelY = scaledContourPoints.y[labelIndex];
+  // Filter points based on azimuthal range
+  const startAngle = integration.azimuthRange[0];
+  const endAngle = integration.azimuthRange[1];
 
-  // Return array of Plotly traces for visualization
+  const filterByAngle = (x: number, y: number) => {
+    const angle = getAngle(x, y);
+    if (startAngle <= endAngle) {
+      return angle >= startAngle && angle <= endAngle;
+    } else {
+      // Handle case where range crosses -180/180 boundary
+      return angle >= startAngle || angle <= endAngle;
+    }
+  };
+
+  // Create and filter points
+  const innerPoints = innerX
+    .map((x, i) => ({ x, y: innerY[i] }))
+    .filter(p => filterByAngle(p.x, p.y))
+    .map(p => scalePoint(p.x, p.y));
+
+  const outerPoints = outerX
+    .map((x, i) => ({ x, y: outerY[i] }))
+    .filter(p => filterByAngle(p.x, p.y))
+    .map(p => scalePoint(p.x, p.y));
+
+  const color = axisNumber === 1 ? integration.leftColor : integration.rightColor;
+
   return [
-    // Contour line showing q-range boundary
+    // Inner circle points
     {
-      x: scaledContourPoints.x,
-      y: scaledContourPoints.y,
-      mode: 'lines',
-      line: { color, width: 2 },
+      x: innerPoints.map(p => p.x),
+      y: innerPoints.map(p => p.y),
+      mode: 'markers',
+      marker: { color, size: 2 },
       opacity: 0.75,
       xaxis: `x${axisNumber}`,
       yaxis: `y${axisNumber}`,
       showlegend: false,
-      hoverinfo: 'skip'
     },
-    // Label showing q-range values
+    // Outer circle points
     {
-      x: [labelX],
-      y: [labelY],
-      mode: 'text',
-      text: [`q: ${qMin.toFixed(2)}-${qMax.toFixed(2)} Å⁻¹`],
-      textfont: { size: 12 },
-      textposition: 'top right',
+      x: outerPoints.map(p => p.x),
+      y: outerPoints.map(p => p.y),
+      mode: 'markers',
+      marker: { color, size: 2 },
+      opacity: 0.75,
       xaxis: `x${axisNumber}`,
       yaxis: `y${axisNumber}`,
       showlegend: false,
-      hoverinfo: 'skip'
-    }
+    },
+    // Fill region between points
+    // {
+    //   x: [...innerPoints.map(p => p.x), ...outerPoints.map(p => p.x).reverse()],
+    //   y: [...innerPoints.map(p => p.y), ...outerPoints.map(p => p.y).reverse()],
+    //   mode: 'lines',
+    //   fill: 'toself',
+    //   fillcolor: color,
+    //   line: { color },
+    //   opacity: 0.3,
+    //   xaxis: `x${axisNumber}`,
+    //   yaxis: `y${axisNumber}`,
+    //   showlegend: false,
+    // }
   ];
-}
-
-function findContourPoints(mask: number[][]) {
-  const height = mask.length;
-  const width = mask[0].length;
-  const points = {
-    x: [] as number[],
-    y: [] as number[]
-  };
-
-  // Define all 8 neighboring directions
-  const directions = [
-    [-1, -1], [-1, 0], [-1, 1],
-    [0, -1],          [0, 1],
-    [1, -1],  [1, 0],  [1, 1]
-  ];
-
-  // Scan through the mask to find edge pixels
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      if (mask[y][x] === 1) {
-        let isEdge = false;
-        for (const [dy, dx] of directions) {
-          const ny = y + dy;
-          const nx = x + dx;
-          if (ny < 0 || ny >= height || nx < 0 || nx >= width || mask[ny][nx] === 0) {
-            isEdge = true;
-            break;
-          }
-        }
-        if (isEdge) {
-          points.x.push(x);
-          points.y.push(y);
-        }
-      }
-    }
-  }
-
-  return sortContourPoints(points);
-}
-
-function sortContourPoints(points: {x: number[], y: number[]}) {
-  if (points.x.length === 0) return points;  // Return empty points if no contour
-
-  const sorted = {
-    x: [points.x[0]],
-    y: [points.y[0]]
-  };
-
-  const remaining = new Set(points.x.map((_, i) => i).slice(1));
-
-  while (remaining.size > 0) {
-    const lastX = sorted.x[sorted.x.length - 1];
-    const lastY = sorted.y[sorted.y.length - 1];
-
-    let minDist = Infinity;
-    let nextIndex = -1;
-
-    for (const i of remaining) {
-      const dx = points.x[i] - lastX;
-      const dy = points.y[i] - lastY;
-      const dist = dx * dx + dy * dy;
-
-      if (dist < minDist) {
-        minDist = dist;
-        nextIndex = i;
-      }
-    }
-
-    sorted.x.push(points.x[nextIndex]);
-    sorted.y.push(points.y[nextIndex]);
-    remaining.delete(nextIndex);
-  }
-
-  // Close the contour
-  sorted.x.push(sorted.x[0]);
-  sorted.y.push(sorted.y[0]);
-
-  return sorted;
 }

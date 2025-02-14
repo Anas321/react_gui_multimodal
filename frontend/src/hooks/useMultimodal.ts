@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { throttle } from 'lodash';
+import { set, throttle } from 'lodash';
 import { decode } from "@msgpack/msgpack";
 import { Linecut, InclinedLinecut, AzimuthalData, AzimuthalIntegration } from '../types';
 import { leftImageColorPalette, rightImageColorPalette } from '../utils/constants';
@@ -719,169 +719,6 @@ export default function useMultimodal() {
   // ==================================================== End of zoom display message
 
 
-  // ====================================================
-  // Azimuthal Integration
-  // ====================================================
-
-  const [azimuthalIntegrations, setAzimuthalIntegrations] = useState<AzimuthalIntegration[]>([]);
-  const [azimuthalData1, setAzimuthalData1] = useState<AzimuthalData[]>([]);
-  const [azimuthalData2, setAzimuthalData2] = useState<AzimuthalData[]>([]);
-  const [maxQValue, setMaxQValue] = useState<number>(2.0);  // Default to 2.0 initially
-
-
-  // Function to fetch azimuthal integration data
-  const fetchAzimuthalData = useCallback(async (
-    id: number,
-    qRange: [number, number] | null,
-    azimuthRange: [number, number]
-  ) => {
-    try {
-      const url = new URL('http://127.0.0.1:8000/api/azimuthal-integrator');
-
-      // Only add q_range parameter if it's not null
-      if (qRange !== null) {
-        url.searchParams.set('q_range', `${qRange[0]},${qRange[1]}`);
-      }
-
-      // Always send azimuth range
-      url.searchParams.set('azimuth_range_deg', `${azimuthRange[0]},${azimuthRange[1]}`);
-
-      const response = await fetch(url.toString());
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch azimuthal integration data: ${errorText}`);
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const result = decode(new Uint8Array(arrayBuffer));
-
-      // Update maxQValue from backend response
-      setMaxQValue(result.q_max);
-
-      // Update state with new data
-      setAzimuthalData1(prev => [
-        ...prev,
-        {
-          id,
-          q: result.q_1,
-          intensity: result.intensity_1,
-          qArray: result.q_array_filtered_1
-        }
-      ]);
-
-      setAzimuthalData2(prev => [
-        ...prev,
-        {
-          id,
-          q: result.q_2,
-          intensity: result.intensity_2,
-          qArray: result.q_array_filtered_2
-        }
-      ]);
-    } catch (error) {
-      console.error('Error fetching azimuthal integration data:', error);
-      throw error;
-    }
-  }, []);
-
-  // Add azimuthal integration with null q_range by default
-  const addAzimuthalIntegration = useCallback(() => {
-    const existingIds = azimuthalIntegrations.map(integration => integration.id);
-    const newId = Math.max(0, ...existingIds) + 1;
-
-    const newIntegration: AzimuthalIntegration = {
-      id: newId,
-      qRange: null,  // Start with null q_range
-      azimuthRange: [-180, 180],
-      leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
-      rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
-      hidden: false
-    };
-
-    setAzimuthalIntegrations(prev => [...prev, newIntegration]);
-    fetchAzimuthalData(newId, null, newIntegration.azimuthRange);
-  }, [fetchAzimuthalData, azimuthalIntegrations]);
-
-
-
-
-  // Update q-range
-  const updateAzimuthalQRange = useCallback((id: number, qRange: [number, number]) => {
-    setAzimuthalIntegrations(prev =>
-      prev.map(integration =>
-        integration.id === id ? { ...integration, qRange } : integration
-      )
-    );
-
-    // Fetch new data with updated range
-    const integration = azimuthalIntegrations.find(i => i.id === id); // Find the integration
-    if (integration) {
-      fetchAzimuthalData(id, qRange, integration.azimuthRange);
-    }
-  }, [fetchAzimuthalData, azimuthalIntegrations]);
-
-  // Update azimuthal range
-  const updateAzimuthalRange = useCallback((id: number, azimuthRange: [number, number]) => {
-    setAzimuthalIntegrations(prev =>
-      prev.map(integration =>
-        integration.id === id ? { ...integration, azimuthRange } : integration
-      )
-    );
-
-    // Fetch new data with updated range
-    const integration = azimuthalIntegrations.find(i => i.id === id); // Find the integration
-    if (integration) {
-      fetchAzimuthalData(id, integration.qRange, azimuthRange);
-    }
-  }, [fetchAzimuthalData, azimuthalIntegrations]);
-
-  // Update color
-  const updateAzimuthalColor = useCallback((id: number, side: 'left' | 'right', color: string) => {
-    setAzimuthalIntegrations(prev =>
-      prev.map(integration =>
-        integration.id === id
-          ? { ...integration, [`${side}Color`]: color }
-          : integration
-      )
-    );
-  }, []);
-
-  // Delete integration
-  const deleteAzimuthalIntegration = useCallback((id: number) => {
-    setAzimuthalIntegrations(prev => {
-      const updatedIntegrations = prev.filter(integration => integration.id !== id);
-      return updatedIntegrations.map((integration, index) => ({
-        ...integration,
-        id: index + 1,
-      }));
-    });
-
-    setAzimuthalData1(prev =>
-      prev.filter(data => data.id !== id).map((data, index) => ({
-        ...data,
-        id: index + 1,
-      }))
-    );
-
-    setAzimuthalData2(prev =>
-      prev.filter(data => data.id !== id).map((data, index) => ({
-        ...data,
-        id: index + 1,
-      }))
-    );
-  }, []);
-
-  // Toggle visibility
-  const toggleAzimuthalVisibility = useCallback((id: number) => {
-    setAzimuthalIntegrations(prev =>
-      prev.map(integration =>
-        integration.id === id ? { ...integration, hidden: !integration.hidden } : integration
-      )
-    );
-  }, []);
-
-
-  // ==================================================== End of azimuthal integration
 
 
   return {
@@ -957,17 +794,7 @@ export default function useMultimodal() {
     setDifferenceColormap,
     normalizationMode,
     setNormalizationMode,
-    // Azimuthal integration states and functions
-    azimuthalIntegrations,
-    azimuthalData1,
-    azimuthalData2,
-    maxQValue,
-    addAzimuthalIntegration,
-    updateAzimuthalQRange,
-    updateAzimuthalRange,
-    updateAzimuthalColor,
-    deleteAzimuthalIntegration,
-    toggleAzimuthalVisibility,
+
   };
 
 }

@@ -21,6 +21,7 @@ import useMultimodal from './hooks/useMultimodal';
 import { Info } from 'lucide-react';
 import { Popover } from '@mantine/core';
 import DataTransformationWidget from './components/DataTransformationWidget';
+import useAzimuthalIntegration from './hooks/useAzimuthalIntegration';
 
 
 
@@ -101,7 +102,10 @@ function App() {
     setDifferenceColormap,
     normalizationMode,
     setNormalizationMode,
-    // Azimuthal integration states and functions
+  } = useMultimodal();
+
+
+  const {
     azimuthalIntegrations,
     azimuthalData1,
     azimuthalData2,
@@ -112,7 +116,11 @@ function App() {
     updateAzimuthalColor,
     deleteAzimuthalIntegration,
     toggleAzimuthalVisibility,
-  } = useMultimodal();
+    globalQRange,
+    setGlobalQRange,
+    globalAzimuthRange,
+    setGlobalAzimuthRange,
+  } = useAzimuthalIntegration();
 
 
   return (
