@@ -14,6 +14,7 @@ import AzimuthalIntegrationWidget from './components/AzimuthalIntegrationWidget'
 import HorizontalLinecutFig from './components/HorizontalLinecutFig';
 import VerticalLinecutFig from './components/VerticalLinecutFig';
 import InclinedLinecutFig from './components/InclinedLinecutFig';
+import AzimuthalIntegrationFig from './components/AzimuthalIntegrationFig';
 
 import { handleExperimentTypeChange, addLinecut } from './utils/linecutHandlers';
 import { leftImageColorPalette, rightImageColorPalette } from './utils/constants';
@@ -430,6 +431,7 @@ function App() {
                   azimuthalIntegrations={azimuthalIntegrations}
                   azimuthalData1={azimuthalData1}
                   azimuthalData2={azimuthalData2}
+                  maxQValue={maxQValue}
                 />
 
                   {resolutionMessage && (
@@ -548,7 +550,12 @@ function App() {
                       <Accordion.Item value="azimuthal-integration-accordion">
                         <Accordion.Control>Azimuthal Integration</Accordion.Control>
                         <Accordion.Panel>
-                          Placeholder
+                          <AzimuthalIntegrationFig
+                            integrations={azimuthalIntegrations}
+                            azimuthalData1={azimuthalData1}
+                            azimuthalData2={azimuthalData2}
+                            zoomedQRange={globalQRange}
+                          />
                         </Accordion.Panel>
                       </Accordion.Item>
                     )}

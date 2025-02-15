@@ -180,7 +180,8 @@ export default function AzimuthalIntegrationWidget({
                         onChange={(value) => updateAzimuthalQRange(integration.id, [value[0], value[1]])}
                         min={0}
                         max={maxQValue}
-                        step={maxQValue / 200}
+                        step={0.1}
+                        minRange={0.1}
                         label={(value) => value.toFixed(2)}
                         disabled={integration.hidden}
                         className="w-full"
@@ -202,7 +203,7 @@ export default function AzimuthalIntegrationWidget({
                             }}
                             disabled={integration.hidden}
                             className="w-28 p-2 border border-gray-300 rounded text-center text-sm"
-                            step={maxQValue / 200}
+                            step={0.1}
                             min={0}
                             max={currentQRange[1]}
                           />
@@ -223,7 +224,7 @@ export default function AzimuthalIntegrationWidget({
                             }}
                             disabled={integration.hidden}
                             className="w-28 p-2 border border-gray-300 rounded text-center text-sm"
-                            step={maxQValue / 200}
+                            step={0.1}
                             min={currentQRange[0]}
                             max={maxQValue}
                           />

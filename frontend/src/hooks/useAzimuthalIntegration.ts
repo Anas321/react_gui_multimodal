@@ -43,6 +43,12 @@ export default function useAzimuthalIntegration() {
     const [globalQRange, setGlobalQRange] = useState<[number, number] | null>(null);  // Current Q range selection
     const [globalAzimuthRange, setGlobalAzimuthRange] = useState<[number, number]>([-180, 180]);  // Current azimuth range
 
+
+    // Define default ranges as constants
+    const DEFAULT_AZIMUTH_RANGE: [number, number] = [-180, 180];
+    const DEFAULT_Q_RANGE: [number, number] | null = null;
+
+
     // Main data fetching function
     // This function communicates with the backend to get integration data
     const fetchAzimuthalData = useCallback(async (
@@ -158,26 +164,31 @@ export default function useAzimuthalIntegration() {
             debouncedQRangeUpdate.cancel();
             debouncedAzimuthRangeUpdate.cancel();
         };
-    }, []);
+    }, [debouncedQRangeUpdate, debouncedAzimuthRangeUpdate]);
 
     // Function to add a new integration
     const addAzimuthalIntegration = useCallback(() => {
         const existingIds = azimuthalIntegrations.map(integration => integration.id);
         const newId = Math.max(0, ...existingIds) + 1;
 
-        // Create new integration with default values
+        // Create new integration with default ranges
         const newIntegration: AzimuthalIntegration = {
             id: newId,
-            qRange: null,  // Start with null q-range
-            azimuthRange: globalAzimuthRange,
+            qRange: DEFAULT_Q_RANGE,
+            azimuthRange: DEFAULT_AZIMUTH_RANGE,  // Always use default range for new integrations
             leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
             rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
             hidden: false
         };
 
         setAzimuthalIntegrations(prev => [...prev, newIntegration]);
-        fetchAzimuthalData(newId, globalQRange, globalAzimuthRange);
-    }, [fetchAzimuthalData, azimuthalIntegrations, globalQRange, globalAzimuthRange]);
+
+        // Reset global range to default when adding new integration
+        setGlobalAzimuthRange(DEFAULT_AZIMUTH_RANGE);
+
+        // Fetch data with default ranges
+        fetchAzimuthalData(newId, globalQRange, DEFAULT_AZIMUTH_RANGE);
+    }, [fetchAzimuthalData, azimuthalIntegrations, globalQRange, DEFAULT_AZIMUTH_RANGE]);
 
     // Update functions that use the debounced versions
     // These functions are called directly from the UI and trigger the debounced updates
