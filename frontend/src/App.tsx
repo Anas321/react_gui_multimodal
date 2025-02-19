@@ -11,6 +11,9 @@ import VerticalLinecutWidget from './components/VerticalLinecutWidget';
 import InclinedLinecutWidget from './components/InclinedLinecutWidget';
 import AzimuthalIntegrationWidget from './components/AzimuthalIntegrationWidget';
 
+import DataTransformationWidget from './components/DataTransformationWidget';
+import CalibrationWidget from './components/CalibrationWidget';
+
 import HorizontalLinecutFig from './components/HorizontalLinecutFig';
 import VerticalLinecutFig from './components/VerticalLinecutFig';
 import InclinedLinecutFig from './components/InclinedLinecutFig';
@@ -21,8 +24,21 @@ import { leftImageColorPalette, rightImageColorPalette } from './utils/constants
 import useMultimodal from './hooks/useMultimodal';
 import { Info } from 'lucide-react';
 import { Popover } from '@mantine/core';
-import DataTransformationWidget from './components/DataTransformationWidget';
+import { notifications } from '@mantine/notifications';
+
 import useAzimuthalIntegration from './hooks/useAzimuthalIntegration';
+
+
+interface CalibrationParams {
+  sample_detector_distance: number;
+  beam_center_x: number;
+  beam_center_y: number;
+  pixel_size_x: number;
+  pixel_size_y: number;
+  wavelength: number;
+  tilt: number;
+  tilt_plan_rotation: number;
+}
 
 
 
@@ -121,7 +137,55 @@ function App() {
     setGlobalQRange,
     globalAzimuthRange,
     setGlobalAzimuthRange,
+    fetchAzimuthalData,
+    calibrationParams,
+    updateCalibration,
   } = useAzimuthalIntegration();
+
+
+    const handleCalibrationUpdate = async (params: CalibrationParams) => {
+      try {
+          notifications.show({
+              id: 'calibration-update',
+              loading: true,
+              title: 'Updating Calibration',
+              message: 'Please wait while calibration parameters are updated...',
+              autoClose: false,
+          });
+
+          // Update the calibration parameters in the hook
+          updateCalibration(params);
+
+          notifications.update({
+              id: 'calibration-update',
+              color: 'green',
+              title: 'Calibration Updated',
+              message: 'Calibration parameters have been updated successfully',
+              autoClose: 2000,
+          });
+
+      } catch (error) {
+          let errorMessage: string;
+          if (error instanceof Error) {
+              errorMessage = error.message;
+          } else if (typeof error === 'string') {
+              errorMessage = error;
+          } else {
+              errorMessage = 'An unexpected error occurred during calibration update';
+          }
+
+          console.error('Error updating calibration:', error);
+
+          notifications.update({
+              id: 'calibration-update',
+              color: 'red',
+              title: 'Calibration Update Failed',
+              message: errorMessage,
+              autoClose: 4000,
+          });
+      }
+  };
+
 
 
   return (
@@ -374,6 +438,23 @@ function App() {
                   />
                 </Accordion.Panel>
               </Accordion.Item>
+
+
+                {/* Data transformation accordion */}
+                <Accordion.Item value="calibration accordion">
+                <Accordion.Control classNames={{label: 'text-3xl font-bold'}}>
+                  Calibration
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <CalibrationWidget
+                    onCalibrationUpdate={handleCalibrationUpdate}
+                    calibrationParams={calibrationParams}
+                  />
+                </Accordion.Panel>
+              </Accordion.Item>
+
+
+
 
 
             </Accordion>

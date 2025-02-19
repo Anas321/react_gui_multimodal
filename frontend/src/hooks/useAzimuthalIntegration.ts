@@ -16,6 +16,17 @@ interface AzimuthalIntegratorResponse {
     q_array_filtered_2: number[][];  // 2D array of Q values for second dataset
 }
 
+interface CalibrationParams {
+    sample_detector_distance: number;  // Distance in millimeters
+    beam_center_x: number;            // X-coordinate in pixels
+    beam_center_y: number;            // Y-coordinate in pixels
+    pixel_size_x: number;             // Size in micrometers
+    pixel_size_y: number;             // Size in micrometers
+    wavelength: number;               // Wavelength in Angstroms
+    tilt: number;                     // Tilt angle in degrees
+    tilt_plan_rotation: number;       // Tilt plane rotation in degrees
+}
+
 // Type guard function to verify the response matches our expected format
 // This is a TypeScript feature that helps ensure runtime type safety
 function isAzimuthalIntegratorResponse(value: unknown): value is AzimuthalIntegratorResponse {
@@ -43,9 +54,18 @@ export default function useAzimuthalIntegration() {
     const [globalQRange, setGlobalQRange] = useState<[number, number] | null>(null);  // Current Q range selection
     const [globalAzimuthRange, setGlobalAzimuthRange] = useState<[number, number]>([-180, 180]);  // Current azimuth range
 
+    const [calibrationParams, setCalibrationParams] = useState<CalibrationParams>({
+        sample_detector_distance: 274.83,
+        beam_center_x: 317.8,
+        beam_center_y: 1245.28,
+        pixel_size_x: 172,
+        pixel_size_y: 172,
+        wavelength: 1.2398,
+        tilt: 0,
+        tilt_plan_rotation: 0
+    });
 
     // Define default ranges as constants
-    const DEFAULT_AZIMUTH_RANGE: [number, number] = [-180, 180];
     const DEFAULT_Q_RANGE: [number, number] | null = null;
 
 
@@ -59,6 +79,19 @@ export default function useAzimuthalIntegration() {
         try {
             // Construct URL with query parameters
             const url = new URL('http://127.0.0.1:8000/api/azimuthal-integrator');
+
+            // Add calibration parameters
+            url.searchParams.set('sample_detector_distance', calibrationParams.sample_detector_distance.toString());
+            url.searchParams.set('beam_center_x', calibrationParams.beam_center_x.toString());
+            url.searchParams.set('beam_center_y', calibrationParams.beam_center_y.toString());
+            url.searchParams.set('pixel_size_x', calibrationParams.pixel_size_x.toString());
+            url.searchParams.set('pixel_size_y', calibrationParams.pixel_size_y.toString());
+            url.searchParams.set('wavelength', calibrationParams.wavelength.toString());
+            url.searchParams.set('tilt', calibrationParams.tilt.toString());
+            url.searchParams.set('tilt_plan_rotation', calibrationParams.tilt_plan_rotation.toString());
+
+
+
             if (qRange !== null) {
                 url.searchParams.set('q_range', `${qRange[0]},${qRange[1]}`);
             }
@@ -112,7 +145,7 @@ export default function useAzimuthalIntegration() {
             console.error('Error fetching azimuthal integration data:', error);
             throw error;
         }
-    }, [maxQValue]);
+    }, [calibrationParams, maxQValue]);
 
     // Debounced function references
     // These are stable references to debounced functions that persist across renders
@@ -168,6 +201,7 @@ export default function useAzimuthalIntegration() {
 
     // Function to add a new integration
     const addAzimuthalIntegration = useCallback(() => {
+        const DEFAULT_AZIMUTH_RANGE: [number, number] = [-180, 180];
         const existingIds = azimuthalIntegrations.map(integration => integration.id);
         const newId = Math.max(0, ...existingIds) + 1;
 
@@ -188,7 +222,7 @@ export default function useAzimuthalIntegration() {
 
         // Fetch data with default ranges
         fetchAzimuthalData(newId, globalQRange, DEFAULT_AZIMUTH_RANGE);
-    }, [fetchAzimuthalData, azimuthalIntegrations, globalQRange, DEFAULT_AZIMUTH_RANGE]);
+    }, [fetchAzimuthalData, azimuthalIntegrations, globalQRange]);
 
     // Update functions that use the debounced versions
     // These functions are called directly from the UI and trigger the debounced updates
@@ -265,6 +299,21 @@ export default function useAzimuthalIntegration() {
         );
     }, []);
 
+    const updateCalibration = useCallback((newParams: CalibrationParams) => {
+        setCalibrationParams(newParams);
+
+        // Refresh all active integrations with new parameters
+        azimuthalIntegrations
+            .filter(integration => !integration.hidden)
+            .forEach(integration => {
+                fetchAzimuthalData(
+                    integration.id,
+                    integration.qRange,
+                    integration.azimuthRange
+                );
+            });
+    }, [azimuthalIntegrations, fetchAzimuthalData]);
+
     // Return all the necessary states and functions
     return {
         azimuthalIntegrations,
@@ -281,5 +330,8 @@ export default function useAzimuthalIntegration() {
         setGlobalQRange,
         globalAzimuthRange,
         setGlobalAzimuthRange,
+        fetchAzimuthalData,
+        calibrationParams,
+        updateCalibration,
     };
 }

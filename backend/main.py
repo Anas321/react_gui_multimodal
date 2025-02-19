@@ -26,6 +26,9 @@ app.include_router(scatter_subplot.router, prefix="/api", tags=["Scatter Images"
 app.include_router(
     azimuthal_integrator.router, prefix="/api", tags=["Azimuthal Integrator"]
 )
+app.include_router(
+    azimuthal_integrator.router, prefix="/api", tags=["Azimuthal Calibration"]
+)
 
 
 @app.get("/")

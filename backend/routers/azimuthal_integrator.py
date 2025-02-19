@@ -4,8 +4,9 @@ import msgpack
 import numpy as np
 
 # import pyFAI
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
+from pydantic import BaseModel
 from pyFAI.integrator.azimuthal import AzimuthalIntegrator
 
 from backend.routers.initial_scans_fetching import get_initial_scans
@@ -13,6 +14,18 @@ from backend.routers.initial_scans_fetching import get_initial_scans
 # OpenCL support is currently commented out but could be enabled for GPU acceleration
 # import pyopencl as cl
 # import pyopencl.array as cla
+
+
+class CalibrationParameters(BaseModel):
+    sample_detector_distance: float
+    beam_center_x: float
+    beam_center_y: float
+    pixel_size_x: float
+    pixel_size_y: float
+    wavelength: float
+    tilt: float = 0.0
+    tilt_plan_rotation: float = 0.0
+
 
 router = APIRouter()
 
@@ -47,10 +60,34 @@ def parse_range_parameter(
 
 @router.get("/azimuthal-integrator")
 async def azimuthal_integration(
+    # Calibration parameters as query parameters with defaults
+    sample_detector_distance: float = Query(
+        default=274.83,
+        description="Distance between sample and detector in millimeters",
+    ),
+    beam_center_x: float = Query(
+        default=317.8, description="X-coordinate of beam center in pixels"
+    ),
+    beam_center_y: float = Query(
+        default=1245.28, description="Y-coordinate of beam center in pixels"
+    ),
+    pixel_size_x: float = Query(
+        default=172, description="Pixel size in X direction (micrometers)"
+    ),
+    pixel_size_y: float = Query(
+        default=172, description="Pixel size in Y direction (micrometers)"
+    ),
+    wavelength: float = Query(
+        default=1.2398, description="X-ray wavelength in Angstroms"
+    ),
+    tilt: float = Query(default=0.0, description="Detector tilt angle in degrees"),
+    tilt_plan_rotation: float = Query(
+        default=0.0, description="Rotation of tilt plane in degrees"
+    ),
+    # Other parameters
     scans=Depends(get_initial_scans),
-    # azimuth_range_deg=(-180, 180),  # Default to full azimuthal range
-    azimuth_range_deg: str | None = None,  # Default full azimuthal range
-    q_range: str | None = None,  # Optional q-range limit
+    azimuth_range_deg: str | None = None,
+    q_range: str | None = None,
 ):
     """
     Performs azimuthal integration on two scatter images to convert 2D detector images
@@ -62,24 +99,26 @@ async def azimuthal_integration(
     azimuth_range = parse_range_parameter(azimuth_range_deg, None)
     q_range_tuple = parse_range_parameter(q_range, None)
 
-    print(f"Azimuthal range: {azimuth_range}", type(azimuth_range))
-    print(f"Q range: {q_range_tuple}")
+    # print(f"Azimuthal range: {azimuth_range}", type(azimuth_range))
+    # print(f"Q range: {q_range_tuple}")
 
     # Convert the input scatter images to NumPy arrays for processing
     # The full resolution images are used to maintain maximum data quality
     scatter_image_array_1 = np.array(scans["scatter_image_array_1_full_res"])
     scatter_image_array_2 = np.array(scans["scatter_image_array_2_full_res"])
 
-    # Define experimental geometry parameters
-    # These parameters describe the physical setup of the X-ray scattering experiment
-    sample_detector_distance = 274.83  # Distance from sample to detector in millimeters
-    beam_center_x = 317.8  # X-coordinate of beam center in pixels
-    beam_center_y = 1245.28  # Y-coordinate of beam center in pixels
-    tilt = 0  # Detector tilt angle (if any)
-    tilt_plan_rotation = 0  # Rotation of tilt plane
-    pixel_size_x = 172  # Pixel size in micrometers (X direction)
-    pixel_size_y = 172  # Pixel size in micrometers (Y direction)
-    wavelength = 1.2398  # X-ray wavelength in Angstroms
+    # # Define experimental geometry parameters
+    # # These parameters describe the physical setup of the X-ray scattering experiment
+    # sample_detector_distance = 274.83  # Distance from sample to detector in millimeters
+    # beam_center_x = 317.8  # X-coordinate of beam center in pixels
+    # beam_center_y = 1245.28  # Y-coordinate of beam center in pixels
+    # tilt = 0  # Detector tilt angle (if any)
+    # tilt_plan_rotation = 0  # Rotation of tilt plane
+    # pixel_size_x = 172  # Pixel size in micrometers (X direction)
+    # pixel_size_y = 172  # Pixel size in micrometers (Y direction)
+    # wavelength = 1.2398  # X-ray wavelength in Angstroms
+
+    # params = update_calibration()
 
     # Package all calibration parameters into a dictionary for easier handling
     azimuthal_integration_calibration_params = {
@@ -93,7 +132,7 @@ async def azimuthal_integration(
         "tilt_plan_rotation": tilt_plan_rotation,
     }
 
-    # Initialize the azimuthal integrator with our experimental geometry
+    # # Initialize the azimuthal integrator with our experimental geometry
     ai = AzimuthalIntegrator()
     ai.setFit2D(
         directDist=azimuthal_integration_calibration_params["sample_detector_distance"],
@@ -105,6 +144,10 @@ async def azimuthal_integration(
         pixelY=azimuthal_integration_calibration_params["pixel_size_y"],
         wavelength=azimuthal_integration_calibration_params["wavelength"],
     )
+
+    # # Get the current calibrated integrator instead of creating a new one
+    # state = IntegratorState()
+    # ai = state.integrator
 
     # Set integration parameters
     number_of_integration_points = 500  # Number of points in output 1D pattern
