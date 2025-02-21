@@ -147,8 +147,8 @@ export function generateAzimuthalOverlay({
     factor,
     currentArray,
     maxQValue,
-    beamCenterX = 317.8,
-    beamCenterY = 1245.28,
+    beamCenterX,
+    beamCenterY,
 }: GenerateAzimuthalOverlayParams): PlotTrace[] {
     // Return empty array if no data is available
     if (!currentArray.length || !azimuthalData) return [];

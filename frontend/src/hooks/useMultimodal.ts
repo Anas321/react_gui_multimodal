@@ -1,20 +1,15 @@
 import { useMemo, useState, useCallback } from 'react';
-import { set, throttle } from 'lodash';
-import { decode } from "@msgpack/msgpack";
-import { Linecut, InclinedLinecut, AzimuthalData, AzimuthalIntegration } from '../types';
+import { throttle } from 'lodash';
+import { Linecut, InclinedLinecut} from '../types';
 import { leftImageColorPalette, rightImageColorPalette } from '../utils/constants';
 import { calculateInclinedLineEndpoints } from '../utils/calculateInclinedLinecutEndpoints';
 
 
 export default function useMultimodal() {
 
-  // 1. First, declare all useState hooks
-  const [horizontalLinecuts, setHorizontalLinecuts] = useState<Linecut[]>([]);
   const [experimentType, setExperimentType] = useState('SAXS');
   const [selectedLinecuts, setSelectedLinecuts] = useState<string[]>([]);
-  const [horizontalLinecutPosition, setHorizontalLinecutPosition] = useState(0);
-  const [horizontalLinecutData1, setHorizontalLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
-  const [horizontalLinecutData2, setHorizontalLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
+  // const [horizontalLinecutPosition, setHorizontalLinecutPosition] = useState(0);
   const [imageHeight, setImageHeight] = useState<number>(100);
   const [imageWidth, setImageWidth] = useState<number>(100);
   const [imageData1, setImageData1] = useState<number[][]>([]);
@@ -23,30 +18,49 @@ export default function useMultimodal() {
   const [zoomedYPixelRange, setZoomedYPixelRange] = useState<[number, number] | null>(null);
 
 
-  // 2. Then declare all useMemo hooks
-  // Cache linecut data computations
-  const linecutDataCache = useMemo(() => new Map(), []);
+  // 1. First, declare all useState hooks
+  const [horizontalLinecuts, setHorizontalLinecuts] = useState<Linecut[]>([]);
+  const [horizontalLinecutData1, setHorizontalLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
+  const [horizontalLinecutData2, setHorizontalLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
 
 
-  // 3. Then declare all useCallback hooks
-  const computeLinecutData = useCallback((position: number, imageData: number[][]): number[] => {
-    const cacheKey = `${position}-${imageData.length}`;
-    if (linecutDataCache.has(cacheKey)) {
-      return linecutDataCache.get(cacheKey);
-    }
-
+  // Compute horizontal linecut data
+  const computeHorizontalLinecutData = useCallback((position: number, imageData: number[][]): number[] => {
     if (Array.isArray(imageData) && position >= 0 && position < imageData.length) {
-      const data = imageData[position];
-      linecutDataCache.set(cacheKey, data);
-      return data;
+      return imageData[position];
     }
     return [];
-  }, [linecutDataCache]);
+  }, []);
 
+  // Add a new horizontal linecut
+  const addHorizontalLinecut = useCallback(throttle(() => {
+    const existingIds = horizontalLinecuts.map((linecut) => linecut.id);
+    const newId = Math.max(0, ...existingIds) + 1;
+    const defaultPosition = Math.floor((imageHeight - 1) / 2);
 
-  // 4. Finally, declare all throttle and debounce hooks
-  // Throttle the update linecut position function to prevent too many updates
-  const throttledUpdateLinecutPosition = useCallback(
+    const newLinecut = {
+      id: newId,
+      position: defaultPosition,
+      leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
+      rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
+      hidden: false,
+      width: 0,
+    };
+
+    setHorizontalLinecuts((prev) => [...prev, newLinecut]);
+    setSelectedLinecuts((prev) => [...prev, String(newLinecut.id)]);
+
+    if (imageData1.length > 0 && imageData2.length > 0) {
+      const data1 = computeHorizontalLinecutData(defaultPosition, imageData1);
+      const data2 = computeHorizontalLinecutData(defaultPosition, imageData2);
+
+      setHorizontalLinecutData1((prev) => [...prev, { id: newId, data: data1 }]);
+      setHorizontalLinecutData2((prev) => [...prev, { id: newId, data: data2 }]);
+    }
+  }, 200), [imageHeight, imageData1, imageData2, horizontalLinecuts, computeHorizontalLinecutData]);
+
+  // Update position of a horizontal linecut
+  const updateHorizontalLinecutPosition = useCallback(
     throttle((id: number, position: number) => {
       setHorizontalLinecuts(prev =>
         prev.map(linecut =>
@@ -55,8 +69,8 @@ export default function useMultimodal() {
       );
 
       if (imageData1.length > 0 && imageData2.length > 0) {
-        const newLinecutData1 = computeLinecutData(position, imageData1);
-        const newLinecutData2 = computeLinecutData(position, imageData2);
+        const newLinecutData1 = computeHorizontalLinecutData(position, imageData1);
+        const newLinecutData2 = computeHorizontalLinecutData(position, imageData2);
 
         setHorizontalLinecutData1(prev =>
           prev.map(data =>
@@ -69,117 +83,66 @@ export default function useMultimodal() {
           )
         );
       }
-    }, 200, { leading: true, trailing: true }),
-    [imageData1, imageData2, computeLinecutData]
+    }, 200),
+    [imageData1, imageData2, computeHorizontalLinecutData]
   );
 
+  // Update width of a horizontal linecut
+  const updateHorizontalLinecutWidth = useCallback(
+    throttle((id: number, width: number) => {
+      setHorizontalLinecuts((prev) =>
+        prev.map((linecut) =>
+          linecut.id === id ? { ...linecut, width } : linecut
+        )
+      );
+    }, 200),
+    []
+  );
 
-  // Update the color of a horizontal linecut
-  const updateHorizontalLinecutColor = (id: number, side: 'left' | 'right', color: string) => {
+  // Update color of a horizontal linecut
+  const updateHorizontalLinecutColor = useCallback((id: number, side: 'left' | 'right', color: string) => {
     setHorizontalLinecuts((prev) =>
       prev.map((linecut) =>
         linecut.id === id
-          ? { ...linecut, [`${side}Color`]: color } // Update either `leftColor` or `rightColor`
+          ? { ...linecut, [`${side}Color`]: color }
           : linecut
       )
     );
-  };
-
+  }, []);
 
   // Delete a horizontal linecut
-  const deleteHorizontalLinecut = (id: number) => {
+  const deleteHorizontalLinecut = useCallback((id: number) => {
     setHorizontalLinecuts((prev) => {
-      // Filter out the linecut to be deleted
       const updatedLinecuts = prev.filter((linecut) => linecut.id !== id);
-
-      // Renumber the remaining linecuts to keep the order
       return updatedLinecuts.map((linecut, index) => ({
         ...linecut,
-        id: index + 1, // Reassign IDs starting from 1
+        id: index + 1,
       }));
     });
 
-    // Also update the linecut data (if applicable)
     setHorizontalLinecutData1((prev) =>
       prev.filter((data) => data.id !== id).map((data, index) => ({
         ...data,
-        id: index + 1, // Ensure the IDs in data match the updated linecuts
+        id: index + 1,
       }))
     );
 
     setHorizontalLinecutData2((prev) =>
       prev.filter((data) => data.id !== id).map((data, index) => ({
         ...data,
-        id: index + 1, // Ensure the IDs in data match the updated linecuts
+        id: index + 1,
       }))
     );
-  };
+  }, []);
 
-
-  // Toggle the visibility of a horizontal linecut
-  const toggleHorizontalLinecutVisibility = (id: number) => {
+  // Toggle visibility of a horizontal linecut
+  const toggleHorizontalLinecutVisibility = useCallback((id: number) => {
     setHorizontalLinecuts((prev) =>
       prev.map((linecut) =>
         linecut.id === id ? { ...linecut, hidden: !linecut.hidden } : linecut
       )
     );
-  };
-
-  // Add a new horizontal linecut
-  const addHorizontalLinecut = throttle(() => {
-    // Ensure unique IDs for new linecuts
-    const existingIds = horizontalLinecuts.map((linecut) => linecut.id);
-    const newId = Math.max(0, ...existingIds) + 1;
-
-    const defaultPosition = Math.floor((imageHeight - 1) / 2); // Default position at the center
-
-    const newLinecut = {
-      id: newId,
-      position: defaultPosition,
-      leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
-      rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
-      hidden: false,
-      width: 0, // Default width
-    };
-
-    // Add the new linecut
-    setHorizontalLinecuts((prev) => [...prev, newLinecut]);
-
-    // Add to selected linecuts
-    setSelectedLinecuts((prev) => [...prev, String(newLinecut.id)]);
-
-    // Set the position state for the new linecut
-    setHorizontalLinecutPosition(defaultPosition);
-
-    // Compute and set linecut data for both images
-    if (imageData1.length > 0 && imageData2.length > 0) {
-      const data1 = imageData1[defaultPosition];
-      const data2 = imageData2[defaultPosition];
-
-      setHorizontalLinecutData1((prev) => [...prev, { id: newId, data: data1 }]);
-      setHorizontalLinecutData2((prev) => [...prev, { id: newId, data: data2 }]);
-    }
-  }, 200);
-
-
-  // Update the position of a horizontal linecut
-  const updateHorizontalLinecutPosition = (id: number, position: number) => {
-    throttledUpdateLinecutPosition(id, position);
-  };
-
-  // Update the width of a horizontal linecut
-  const updateHorizontalLinecutWidth = (id: number, width: number) => {
-    setHorizontalLinecuts((prev) =>
-      prev.map((linecut) =>
-        linecut.id === id
-          ? {
-              ...linecut,
-              width, // Update only the width
-            }
-          : linecut
-      )
-    );
-  };
+  }, []);
 
 
   // ====================================================
@@ -191,20 +154,20 @@ export default function useMultimodal() {
     const [verticalLinecutData1, setVerticalLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
     const [verticalLinecutData2, setVerticalLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
 
-    // Add vertical linecut computation function
+    // Compute vertical linecut data
     const computeVerticalLinecutData = useCallback((position: number, imageData: number[][]): number[] => {
-        const cacheKey = `vertical-${position}-${imageData.length}`;
-        if (linecutDataCache.has(cacheKey)) {
-        return linecutDataCache.get(cacheKey);
-        }
-
-        if (Array.isArray(imageData) && imageData[0] && position >= 0 && position < imageData[0].length) {
-        const data = imageData.map(row => row[position]);
-        linecutDataCache.set(cacheKey, data);
-        return data;
-        }
-        return [];
-    }, [linecutDataCache]);
+      // First validate the input parameters
+      if (Array.isArray(imageData) &&
+          imageData[0] && // Check first row exists
+          position >= 0 &&
+          position < imageData[0].length) {
+          // For vertical linecuts, we take values from the same position in each row
+          // This creates an array of intensity values going from top to bottom
+          return imageData.map(row => row[position]);
+      }
+      // Return empty array if validation fails
+      return [];
+    }, []); // No dependencies needed since this is a pure computation
 
     // Add vertical linecut functions
     const addVerticalLinecut = throttle(() => {

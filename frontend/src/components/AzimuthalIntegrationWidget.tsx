@@ -120,57 +120,63 @@ export default function AzimuthalIntegrationWidget({
                   role="region"
                   aria-labelledby={`integration-${integration.id}`}
                 >
-                  <div className="w-full mb-4">
-                    <h3 className="text-xl font-medium mb-2 text-left">
-                      Integral {integration.id}
+                <div className="flex items-center justify-between w-full mb-4">
+                    <h3 className="text-xl font-medium">
+                        Integral {integration.id}
                     </h3>
-                    <div className="flex items-center justify-end">
-                      <div className="group relative">
+                    <div className="flex items-center">
+                        {/* Left color bar */}
+                        <div className="group relative">
                         <div
-                          className="h-3 w-12 mr-4 cursor-pointer"
-                          style={{ backgroundColor: integration.leftColor }}
-                          onClick={(e) => handleOpenColorPicker(integration, 'left', e)}
-                        ></div>
+                            className="h-3 w-12 mr-4 cursor-pointer"
+                            style={{ backgroundColor: integration.leftColor }}
+                            onClick={(e) => handleOpenColorPicker(integration, 'left', e)}
+                        />
                         <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
-                          Click to change color
+                            Click to change color
                         </span>
-                      </div>
-                      <div className="group relative">
+                        </div>
+                        {/* Right color bar */}
+                        <div className="group relative">
                         <div
-                          className="h-3 w-12 mr-2 cursor-pointer"
-                          style={{ backgroundColor: integration.rightColor }}
-                          onClick={(e) => handleOpenColorPicker(integration, 'right', e)}
-                        ></div>
+                            className="h-3 w-12 mr-2 cursor-pointer"
+                            style={{ backgroundColor: integration.rightColor }}
+                            onClick={(e) => handleOpenColorPicker(integration, 'right', e)}
+                        />
                         <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
-                          Click to change color
+                            Click to change color
                         </span>
-                      </div>
-                      <div className="group relative">
+                        </div>
+                        {/* Eye icon */}
+                        <div className="group relative">
                         <button
-                          className="text-blue-500 hover:text-blue-700 ml-1 flex items-center pointer-events-auto"
-                          onClick={() => toggleAzimuthalVisibility(integration.id)}
-                          aria-label={`Toggle Visibility of Integration ${integration.id}`}
+                            className="text-blue-500 hover:text-blue-700 ml-1 flex items-center pointer-events-auto"
+                            onClick={() => toggleAzimuthalVisibility(integration.id)}
+                            aria-label={`Toggle Visibility of Integration ${integration.id}`}
                         >
-                          {integration.hidden ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
+                            {integration.hidden ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
                         </button>
                         <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
-                          {integration.hidden ? "Show" : "Hide"}
+                            {integration.hidden ? "Show" : "Hide"}
                         </span>
-                      </div>
-                      <div className="group relative ml-4" style={{ transform: 'translateY(1px)' }}>
+                        </div>
+                        {/* Delete button */}
+                        <div className="group relative ml-4" style={{ transform: 'translateY(1px)' }}>
                         <button
-                          className="w-5 h-5 flex items-center justify-center bg-gray-200 text-gray-600 hover:bg-red-500 hover:text-white rounded"
-                          onClick={() => deleteAzimuthalIntegration(integration.id)}
-                          aria-label={`Delete Integration ${integration.id}`}
+                            className="w-5 h-5 flex items-center justify-center bg-gray-200 text-gray-600 hover:bg-red-500 hover:text-white rounded"
+                            onClick={() => deleteAzimuthalIntegration(integration.id)}
+                            aria-label={`Delete Integration ${integration.id}`}
                         >
-                          <FaTrash size={14} />
+                            <FaTrash size={14} />
                         </button>
                         <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
-                          Delete
+                            Delete
                         </span>
-                      </div>
+                        </div>
                     </div>
-                  </div>
+                    </div>
+
+
 
                   <div className="mb-6">
                     <h4 className="text-md font-semibold mb-2">Q-Range (nm⁻¹)</h4>

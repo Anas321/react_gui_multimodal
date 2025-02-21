@@ -94,7 +94,6 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
   }, [colorPicker, handleCancelColor]);
 
   return (
-    <div className="w-full mb-6">
       <Accordion
         multiple={false}
         defaultValue={linecutType ? `${linecutType}-linecuts` : undefined}
@@ -287,7 +286,7 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
             </div>
           </Accordion.Panel>
         </Accordion.Item>
-      </Accordion>
+      {/* </Accordion> */}
 
       {/* Color Picker Popup */}
       {colorPicker?.visible && (
@@ -300,7 +299,7 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
           />
         </div>
       )}
-    </div>
+    </Accordion>
   );
 };
 

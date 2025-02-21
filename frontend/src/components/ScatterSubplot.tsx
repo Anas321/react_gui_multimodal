@@ -6,7 +6,8 @@ import {
   InclinedLinecut,
   Linecut,
   AzimuthalIntegration,
-  AzimuthalData
+  AzimuthalData,
+  CalibrationParams,
 } from "../types";
 import { downsampleArray } from "../utils/downsampleArray";
 import { handleRelayout } from '../utils/handleRelayout';
@@ -55,6 +56,7 @@ interface ScatterSubplotProps {
   azimuthalData1: AzimuthalData[];               // Integration data for first image
   azimuthalData2: AzimuthalData[];               // Integration data for second image
   maxQValue: number;
+  calibrationParams: CalibrationParams;
 }
 
 
@@ -84,6 +86,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   azimuthalData1,
   azimuthalData2,
   maxQValue,
+  calibrationParams,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
@@ -91,6 +94,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   const [dragMode, setDragMode] = useState('zoom');
   // const [clippingLimits, setClippingLimits] = useState({ lower: 1, upper: 99 });
   const plotDataRef = useRef<any>(null);
+  // const [isTransformingData, setIsTransformingData] = useState(false);
 
 
   // Resolution-specific states
@@ -309,7 +313,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       // - Better CPU branch prediction
       for (let i = 0; i < totalSize; i++) {
         const val = flatInput[i];
-        result[i] = val <= 0 ? logMinPositive : Math.log10(val);
+        result[i] = val < 0 ? logMinPositive : val == 0 ? 0 : Math.log10(val);
       }
 
       // Convert back to 2D array if required by the calling code
@@ -1089,8 +1093,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
             factor,
             currentArray: currentArrayData,
             maxQValue: maxQValue,
-            // beamCenterX: integration.beamCenterX,
-            // beamCenterY: integration.beamCenterY
+            beamCenterX: calibrationParams.beam_center_x,
+            beamCenterY: calibrationParams.beam_center_y,
           }),
           ...generateAzimuthalOverlay({
             integration,
@@ -1099,8 +1103,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
             factor,
             currentArray: currentArrayData,
             maxQValue: maxQValue,
-            // beamCenterX: integration.beamCenterX,
-            // beamCenterY: integration.beamCenterY
+            beamCenterX: calibrationParams.beam_center_x,
+            beamCenterY: calibrationParams.beam_center_y,
           })
         ];
       })
@@ -1118,6 +1122,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     currentResolution,
     getCurrentFactor,
     maxQValue,
+    calibrationParams
   ]);
 
 

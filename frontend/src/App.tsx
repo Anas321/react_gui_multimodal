@@ -123,23 +123,24 @@ function App() {
 
 
   const {
+    // State
     azimuthalIntegrations,
     azimuthalData1,
     azimuthalData2,
     maxQValue,
+    globalQRange,
+    globalAzimuthRange,
+    calibrationParams,
+
+    // Functions
     addAzimuthalIntegration,
     updateAzimuthalQRange,
     updateAzimuthalRange,
     updateAzimuthalColor,
     deleteAzimuthalIntegration,
     toggleAzimuthalVisibility,
-    globalQRange,
-    setGlobalQRange,
-    globalAzimuthRange,
-    setGlobalAzimuthRange,
-    fetchAzimuthalData,
-    calibrationParams,
     updateCalibration,
+    fetchAzimuthalData,
   } = useAzimuthalIntegration();
 
 
@@ -236,16 +237,16 @@ function App() {
       {/* <div className="flex flex-row h-[150vh] w-[100vw] p-0"> */}
         {/* First Column */}
         {!isSecondCollapsed && (
-          <div className={`border border-gray-300 shadow-lg h-full bg-gray-100 relative transition-all duration-300 flex-shrink-0 flex flex-col
+          <div className={`border border-gray-300 shadow-lg h-full bg-gray-100 relative transition-all duration-300 flex-shrink-0 flex flex-col h-[calc(100vh-70px)]
             ${isSecondCollapsed ? 'w-0' : 'w-[15%]'}`}
           >
             {/* Fixed Header Section */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 sticky top-0 bg-gray-100 z-10 pt-4 pb-2">
               <h1 className="text-3xl font-bold mb-4 mt-4 text-center">Scatter Controls</h1>
               <hr className="w-full border border-gray-300" />
             </div>
           {/* Scrollable Content Section */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
             {/* Dropdown for Experiment Type */}
             <Select
               label="Select Experiment Type"
@@ -311,9 +312,6 @@ function App() {
                           <span className="text-2xl font-medium">Vertical Linecut</span>
                         </Menu.Item>
 
-                        {/* <Menu.Item onClick={() => addLinecut('Vertical', selectedLinecuts, setSelectedLinecuts)}>
-                          <span className="text-2xl font-medium">Vertical Linecut</span>
-                        </Menu.Item> */}
                         {/* Conditionally render Azimuthal Integration in the menu*/}
                         <Menu.Item
                         onClick={() => {
@@ -464,7 +462,7 @@ function App() {
       )}
         {/* Second Column */}
         <div
-          className={`h-full border-r-2 border-gray-300 transition-all duration-300
+          className={`h-[calc(100vh-70px)] border-r-2 border-gray-300 transition-all duration-300
             ${isSecondCollapsed
             ? 'flex-grow-0 w-0 overflow-hidden'
             : isThirdCollapsed
@@ -473,6 +471,7 @@ function App() {
           }`}
         >
           {/* {!isSecondCollapsed && ( */}
+          <div className="flex-1 overflow-y-auto">
             <Accordion
               multiple
               defaultValue={['scatter-images-accordion', 'intensity-spectrum-accordion', 'linecuts-accordion-second-col']} // Expanded by default
@@ -513,6 +512,7 @@ function App() {
                   azimuthalData1={azimuthalData1}
                   azimuthalData2={azimuthalData2}
                   maxQValue={maxQValue}
+                  calibrationParams={calibrationParams}
                 />
 
                   {resolutionMessage && (
@@ -563,7 +563,7 @@ function App() {
               <Accordion.Item value="linecuts-accordion-second-col">
                 <Accordion.Control>Linecuts</Accordion.Control>
                 <Accordion.Panel>
-                <div className="max-h-[60vh] overflow-y-auto">
+                <div className="max-h-[45vh] overflow-y-auto">
                   <Accordion
                     multiple
                     defaultValue={
@@ -627,7 +627,10 @@ function App() {
                       </Accordion.Panel>
                     </Accordion.Item>
                     )}
-                    {experimentType === 'SAXS' && selectedLinecuts.includes('Azimuthal') && (
+                    {experimentType === 'SAXS' &&
+                    selectedLinecuts.includes('Azimuthal') &&
+                    azimuthalIntegrations.length > 0
+                    && (
                       <Accordion.Item value="azimuthal-integration-accordion">
                         <Accordion.Control>Azimuthal Integration</Accordion.Control>
                         <Accordion.Panel>
@@ -636,6 +639,7 @@ function App() {
                             azimuthalData1={azimuthalData1}
                             azimuthalData2={azimuthalData2}
                             zoomedQRange={globalQRange}
+                            isLogScale={isLogScale}
                           />
                         </Accordion.Panel>
                       </Accordion.Item>
@@ -646,7 +650,7 @@ function App() {
                 </Accordion.Panel>
               </Accordion.Item>
             </Accordion>
-           {/* )} */}
+           </div>
         </div>
 
         {/* Third Column */}

@@ -44,3 +44,15 @@ export interface AzimuthalData {
         intensity: number[];  // integrated intensities
         qArray: number[][];  // 2D array of q values for visualization
       }
+
+
+export interface CalibrationParams {
+        sample_detector_distance: number;
+        beam_center_x: number;
+        beam_center_y: number;
+        pixel_size_x: number;
+        pixel_size_y: number;
+        wavelength: number;
+        tilt: number;
+        tilt_plan_rotation: number;
+    }
