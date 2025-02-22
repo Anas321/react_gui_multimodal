@@ -121,31 +121,55 @@ export default function useAzimuthalIntegration() {
         qRange: [number, number] | null,
         azimuthRange: [number, number]
     ) => {
+        // Generate a unique key for caching based on current parameters
         const currentCacheKey = createCacheKey(calibrationParams, azimuthRange);
 
+        // Check if we need to fetch new data by comparing cache keys
+        // This happens if:
+        // 1. We have no cached data (!cachedMatrixData), or
+        // 2. The current parameters don't match the cached parameters
         try {
             const needsNewData = !cachedMatrixData ||
-                               currentCacheKey !== createCacheKey(calibrationParams, cachedMatrixData.azimuthRange);
+                               currentCacheKey !== cachedMatrixData.calibrationHash ||
+                               azimuthRange !== cachedMatrixData.azimuthRange;
 
+            console.log('needsNewData', needsNewData);
             if (needsNewData) {
+                // Create a URL object for the API endpoint
+                // URL is a built-in JavaScript class for handling URLs
                 const url = new URL('http://127.0.0.1:8000/api/azimuthal-integrator');
 
+                // Add all calibration parameters to the URL as query parameters
+                // Object.entries() converts an object into an array of [key, value] pairs
+                // forEach() executes a function for each item in the array
                 Object.entries(calibrationParams).forEach(([key, value]) => {
                     url.searchParams.set(key, value.toString());
                 });
+                // URLSearchParams is a built-in API for handling URL query parameters
                 url.searchParams.set('azimuth_range_deg', `${azimuthRange[0]},${azimuthRange[1]}`);
 
+                // Add the azimuth range to the URL parameters
+                // Template literals (`${x}`) allow embedding expressions in strings
                 const response = await fetch(url.toString());
+
+                // Check if the request was successful (status code 200-299)
                 if (!response.ok) {
                     throw new Error(`Failed to fetch azimuthal integration data: ${await response.text()}`);
                 }
 
+                // Convert the response to a binary array buffer and decode it
+                // arrayBuffer() gets the raw binary data
+                // Uint8Array creates a typed array of 8-bit unsigned integers
+                // decode() converts the binary MessagePack format back to JavaScript objects
                 const decodedData = decode(new Uint8Array(await response.arrayBuffer()));
 
+                // Validate the response format using our type guard
                 if (!isAzimuthalIntegratorResponse(decodedData)) {
                     throw new Error('Invalid response format from server');
                 }
 
+                // Store the fetched data in the cache
+                // This prevents unnecessary future API calls
                 setCachedMatrixData({
                     qArray1: decodedData.q_array_filtered_1,
                     qArray2: decodedData.q_array_filtered_2,
@@ -157,11 +181,15 @@ export default function useAzimuthalIntegration() {
                     qValues2: decodedData.q_2
                 });
 
+                // If this is the first time we're getting data,
+                // initialize the global Q-range based on the maximum Q value
                 if (maxQValue === 2) {
                     setMaxQValue(decodedData.q_max);
                     setGlobalQRange([0, decodedData.q_max]);
                 }
 
+                // Update the integration data with the new values
+                // filterByQRange applies the Q-range filter to the arrays
                 updateIntegrationData(id, {
                     q1: decodedData.q_1,
                     q2: decodedData.q_2,
@@ -171,6 +199,8 @@ export default function useAzimuthalIntegration() {
                     qArray2: filterByQRange(decodedData.q_array_filtered_2, qRange)
                 });
             } else {
+                // If we don't need new data, use the cached values
+                // This saves unnecessary API calls
                 updateIntegrationData(id, {
                     q1: cachedMatrixData.qValues1,
                     q2: cachedMatrixData.qValues2,
@@ -181,6 +211,7 @@ export default function useAzimuthalIntegration() {
                 });
             }
         } catch (error) {
+            // If any error occurs during the process, log it and re-throw
             console.error('Error in azimuthal integration:', error);
             throw error;
         }
@@ -334,12 +365,36 @@ export default function useAzimuthalIntegration() {
         );
     }, []);
 
+    // const updateCalibration = useCallback((newParams: CalibrationParams) => {
+    //     setCalibrationParams(newParams);
+    //     // Clear cache when calibration changes
+    //     setCachedMatrixData(null);
+
+    //     // Refresh all active integrations
+    //     azimuthalIntegrations
+    //         .filter(integration => !integration.hidden)
+    //         .forEach(integration => {
+    //             fetchAzimuthalData(
+    //                 integration.id,
+    //                 integration.qRange,
+    //                 integration.azimuthRange
+    //             );
+    //         });
+    // }, [azimuthalIntegrations, fetchAzimuthalData]);
+
+    // Update calibration parameters only
     const updateCalibration = useCallback((newParams: CalibrationParams) => {
         setCalibrationParams(newParams);
-        // Clear cache when calibration changes
-        setCachedMatrixData(null);
+    }, []); // No dependencies needed
 
-        // Refresh all active integrations
+    // Handle data fetching in an effect
+    useEffect(() => {
+        // Skip if no calibration params or no integrations
+        if (!calibrationParams || azimuthalIntegrations.length === 0) return;
+
+        console.log('Fetching azimuthal data...');
+
+        // Update all visible integrations
         azimuthalIntegrations
             .filter(integration => !integration.hidden)
             .forEach(integration => {
@@ -349,7 +404,7 @@ export default function useAzimuthalIntegration() {
                     integration.azimuthRange
                 );
             });
-    }, [azimuthalIntegrations, fetchAzimuthalData]);
+    }, [calibrationParams, azimuthalIntegrations, fetchAzimuthalData]);
 
     // Return hook interface
     return {
