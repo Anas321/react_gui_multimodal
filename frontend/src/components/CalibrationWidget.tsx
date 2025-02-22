@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NumberInput, Button } from '@mantine/core';
+import { NumberInput, Button, NumberInputProps } from '@mantine/core';
 
 interface CalibrationParams {
     sample_detector_distance: number;  // Distance in millimeters
@@ -17,35 +17,57 @@ interface CalibrationWidgetProps {
     onCalibrationUpdate: (params: CalibrationParams) => void;
 }
 
+// Define props for our custom input component
+interface LargeNumberInputProps extends Omit<NumberInputProps, 'label'> {
+    label: string;
+    description?: string;
+}
+
+// Custom wrapper component for NumberInput with large labels
+const LargeNumberInput: React.FC<LargeNumberInputProps> = ({
+    label,
+    description,
+    ...numberInputProps
+}) => {
+    return (
+        <div className="space-y-1">
+            <label className="block text-xl font-medium text-gray-700">{label}</label>
+            {description && (
+                <p className="text-sm text-gray-500">{description}</p>
+            )}
+            <NumberInput {...numberInputProps}
+              size='md'
+            />
+        </div>
+    );
+};
+
 export default function CalibrationWidget({
     calibrationParams,
     onCalibrationUpdate,
 }: CalibrationWidgetProps) {
-
-    // Track whether any parameter has been modified
     const [isModified, setIsModified] = useState(false);
-
-    // Create a local copy for tracking changes before submission
     const [localParams, setLocalParams] = useState(calibrationParams);
 
-    // Update local copy when props change
     useEffect(() => {
         setLocalParams(calibrationParams);
-        setIsModified(false);  // Reset modified state when new props arrive
+        setIsModified(false);
     }, [calibrationParams]);
 
-    // Handle parameter updates
-    const handleParamChange = (paramName: keyof CalibrationParams, value: number | null) => {
-        if (value !== null) {
+    // Handler that accepts Mantine's value type (string | number)
+    const handleParamChange = (paramName: keyof CalibrationParams) => (value: string | number) => {
+        // Convert string to number if needed and validate
+        const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+
+        if (!isNaN(numericValue)) {
             setLocalParams(prev => ({
                 ...prev,
-                [paramName]: value
+                [paramName]: numericValue
             }));
             setIsModified(true);
         }
     };
 
-    // Handle form submission
     const handleSubmit = () => {
         const isValid = Object.values(localParams).every(value =>
             typeof value === 'number' && !isNaN(value)
@@ -60,34 +82,32 @@ export default function CalibrationWidget({
     return (
         <div className="space-y-4">
             {/* Sample-Detector Distance */}
-            <div>
-                <NumberInput
-                    label="Sample-Detector Distance (mm)"
-                    description="Distance between sample and detector"
-                    value={calibrationParams.sample_detector_distance}
-                    onChange={(value) => handleParamChange('sample_detector_distance', value as number)}
-                    decimalScale={2}
-                    step={0.1}
-                    min={0}
-                    className="w-full"
-                />
-            </div>
+            <LargeNumberInput
+                label="Sample-Detector Distance (mm)"
+                description="Distance between sample and detector"
+                value={localParams.sample_detector_distance}
+                onChange={handleParamChange('sample_detector_distance')}
+                decimalScale={2}
+                step={0.1}
+                min={0}
+                className="w-full"
+            />
 
             {/* Beam Center Coordinates */}
             <div className="space-y-2">
-                <NumberInput
+                <LargeNumberInput
                     label="Beam Center X (pixels)"
                     description="X-coordinate of beam center"
-                    value={calibrationParams.beam_center_x}
-                    onChange={(value) => handleParamChange('beam_center_x', value as number)}
+                    value={localParams.beam_center_x}
+                    onChange={handleParamChange('beam_center_x')}
                     decimalScale={2}
                     step={0.1}
                 />
-                <NumberInput
+                <LargeNumberInput
                     label="Beam Center Y (pixels)"
                     description="Y-coordinate of beam center"
-                    value={calibrationParams.beam_center_y}
-                    onChange={(value) => handleParamChange('beam_center_y', value as number)}
+                    value={localParams.beam_center_y}
+                    onChange={handleParamChange('beam_center_y')}
                     decimalScale={2}
                     step={0.1}
                 />
@@ -95,20 +115,20 @@ export default function CalibrationWidget({
 
             {/* Pixel Size */}
             <div className="space-y-2">
-                <NumberInput
+                <LargeNumberInput
                     label="Pixel Size X (μm)"
                     description="Pixel size in X direction"
-                    value={calibrationParams.pixel_size_x}
-                    onChange={(value) => handleParamChange('pixel_size_x', value as number)}
+                    value={localParams.pixel_size_x}
+                    onChange={handleParamChange('pixel_size_x')}
                     decimalScale={2}
                     step={1}
                     min={0}
                 />
-                <NumberInput
+                <LargeNumberInput
                     label="Pixel Size Y (μm)"
                     description="Pixel size in Y direction"
-                    value={calibrationParams.pixel_size_y}
-                    onChange={(value) => handleParamChange('pixel_size_y', value as number)}
+                    value={localParams.pixel_size_y}
+                    onChange={handleParamChange('pixel_size_y')}
                     decimalScale={2}
                     step={1}
                     min={0}
@@ -116,33 +136,31 @@ export default function CalibrationWidget({
             </div>
 
             {/* Wavelength */}
-            <div>
-                <NumberInput
-                    label="Wavelength (Å)"
-                    description="X-ray wavelength"
-                    value={calibrationParams.wavelength}
-                    onChange={(value) => handleParamChange('wavelength', value as number)}
-                    decimalScale={2}
-                    step={0.0001}
-                    min={0}
-                />
-            </div>
+            <LargeNumberInput
+                label="Wavelength (Å)"
+                description="X-ray wavelength"
+                value={localParams.wavelength}
+                onChange={handleParamChange('wavelength')}
+                decimalScale={2}
+                step={0.0001}
+                min={0}
+            />
 
             {/* Detector Tilt */}
             <div className="space-y-2">
-                <NumberInput
+                <LargeNumberInput
                     label="Detector Tilt (degrees)"
                     description="Tilt angle of detector"
-                    value={calibrationParams.tilt}
-                    onChange={(value) => handleParamChange('tilt', value as number)}
+                    value={localParams.tilt}
+                    onChange={handleParamChange('tilt')}
                     decimalScale={2}
                     step={0.1}
                 />
-                <NumberInput
+                <LargeNumberInput
                     label="Tilt Plane Rotation (degrees)"
                     description="Rotation of tilt plane"
-                    value={calibrationParams.tilt_plan_rotation}
-                    onChange={(value) => handleParamChange('tilt_plan_rotation', value as number)}
+                    value={localParams.tilt_plan_rotation}
+                    onChange={handleParamChange('tilt_plan_rotation')}
                     decimalScale={2}
                     step={0.1}
                 />
@@ -158,6 +176,5 @@ export default function CalibrationWidget({
                 Update Calibration
             </Button>
         </div>
-
     );
 }

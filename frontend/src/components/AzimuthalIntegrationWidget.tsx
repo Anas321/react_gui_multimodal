@@ -121,7 +121,7 @@ export default function AzimuthalIntegrationWidget({
                   aria-labelledby={`integration-${integration.id}`}
                 >
                 <div className="flex items-center justify-between w-full mb-4">
-                    <h3 className="text-xl font-medium">
+                    <h3 className="text-xl font-semibold">
                         Integral {integration.id}
                     </h3>
                     <div className="flex items-center">
@@ -179,7 +179,7 @@ export default function AzimuthalIntegrationWidget({
 
 
                   <div className="mb-6">
-                    <h4 className="text-md font-semibold mb-2">Q-Range (nm⁻¹)</h4>
+                    <h4 className="text-xl mb-2">Q-Range (nm⁻¹)</h4>
                     <div className="space-y-2">
                       <RangeSlider
                         value={[currentQRange[0], currentQRange[1]]}
@@ -240,7 +240,7 @@ export default function AzimuthalIntegrationWidget({
                   </div>
 
                   <div className="mb-4">
-                    <h4 className="text-md font-semibold mb-2">Azimuthal Range (degrees)</h4>
+                    <h4 className="text-xl mb-2">Azimuthal Range (degrees)</h4>
                     <div className="space-y-2">
                       <RangeSlider
                         value={[integration.azimuthRange[0], integration.azimuthRange[1]]}

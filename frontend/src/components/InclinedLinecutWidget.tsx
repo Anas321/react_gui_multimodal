@@ -120,7 +120,7 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
                 >
                   {/* Header Section */}
                   <div className="flex items-center justify-between w-full mb-4">
-                    <h3 className="text-xl font-medium">
+                    <h3 className="text-xl font-semibold">
                       Linecut {linecut.id}
                     </h3>
                     <div className="flex items-center">
@@ -179,7 +179,7 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
                   <div className="space-y-4">
                     {/* Width Control */}
                     <div>
-                      <h4 className="text-md font-semibold mb-2">Width (pixels)</h4>
+                      <h4 className="text-xl mb-2">Width (pixels)</h4>
                       <div className="flex items-center gap-4">
                         <div className="flex-1">
                           <InputSlider
@@ -205,7 +205,7 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
 
                     {/* X Position Control */}
                     <div>
-                      <h4 className="text-md font-semibold mb-2">X Position (pixels)</h4>
+                      <h4 className="text-xl mb-2">X Position (pixels)</h4>
                       <div className="flex items-center gap-4">
                         <div className="flex-1">
                           <InputSlider
@@ -231,7 +231,7 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
 
                     {/* Y Position Control */}
                     <div>
-                      <h4 className="text-md font-semibold mb-2">Y Position (pixels)</h4>
+                      <h4 className="text-xl mb-2">Y Position (pixels)</h4>
                       <div className="flex items-center gap-4">
                         <div className="flex-1">
                           <InputSlider
@@ -257,7 +257,7 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
 
                     {/* Angle Control */}
                     <div>
-                      <h4 className="text-md font-semibold mb-2">Angle (degrees)</h4>
+                      <h4 className="text-xl mb-2">Angle (degrees)</h4>
                       <div className="flex items-center gap-4">
                         <div className="flex-1">
                           <InputSlider

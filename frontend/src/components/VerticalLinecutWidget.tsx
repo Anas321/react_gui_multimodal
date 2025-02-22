@@ -127,7 +127,7 @@ const VerticalLinecutWidget: React.FC<VerticalLinecutWidgetProps> = ({
 
                   {/* Linecut Title with Color Pickers */}
                   <div className="flex items-center justify-between w-full mb-4">
-                    <h3 className="text-xl font-medium">
+                    <h3 className="text-xl font-semibold">
                       Linecut {linecut.id}
                       </h3>
                     <div className="flex items-center ml-4">
@@ -185,7 +185,7 @@ const VerticalLinecutWidget: React.FC<VerticalLinecutWidgetProps> = ({
 
                 {/* Slider and Input Box for Linecut Width */}
                 <div className="mb-6">
-                  <h4 className="text-md font-semibold mb-2">Width (pixels)</h4>
+                  <h4 className="text-xl mb-2">Width (pixels)</h4>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <InputSlider
@@ -216,7 +216,7 @@ const VerticalLinecutWidget: React.FC<VerticalLinecutWidgetProps> = ({
 
                 {/* Slider and Input Box for Linecut Position */}
                 <div className="mb-4">
-                  <h4 className="text-md font-semibold mb-2">Position (pixels)</h4>
+                  <h4 className="text-xl mb-2">Position (pixels)</h4>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <InputSlider
