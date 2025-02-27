@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+/* @import 'bluesky-web/dist/bluesky-web.css'; */
+
 
 /* Tooltip styling */
 .tooltip-content {

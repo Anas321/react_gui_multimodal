@@ -107,19 +107,6 @@ async def azimuthal_integration(
     scatter_image_array_1 = np.array(scans["scatter_image_array_1_full_res"])
     scatter_image_array_2 = np.array(scans["scatter_image_array_2_full_res"])
 
-    # # Define experimental geometry parameters
-    # # These parameters describe the physical setup of the X-ray scattering experiment
-    # sample_detector_distance = 274.83  # Distance from sample to detector in millimeters
-    # beam_center_x = 317.8  # X-coordinate of beam center in pixels
-    # beam_center_y = 1245.28  # Y-coordinate of beam center in pixels
-    # tilt = 0  # Detector tilt angle (if any)
-    # tilt_plan_rotation = 0  # Rotation of tilt plane
-    # pixel_size_x = 172  # Pixel size in micrometers (X direction)
-    # pixel_size_y = 172  # Pixel size in micrometers (Y direction)
-    # wavelength = 1.2398  # X-ray wavelength in Angstroms
-
-    # params = update_calibration()
-
     # Package all calibration parameters into a dictionary for easier handling
     azimuthal_integration_calibration_params = {
         "sample_detector_distance": sample_detector_distance,

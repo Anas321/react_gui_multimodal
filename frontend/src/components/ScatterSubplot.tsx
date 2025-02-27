@@ -57,6 +57,7 @@ interface ScatterSubplotProps {
   azimuthalData2: AzimuthalData[];               // Integration data for second image
   maxQValue: number;
   calibrationParams: CalibrationParams;
+  qYVector: number[]; // qYVector for q-value mapping
 }
 
 
@@ -87,6 +88,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   azimuthalData2,
   maxQValue,
   calibrationParams,
+  qYVector,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
@@ -860,38 +862,15 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         const lowFactor = fullArray1[0].length > 2000 || fullArray1.length > 2000 ? 8 : 4;
         const mediumFactor = fullArray1[0].length > 2000 || fullArray1.length > 2000 ? 4 : 2;
 
-        // // Transform the full resolution data
-        // const transformedArray1 = transformData(fullArray1, isLogScale, lowerPercentile, upperPercentile);
-        // const transformedArray2 = transformData(fullArray2, isLogScale, lowerPercentile, upperPercentile);
-        // const transformedDiff = transformData(fullDiff, isLogScale, lowerPercentile, upperPercentile);
-
-
-        // Calculate clip values (1st and 99th percentiles) for each array
-        // Calculate clip values but don't set them in the coloraxis
-        // In the data fetch useEffect, after calculating the percentiles:
-
-        // const [minValue1, maxValue1] = calculatePercentiles(fullArray1, lowerPercentile, upperPercentile);
-        // const [minValue2, maxValue2] = calculatePercentiles(fullArray2, lowerPercentile, upperPercentile);
-        // const [minValueDiff, maxValueDiff] = calculatePercentiles(fullDiff, lowerPercentile, upperPercentile);
-
         const [minValue1, maxValue1] = getArrayMinMax(fullArray1);
         const [minValue2, maxValue2] = getArrayMinMax(fullArray2);
         const [minValueDiff, maxValueDiff] = getArrayMinMax(fullDiff);
-
-        // const fullArray1Clipped = clipArray(fullArray1, minValue1, maxValue1);
-        // const fullArray2Clipped = clipArray(fullArray2, minValue2, maxValue2);
-        // const fullDiffClipped = clipArray(fullDiff, minValueDiff, maxValueDiff);
-
 
         // Set dimensions and full resolution data for linecuts
         setImageHeight(fullArray1.length);
         setImageWidth(fullArray1[0].length);
         setImageData1(fullArray1);
         setImageData2(fullArray2);
-        // setImageData1(fullArray1Clipped);
-        // setImageData2(fullArray2Clipped);
-        // setImageData1(transformedArray1);
-        // setImageData2(transformedArray2);
 
         const array1DownsampledLowRes = downsampleArray(fullArray1, lowFactor);
         const array2DownsampledLowRes = downsampleArray(fullArray2, lowFactor);
@@ -900,15 +879,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         const array1DownsampledMediumRes = downsampleArray(fullArray1, mediumFactor);
         const array2DownsampledMediumRes = downsampleArray(fullArray2, mediumFactor);
         const diffDownsampledMediumRes = downsampleArray(fullDiff, mediumFactor);
-
-
-        // const array1DownsampledLowRes = downsampleArray(transformedArray1, lowFactor);
-        // const array2DownsampledLowRes = downsampleArray(transformedArray2, lowFactor);
-        // const diffDownsampledLowRes = downsampleArray(transformedDiff, lowFactor);
-
-        // const array1DownsampledMediumRes = downsampleArray(transformedArray1, mediumFactor);
-        // const array2DownsampledMediumRes = downsampleArray(transformedArray2, mediumFactor);
-        // const diffDownsampledMediumRes = downsampleArray(transformedDiff, mediumFactor);
 
 
         // Update resolution data with clipped arrays for display
@@ -939,11 +909,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         plotlyData.data[1].z = array2DownsampledLowRes;
         plotlyData.data[2].z = diffDownsampledLowRes;
 
-        // // Calculate min and max values for color scales
-        // const [minValue1, maxValue1] = getArrayMinMax(array1DownsampledLowRes);
-        // const [minValue2, maxValue2] = getArrayMinMax(array2DownsampledLowRes);
-        // const [minValueDiff, maxValueDiff] = getArrayMinMax(diffDownsampledLowRes);
-
         const globalMinValue = Math.min(minValue1, minValue2);
         const globalMaxValue = Math.max(maxValue1, maxValue2);
 
@@ -967,42 +932,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           plotlyData.layout.coloraxis2.cmid = 0;
         }
 
-        // // Create medium and low resolution versions
-        // const mediumArray1 = downsampleArray(fullArray1, mediumFactor);
-        // const mediumArray2 = downsampleArray(fullArray2, mediumFactor);
-        // const mediumDiff = downsampleArray(fullDiff, mediumFactor);
-        // const lowArray1 = downsampleArray(fullArray1, lowFactor);
-        // const lowArray2 = downsampleArray(fullArray2, lowFactor);
-        // const lowDiff = downsampleArray(fullDiff, lowFactor);
-
-        // // Update resolution data
-        // setResolutionData({
-        //   low: {
-        //     array1: lowArray1,
-        //     array2: lowArray2,
-        //     diff: lowDiff,
-        //     factor: lowFactor
-        //   },
-        //   medium: {
-        //     array1: mediumArray1,
-        //     array2: mediumArray2,
-        //     diff: mediumDiff,
-        //     factor: mediumFactor
-        //   },
-        //   full: {
-        //     array1: fullArray1,
-        //     array2: fullArray2,
-        //     diff: fullDiff,
-        //     factor: 1
-        //   }
-        // });
-
-        // // Initialize plot with low resolution data
-        // const plotlyData = decoded.metadata.plotly;
-        // plotlyData.data[0].z = lowArray1;
-        // plotlyData.data[1].z = lowArray2;
-        // plotlyData.data[2].z = lowDiff;
-
         setPlotData(plotlyData);
 
       })
@@ -1012,10 +941,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     setImageWidth,
     setImageData1,
     setImageData2,
-    // lowerPercentile,
-    // upperPercentile,
-    // transformData,
-    // isLogScale
   ]);
 
 
@@ -1037,7 +962,9 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         .flatMap(linecut => generateHorizontalLinecutOverlay({
           linecut,
           currentArray: currentArrayData,
-          factor: getCurrentFactor()
+          factor: getCurrentFactor(),
+          qYVector, // Pass qYVector to the function
+          units: "nm⁻¹" // Pass units
         })),
       ...(verticalLinecuts || [])
         .filter(l => !l.hidden)
@@ -1122,7 +1049,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     currentResolution,
     getCurrentFactor,
     maxQValue,
-    calibrationParams
+    calibrationParams,
+    qYVector
   ]);
 
 

@@ -1,700 +1,170 @@
-import { useMemo, useState, useCallback } from 'react';
-import { throttle } from 'lodash';
-import { Linecut, InclinedLinecut} from '../types';
-import { leftImageColorPalette, rightImageColorPalette } from '../utils/constants';
-import { calculateInclinedLineEndpoints } from '../utils/calculateInclinedLinecutEndpoints';
+// import { useState } from 'react';
 
+// export default function useMultimodal() {
+
+//   const [experimentType, setExperimentType] = useState('SAXS');
+//   const [selectedLinecuts, setSelectedLinecuts] = useState<string[]>([]);
+//   const [imageHeight, setImageHeight] = useState<number>(100);
+//   const [imageWidth, setImageWidth] = useState<number>(100);
+//   const [imageData1, setImageData1] = useState<number[][]>([]);
+//   const [imageData2, setImageData2] = useState<number[][]>([]);
+//   const [zoomedXPixelRange, setZoomedXPixelRange] = useState<[number, number] | null>(null);
+//   const [zoomedYPixelRange, setZoomedYPixelRange] = useState<[number, number] | null>(null);
+
+//   const [resolutionMessage, setResolutionMessage] = useState('');
+
+//   const [calibrationParams, setCalibrationParams] = useState({
+//     sample_detector_distance: 274.83,
+//     beam_center_x: 317.8,
+//     beam_center_y: 1245.28,
+//     pixel_size_x: 172,
+//     pixel_size_y: 172,
+//     wavelength: 1.2398,
+//     tilt: 0,
+//     tilt_plan_rotation: 0
+//   });
+
+
+
+//   return {
+//     experimentType,
+//     setExperimentType,
+//     selectedLinecuts,
+//     setSelectedLinecuts,
+//     imageHeight,
+//     setImageHeight,
+//     imageWidth,
+//     setImageWidth,
+//     imageData1,
+//     setImageData1,
+//     imageData2,
+//     setImageData2,
+//     zoomedXPixelRange,
+//     setZoomedXPixelRange,
+//     zoomedYPixelRange,
+//     setZoomedYPixelRange,
+//     // For the zoom display message
+//     resolutionMessage,
+//     setResolutionMessage,
+//     calibrationParams,
+//     setCalibrationParams,
+//   };
+
+// }
+
+
+
+import { useState, useCallback, useEffect } from 'react';
+import { decode } from "@msgpack/msgpack";
+import { CalibrationParams } from '../types';
+
+// Define the response interface for q-vectors
+interface QVectorsResponse {
+  q_x: number[];
+  q_y: number[];
+}
+
+// Type guard to validate the response
+function isQVectorsResponse(value: unknown): value is QVectorsResponse {
+  const response = value as QVectorsResponse;
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    Array.isArray(response.q_x) &&
+    Array.isArray(response.q_y)
+  );
+}
 
 export default function useMultimodal() {
-
+  // Existing state variables
   const [experimentType, setExperimentType] = useState('SAXS');
   const [selectedLinecuts, setSelectedLinecuts] = useState<string[]>([]);
-  // const [horizontalLinecutPosition, setHorizontalLinecutPosition] = useState(0);
   const [imageHeight, setImageHeight] = useState<number>(100);
   const [imageWidth, setImageWidth] = useState<number>(100);
   const [imageData1, setImageData1] = useState<number[][]>([]);
   const [imageData2, setImageData2] = useState<number[][]>([]);
   const [zoomedXPixelRange, setZoomedXPixelRange] = useState<[number, number] | null>(null);
   const [zoomedYPixelRange, setZoomedYPixelRange] = useState<[number, number] | null>(null);
-
-
-  // 1. First, declare all useState hooks
-  const [horizontalLinecuts, setHorizontalLinecuts] = useState<Linecut[]>([]);
-  const [horizontalLinecutData1, setHorizontalLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
-  const [horizontalLinecutData2, setHorizontalLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
-
-
-  // Compute horizontal linecut data
-  const computeHorizontalLinecutData = useCallback((position: number, imageData: number[][]): number[] => {
-    if (Array.isArray(imageData) && position >= 0 && position < imageData.length) {
-      return imageData[position];
-    }
-    return [];
-  }, []);
-
-  // Add a new horizontal linecut
-  const addHorizontalLinecut = useCallback(throttle(() => {
-    const existingIds = horizontalLinecuts.map((linecut) => linecut.id);
-    const newId = Math.max(0, ...existingIds) + 1;
-    const defaultPosition = Math.floor((imageHeight - 1) / 2);
-
-    const newLinecut = {
-      id: newId,
-      position: defaultPosition,
-      leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
-      rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
-      hidden: false,
-      width: 0,
-    };
-
-    setHorizontalLinecuts((prev) => [...prev, newLinecut]);
-    setSelectedLinecuts((prev) => [...prev, String(newLinecut.id)]);
-
-    if (imageData1.length > 0 && imageData2.length > 0) {
-      const data1 = computeHorizontalLinecutData(defaultPosition, imageData1);
-      const data2 = computeHorizontalLinecutData(defaultPosition, imageData2);
-
-      setHorizontalLinecutData1((prev) => [...prev, { id: newId, data: data1 }]);
-      setHorizontalLinecutData2((prev) => [...prev, { id: newId, data: data2 }]);
-    }
-  }, 200), [imageHeight, imageData1, imageData2, horizontalLinecuts, computeHorizontalLinecutData]);
-
-  // Update position of a horizontal linecut
-  const updateHorizontalLinecutPosition = useCallback(
-    throttle((id: number, position: number) => {
-      setHorizontalLinecuts(prev =>
-        prev.map(linecut =>
-          linecut.id === id ? { ...linecut, position } : linecut
-        )
-      );
-
-      if (imageData1.length > 0 && imageData2.length > 0) {
-        const newLinecutData1 = computeHorizontalLinecutData(position, imageData1);
-        const newLinecutData2 = computeHorizontalLinecutData(position, imageData2);
-
-        setHorizontalLinecutData1(prev =>
-          prev.map(data =>
-            data.id === id ? { ...data, data: newLinecutData1 } : data
-          )
-        );
-        setHorizontalLinecutData2(prev =>
-          prev.map(data =>
-            data.id === id ? { ...data, data: newLinecutData2 } : data
-          )
-        );
-      }
-    }, 200),
-    [imageData1, imageData2, computeHorizontalLinecutData]
-  );
-
-  // Update width of a horizontal linecut
-  const updateHorizontalLinecutWidth = useCallback(
-    throttle((id: number, width: number) => {
-      setHorizontalLinecuts((prev) =>
-        prev.map((linecut) =>
-          linecut.id === id ? { ...linecut, width } : linecut
-        )
-      );
-    }, 200),
-    []
-  );
-
-  // Update color of a horizontal linecut
-  const updateHorizontalLinecutColor = useCallback((id: number, side: 'left' | 'right', color: string) => {
-    setHorizontalLinecuts((prev) =>
-      prev.map((linecut) =>
-        linecut.id === id
-          ? { ...linecut, [`${side}Color`]: color }
-          : linecut
-      )
-    );
-  }, []);
-
-  // Delete a horizontal linecut
-  const deleteHorizontalLinecut = useCallback((id: number) => {
-    setHorizontalLinecuts((prev) => {
-      const updatedLinecuts = prev.filter((linecut) => linecut.id !== id);
-      return updatedLinecuts.map((linecut, index) => ({
-        ...linecut,
-        id: index + 1,
-      }));
-    });
-
-    setHorizontalLinecutData1((prev) =>
-      prev.filter((data) => data.id !== id).map((data, index) => ({
-        ...data,
-        id: index + 1,
-      }))
-    );
-
-    setHorizontalLinecutData2((prev) =>
-      prev.filter((data) => data.id !== id).map((data, index) => ({
-        ...data,
-        id: index + 1,
-      }))
-    );
-  }, []);
-
-  // Toggle visibility of a horizontal linecut
-  const toggleHorizontalLinecutVisibility = useCallback((id: number) => {
-    setHorizontalLinecuts((prev) =>
-      prev.map((linecut) =>
-        linecut.id === id ? { ...linecut, hidden: !linecut.hidden } : linecut
-      )
-    );
-  }, []);
-
-
-  // ====================================================
-  // Vertical Linecuts
-  // ====================================================
-
-    // Add new states for vertical linecuts
-    const [verticalLinecuts, setVerticalLinecuts] = useState<Linecut[]>([]);
-    const [verticalLinecutData1, setVerticalLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
-    const [verticalLinecutData2, setVerticalLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
-
-    // Compute vertical linecut data
-    const computeVerticalLinecutData = useCallback((position: number, imageData: number[][]): number[] => {
-      // First validate the input parameters
-      if (Array.isArray(imageData) &&
-          imageData[0] && // Check first row exists
-          position >= 0 &&
-          position < imageData[0].length) {
-          // For vertical linecuts, we take values from the same position in each row
-          // This creates an array of intensity values going from top to bottom
-          return imageData.map(row => row[position]);
-      }
-      // Return empty array if validation fails
-      return [];
-    }, []); // No dependencies needed since this is a pure computation
-
-    // Add vertical linecut functions
-    const addVerticalLinecut = throttle(() => {
-        const existingIds = verticalLinecuts.map((linecut) => linecut.id);
-        const newId = Math.max(0, ...existingIds) + 1;
-        const defaultPosition = Math.floor((imageWidth - 1) / 2); // Default position at the center
-
-        const newLinecut = {
-        id: newId,
-        position: defaultPosition,
-        leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
-        rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
-        hidden: false,
-        width: 0,
-        };
-
-        setVerticalLinecuts((prev) => [...prev, newLinecut]);
-
-        if (imageData1.length > 0 && imageData2.length > 0) {
-        const data1 = computeVerticalLinecutData(defaultPosition, imageData1);
-        const data2 = computeVerticalLinecutData(defaultPosition, imageData2);
-
-        setVerticalLinecutData1((prev) => [...prev, { id: newId, data: data1 }]);
-        setVerticalLinecutData2((prev) => [...prev, { id: newId, data: data2 }]);
-        }
-    }, 200);
-
-    const updateVerticalLinecutPosition = useCallback(
-        throttle((id: number, position: number) => {
-        setVerticalLinecuts(prev =>
-            prev.map(linecut =>
-            linecut.id === id ? { ...linecut, position } : linecut
-            )
-        );
-
-        if (imageData1.length > 0 && imageData2.length > 0) {
-            const newLinecutData1 = computeVerticalLinecutData(position, imageData1);
-            const newLinecutData2 = computeVerticalLinecutData(position, imageData2);
-
-            setVerticalLinecutData1(prev =>
-            prev.map(data =>
-                data.id === id ? { ...data, data: newLinecutData1 } : data
-            )
-            );
-            setVerticalLinecutData2(prev =>
-            prev.map(data =>
-                data.id === id ? { ...data, data: newLinecutData2 } : data
-            )
-            );
-        }
-        }, 200),
-        [imageData1, imageData2, computeVerticalLinecutData]
-    );
-
-    const updateVerticalLinecutWidth = (id: number, width: number) => {
-        setVerticalLinecuts((prev) =>
-        prev.map((linecut) =>
-            linecut.id === id ? { ...linecut, width } : linecut
-        )
-        );
-    };
-
-    const updateVerticalLinecutColor = (id: number, side: 'left' | 'right', color: string) => {
-        setVerticalLinecuts((prev) =>
-        prev.map((linecut) =>
-            linecut.id === id
-            ? { ...linecut, [`${side}Color`]: color }
-            : linecut
-        )
-        );
-    };
-
-    const deleteVerticalLinecut = (id: number) => {
-        setVerticalLinecuts((prev) => {
-        const updatedLinecuts = prev.filter((linecut) => linecut.id !== id);
-        return updatedLinecuts.map((linecut, index) => ({
-            ...linecut,
-            id: index + 1,
-        }));
-        });
-
-        setVerticalLinecutData1((prev) =>
-        prev.filter((data) => data.id !== id).map((data, index) => ({
-            ...data,
-            id: index + 1,
-        }))
-        );
-
-        setVerticalLinecutData2((prev) =>
-        prev.filter((data) => data.id !== id).map((data, index) => ({
-            ...data,
-            id: index + 1,
-        }))
-        );
-    };
-
-    const toggleVerticalLinecutVisibility = (id: number) => {
-        setVerticalLinecuts((prev) =>
-        prev.map((linecut) =>
-            linecut.id === id ? { ...linecut, hidden: !linecut.hidden } : linecut
-        )
-        );
-    };
-
-
-  // ==================================================== End of vertical linecuts
-
-
-  // ====================================================
-  // Inclined Linecuts
-  // ====================================================
-
-  // State declarations for inclined linecuts
-  const [inclinedLinecuts, setInclinedLinecuts] = useState<InclinedLinecut[]>([]);
-  const [inclinedLinecutData1, setInclinedLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
-  const [inclinedLinecutData2, setInclinedLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
-
-
-
-  // Compute intensity along an inclined line using interpolation
-  const computeInclinedLinecutData = useCallback((
-    imageData: number[][],
-    xPos: number,
-    yPos: number,
-    angle: number,
-    width: number
-  ): number[] => {
-    // Get the endpoints
-    const endpoints = calculateInclinedLineEndpoints({
-      linecut: {
-        xPosition: xPos,
-        yPosition: yPos,
-        angle,
-        width,
-        id: 0,
-        leftColor: '',
-        rightColor: '',
-        hidden: false,
-        type: 'inclined'
-      },
-      imageWidth: imageData[0].length,
-      imageHeight: imageData.length
-    });
-
-    if (!endpoints) return [];
-    const { x0, y0, x1, y1 } = endpoints;
-
-    // // Calculate the total distance and unit vector
-    // const distanceInX = x1 - x0;
-    // const distanceInY = y1 - y0;
-    // const length = Math.sqrt(distanceInX * distanceInX + distanceInY * distanceInY);
-
-    // Calculate direction vectors using the same convention as calculateInclinedLineEndpoints
-    const angleRad = (angle * Math.PI) / 180;
-    const dirX = Math.cos(angleRad);
-    const dirY = -Math.sin(angleRad);  // Match the negative sign convention
-
-    // Perpendicular vector (rotated 90 degrees counter-clockwise)
-    const perpX = -dirY;  // This becomes sin(angleRad)
-    const perpY = -dirX;  // This becomes -cos(angleRad)
-
-    const distanceInX = x1 - x0;
-    const distanceInY = y1 - y0;
-    const length = Math.sqrt(distanceInX * distanceInX + distanceInY * distanceInY);
-
-    // If we have zero length, return empty array
-    if (length === 0) return [];
-
-    // // Unit vectors for direction and perpendicular
-    // const dirX = distanceInX / length;
-    // const dirY = distanceInY / length;
-
-    // // Perpendicular unit vector (rotated 90 degrees)
-    // const perpX = -dirY;
-    // const perpY = dirX;
-
-    // Sample points along the line
-    const numPoints = Math.ceil(length);
-    const intensities = new Array(numPoints).fill(0);
-    const halfWidth = width / 2;
-
-    // For each point along the line
-    for (let i = 0; i < numPoints; i++) {
-      let sum = 0;
-      let count = 0;
-
-      // Base position along the line
-      const baseX = x0 + (i * dirX);
-      const baseY = y0 + (i * dirY);
-
-      // Sample perpendicular to the line for width averaging
-      for (let w = -halfWidth; w <= halfWidth; w++) {
-        const x = Math.round(baseX + (w * perpX));
-        const y = Math.round(baseY + (w * perpY));
-
-        // console.log(x, y);
-
-        // Check if point is within bounds
-        if (x >= 0 && x < imageData[0].length && y >= 0 && y < imageData.length) {
-          sum += imageData[y][x];
-          count++;
-        }
-      }
-
-      intensities[i] = count > 0 ? sum / count : 0;
-    }
-
-    return intensities;
-  }, []);
-
-
-
-  // Add a new inclined linecut
-  const addInclinedLinecut = useCallback(throttle(() => {
-    const existingIds = inclinedLinecuts.map((linecut) => linecut.id);
-    const newId = Math.max(0, ...existingIds) + 1;
-
-    // Create default linecut at center of image
-    const defaultLinecut: InclinedLinecut = {
-      id: newId,
-      xPosition: Math.floor(imageWidth / 2),  // center x
-      yPosition: Math.floor(imageHeight / 2), // center y
-      leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
-      rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
-      hidden: false,
-      width: 0,
-      angle: 45,  // Default 45-degree angle
-      type: 'inclined'
-    };
-
-    // Add new linecut to state
-    setInclinedLinecuts(prev => [...prev, defaultLinecut]);
-
-    // Compute initial linecut data
-    if (imageData1.length > 0 && imageData2.length > 0) {
-      const data1 = computeInclinedLinecutData(
-        imageData1,
-        defaultLinecut.xPosition,
-        defaultLinecut.yPosition,
-        defaultLinecut.angle,
-        defaultLinecut.width
-      );
-      const data2 = computeInclinedLinecutData(
-        imageData2,
-        defaultLinecut.xPosition,
-        defaultLinecut.yPosition,
-        defaultLinecut.angle,
-        defaultLinecut.width
-      );
-
-      setInclinedLinecutData1(prev => [...prev, { id: newId, data: data1 }]);
-      setInclinedLinecutData2(prev => [...prev, { id: newId, data: data2 }]);
-    }
-  }, 200), [imageWidth, imageHeight, imageData1, imageData2, inclinedLinecuts, computeInclinedLinecutData]);
-
-  // Update x position of an inclined linecut
-  const updateInclinedLinecutXPosition = useCallback(
-    throttle((id: number, xPosition: number) => {
-      // Update linecut x position only
-      setInclinedLinecuts(prev =>
-        prev.map(linecut =>
-          linecut.id === id
-            ? { ...linecut, xPosition }
-            : linecut
-        )
-      );
-
-      // Update linecut data
-      if (imageData1.length > 0 && imageData2.length > 0) {
-        const linecut = inclinedLinecuts.find(l => l.id === id);
-        if (linecut) {
-          const newData1 = computeInclinedLinecutData(
-            imageData1,
-            xPosition,
-            linecut.yPosition,
-            linecut.angle,
-            linecut.width
-          );
-          const newData2 = computeInclinedLinecutData(
-            imageData2,
-            xPosition,
-            linecut.yPosition,
-            linecut.angle,
-            linecut.width
-          );
-
-          setInclinedLinecutData1(prev =>
-            prev.map(data =>
-              data.id === id ? { ...data, data: newData1 } : data
-            )
-          );
-          setInclinedLinecutData2(prev =>
-            prev.map(data =>
-              data.id === id ? { ...data, data: newData2 } : data
-            )
-          );
-        }
-      }
-    }, 200),
-    [imageData1, imageData2, inclinedLinecuts, computeInclinedLinecutData]
-  );
-
-  // Update y position of an inclined linecut
-  const updateInclinedLinecutYPosition = useCallback(
-    throttle((id: number, yPosition: number) => {
-      // Update linecut y position only
-      setInclinedLinecuts(prev =>
-        prev.map(linecut =>
-          linecut.id === id
-            ? { ...linecut, yPosition }
-            : linecut
-        )
-      );
-
-      // Update linecut data
-      if (imageData1.length > 0 && imageData2.length > 0) {
-        const linecut = inclinedLinecuts.find(l => l.id === id);
-        if (linecut) {
-          const newData1 = computeInclinedLinecutData(
-            imageData1,
-            linecut.xPosition,
-            yPosition,
-            linecut.angle,
-            linecut.width
-          );
-          const newData2 = computeInclinedLinecutData(
-            imageData2,
-            linecut.xPosition,
-            yPosition,
-            linecut.angle,
-            linecut.width
-          );
-
-          setInclinedLinecutData1(prev =>
-            prev.map(data =>
-              data.id === id ? { ...data, data: newData1 } : data
-            )
-          );
-          setInclinedLinecutData2(prev =>
-            prev.map(data =>
-              data.id === id ? { ...data, data: newData2 } : data
-            )
-          );
-        }
-      }
-    }, 200),
-    [imageData1, imageData2, inclinedLinecuts, computeInclinedLinecutData]
-  );
-
-  // Update angle of an inclined linecut
-  const updateInclinedLinecutAngle = useCallback(
-    throttle((id: number, angle: number) => {
-      // Normalize angle to -180 to 180 range
-      const normalizedAngle = ((angle % 360 + 540) % 360) - 180;
-
-      // Update linecut angle
-      setInclinedLinecuts(prev =>
-        prev.map(linecut =>
-          linecut.id === id ? { ...linecut, angle: normalizedAngle } : linecut
-        )
-      );
-
-      // Update linecut data
-      if (imageData1.length > 0 && imageData2.length > 0) {
-        const linecut = inclinedLinecuts.find(l => l.id === id);
-        if (linecut) {
-          const newData1 = computeInclinedLinecutData(
-            imageData1,
-            linecut.xPosition,
-            linecut.yPosition,
-            normalizedAngle,
-            linecut.width
-          );
-          const newData2 = computeInclinedLinecutData(
-            imageData2,
-            linecut.xPosition,
-            linecut.yPosition,
-            normalizedAngle,
-            linecut.width
-          );
-
-          setInclinedLinecutData1(prev =>
-            prev.map(data =>
-              data.id === id ? { ...data, data: newData1 } : data
-            )
-          );
-          setInclinedLinecutData2(prev =>
-            prev.map(data =>
-              data.id === id ? { ...data, data: newData2 } : data
-            )
-          );
-        }
-      }
-    }, 200),
-    [imageData1, imageData2, inclinedLinecuts, computeInclinedLinecutData]
-  );
-
-  // Update width of an inclined linecut
-  const updateInclinedLinecutWidth = useCallback(
-    throttle((id: number, width: number) => {
-      // Update linecut width
-      setInclinedLinecuts(prev =>
-        prev.map(linecut =>
-          linecut.id === id ? { ...linecut, width } : linecut
-        )
-      );
-
-      // Update linecut data
-      if (imageData1.length > 0 && imageData2.length > 0) {
-        const linecut = inclinedLinecuts.find(l => l.id === id);
-        if (linecut) {
-          const newData1 = computeInclinedLinecutData(
-            imageData1,
-            linecut.xPosition,
-            linecut.yPosition,
-            linecut.angle,
-            width
-          );
-          const newData2 = computeInclinedLinecutData(
-            imageData2,
-            linecut.xPosition,
-            linecut.yPosition,
-            linecut.angle,
-            width
-          );
-
-          setInclinedLinecutData1(prev =>
-            prev.map(data =>
-              data.id === id ? { ...data, data: newData1 } : data
-            )
-          );
-          setInclinedLinecutData2(prev =>
-            prev.map(data =>
-              data.id === id ? { ...data, data: newData2 } : data
-            )
-          );
-        }
-      }
-    }, 200),
-    [imageData1, imageData2, inclinedLinecuts, computeInclinedLinecutData]
-  );
-
-  // Update color of an inclined linecut
-  const updateInclinedLinecutColor = useCallback((id: number, side: 'left' | 'right', color: string) => {
-    setInclinedLinecuts(prev =>
-      prev.map(linecut =>
-        linecut.id === id
-          ? { ...linecut, [`${side}Color`]: color }
-          : linecut
-      )
-    );
-  }, []);
-
-  // Delete an inclined linecut
-  const deleteInclinedLinecut = useCallback((id: number) => {
-    // Remove linecut and reindex remaining ones
-    setInclinedLinecuts(prev => {
-      const updatedLinecuts = prev.filter(linecut => linecut.id !== id);
-      return updatedLinecuts.map((linecut, index) => ({
-        ...linecut,
-        id: index + 1,
-      }));
-    });
-
-    // Update corresponding data arrays
-    setInclinedLinecutData1(prev =>
-      prev.filter(data => data.id !== id).map((data, index) => ({
-        ...data,
-        id: index + 1,
-      }))
-    );
-    setInclinedLinecutData2(prev =>
-      prev.filter(data => data.id !== id).map((data, index) => ({
-        ...data,
-        id: index + 1,
-      }))
-    );
-  }, []);
-
-  // Toggle visibility of an inclined linecut
-  const toggleInclinedLinecutVisibility = useCallback((id: number) => {
-    setInclinedLinecuts(prev =>
-      prev.map(linecut =>
-        linecut.id === id ? { ...linecut, hidden: !linecut.hidden } : linecut
-      )
-    );
-  }, []);
-
-  // ===================================================== End of inclined linecuts
-
-
-  // ====================================================
-  // Data transformation
-  // ====================================================
-
-  const [isLogScale, setIsLogScale] = useState(false);
-  const [lowerPercentile, setLowerPercentile] = useState(1);
-  const [upperPercentile, setUpperPercentile] = useState(99);
-  const [normalization, setNormalization] = useState<string>('none');
-  const [imageColormap, setImageColormap] = useState('Viridis');
-  const [differenceColormap, setDifferenceColormap] = useState('RdBu');
-  const [normalizationMode, setNormalizationMode] = useState('together');
-
-  // ==================================================== End of data transformation
-
-  // ====================================================
-  // For the zoom display message
-  // ====================================================
-
   const [resolutionMessage, setResolutionMessage] = useState('');
 
-  // ==================================================== End of zoom display message
+  // Calibration parameters
+  const [calibrationParams, setCalibrationParams] = useState<CalibrationParams>({
+    sample_detector_distance: 274.83,
+    beam_center_x: 317.8,
+    beam_center_y: 1245.28,
+    pixel_size_x: 172,
+    pixel_size_y: 172,
+    wavelength: 1.2398,
+    tilt: 0,
+    tilt_plan_rotation: 0
+  });
 
+  // Q-vector state
+  const [qXVector, setQXVector] = useState<number[]>([]);
+  const [qYVector, setQYVector] = useState<number[]>([]);
+  /**
+   * Fetch q-vectors from the server
+   * This fetches both q_x and q_y vectors based on current calibration parameters
+   */
+  const fetchQVectors = useCallback(async () => {
+    try {
+      // Create the URL with calibration parameters
+      const url = new URL('http://127.0.0.1:8000/api/q-vectors');
 
+      // Add all calibration parameters to the URL
+      Object.entries(calibrationParams).forEach(([key, value]) => {
+        url.searchParams.set(key, value.toString());
+      });
 
+      // Fetch the data
+      const response = await fetch(url.toString());
+
+      // Check for HTTP errors
+      if (!response.ok) {
+        throw new Error(`Failed to fetch q-vectors: ${await response.text()}`);
+      }
+
+      // Decode the msgpack response
+      const decodedData = decode(new Uint8Array(await response.arrayBuffer()));
+
+      // Validate the response format using the type guard
+      if (!isQVectorsResponse(decodedData)) {
+        throw new Error('Invalid q-vectors response format');
+      }
+
+      // Store the q-vectors
+      setQXVector(decodedData.q_x);
+      setQYVector(decodedData.q_y);
+
+      console.log("Loaded q-vectors:", {
+        q_x_length: decodedData.q_x.length,
+        q_y_length: decodedData.q_y.length
+      });
+
+    } catch (error) {
+      console.error('Error fetching q-vectors:', error);
+    }
+  }, [calibrationParams]);
+
+  /**
+   * Update calibration parameters and trigger q-vector refresh
+   */
+  const updateCalibration = useCallback((newParams: CalibrationParams) => {
+    setCalibrationParams(newParams);
+    // The effect will automatically trigger q-vector refresh
+  }, []);
+
+  // Fetch q-vectors when calibration parameters change
+  useEffect(() => {
+    fetchQVectors();
+  }, [fetchQVectors]);
 
   return {
-    horizontalLinecuts,
-    setHorizontalLinecuts,
+    // Existing state
     experimentType,
     setExperimentType,
     selectedLinecuts,
     setSelectedLinecuts,
-    horizontalLinecutData1,
-    setHorizontalLinecutData1,
-    horizontalLinecutData2,
-    setHorizontalLinecutData2,
     imageHeight,
     setImageHeight,
     imageWidth,
@@ -703,61 +173,21 @@ export default function useMultimodal() {
     setImageData1,
     imageData2,
     setImageData2,
-    updateHorizontalLinecutColor,
-    deleteHorizontalLinecut,
-    toggleHorizontalLinecutVisibility,
-    addHorizontalLinecut,
-    updateHorizontalLinecutPosition,
-    updateHorizontalLinecutWidth,
     zoomedXPixelRange,
     setZoomedXPixelRange,
-    // Add vertical linecut states and functions
-    verticalLinecuts,
-    setVerticalLinecuts,
-    verticalLinecutData1,
-    verticalLinecutData2,
-    addVerticalLinecut,
-    updateVerticalLinecutPosition,
-    updateVerticalLinecutWidth,
-    updateVerticalLinecutColor,
-    deleteVerticalLinecut,
-    toggleVerticalLinecutVisibility,
     zoomedYPixelRange,
     setZoomedYPixelRange,
-    // For the zoom display message
     resolutionMessage,
     setResolutionMessage,
-    // Inclined linecut states and functions
-    inclinedLinecuts,
-    inclinedLinecutData1,
-    inclinedLinecutData2,
-    addInclinedLinecut,
-    updateInclinedLinecutXPosition,
-    updateInclinedLinecutYPosition,
-    updateInclinedLinecutAngle,
-    updateInclinedLinecutWidth,
-    updateInclinedLinecutColor,
-    deleteInclinedLinecut,
-    toggleInclinedLinecutVisibility,
-    computeInclinedLinecutData,
-    setInclinedLinecutData1,
-    setInclinedLinecutData2,
-    // Data transformation states and functions
-    isLogScale,
-    setIsLogScale,
-    lowerPercentile,
-    setLowerPercentile,
-    upperPercentile,
-    setUpperPercentile,
-    normalization,
-    setNormalization,
-    imageColormap,
-    setImageColormap,
-    differenceColormap,
-    setDifferenceColormap,
-    normalizationMode,
-    setNormalizationMode,
 
+    // Calibration parameters
+    calibrationParams,
+    // setCalibrationParams,
+    updateCalibration,
+
+    // Q-vectors and related state
+    qXVector,
+    qYVector,
+    fetchQVectors,  // Allow manual refresh if needed
   };
-
 }

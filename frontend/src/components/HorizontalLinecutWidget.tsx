@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { FaEye, FaEyeSlash, FaTrash } from "react-icons/fa"; // Icons for visibility toggle
 import { Linecut } from "../types";
 import InputSlider from "./InputSlider";
+// import { InputSlider } from "bluesky-web";
 import { Accordion } from "@mantine/core";
 import ColorPickerPopup from "./ColorPickerPopup";
 
@@ -9,6 +10,7 @@ interface HorizontalLinecutWidgetProps {
   linecutType: string | null;
   imageHeight: number;
   linecuts: Linecut[];
+  qYVector: number[];
   updateHorizontalLinecutPosition: (id: number, position: number) => void;
   updateHorizontalLinecutWidth: (id: number, width: number) => void;
   updateHorizontalLinecutColor: (id: number, side: "left" | "right", color: string) => void;
@@ -20,6 +22,7 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
   linecutType,
   imageHeight,
   linecuts,
+  qYVector,
   updateHorizontalLinecutPosition,
   updateHorizontalLinecutWidth,
   updateHorizontalLinecutColor,
@@ -35,6 +38,12 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
     currentColor: string; // Track the current color during picking
     position: { top: number; left: number }; // Position for the color picker
   } | null>(null);
+
+  const minQYValue = parseFloat(Math.min(...qYVector).toFixed(1));
+  const maxQYValue = parseFloat(Math.max(...qYVector).toFixed(1));
+
+  // console.log("minQYValue", minQYValue);
+  // console.log("maxQYValue", maxQYValue);
 
 
   const handleCancelColor = useCallback(() => {
@@ -185,16 +194,16 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
 
                 {/* Slider and Input Box for Linecut Width */}
                 <div className="mb-6">
-                  <h4 className="text-xl mb-2">Width (pixels)</h4>
+                  <h4 className="text-xl mb-2">Width (nm⁻¹)</h4>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <InputSlider
                         min={0}
-                        max={100}
+                        max={10}
                         value={linecut.width || 0}
                         step={0.1}
                         onChange={(value) => updateHorizontalLinecutWidth(linecut.id, value)}
-                        marks={[0, 100]}
+                        marks={[0, 10]}
                         styles="w-full"
                         disabled={linecut.hidden}
                       />
@@ -203,7 +212,7 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
                       type="number"
                       value={linecut.width || 0}
                       min={0}
-                      max={100}
+                      max={10}
                       step={0.1}
                       onChange={(e) =>
                         updateHorizontalLinecutWidth(linecut.id, parseFloat(e.target.value) || 0)
@@ -216,26 +225,26 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
 
                 {/* Slider and Input Box for Linecut Position */}
                 <div className="mb-4">
-                  <h4 className="text-xl mb-2">Position (pixels)</h4>
+                  <h4 className="text-xl mb-2">q value (nm⁻¹)</h4>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <InputSlider
-                        min={0}
-                        max={imageHeight - 1}
-                        value={linecut.position}
-                        step={1}
+                        min={minQYValue}
+                        max={maxQYValue}
+                        value={parseFloat(linecut.position.toFixed(1))}
+                        step={0.1}
                         onChange={(value) => updateHorizontalLinecutPosition(linecut.id, value)}
-                        marks={[0, imageHeight - 1]}
+                        marks={[minQYValue, maxQYValue]}
                         styles="w-full"
                         disabled={linecut.hidden}
                       />
                     </div>
                     <input
                       type="number"
-                      value={linecut.position}
-                      min={0}
-                      max={imageHeight - 1}
-                      step={1}
+                      value={linecut.position.toFixed(1)}
+                      min={minQYValue}
+                      max={maxQYValue}
+                      step={0.1}
                       onChange={(e) =>
                         updateHorizontalLinecutPosition(linecut.id, parseInt(e.target.value) || 0)
                       }

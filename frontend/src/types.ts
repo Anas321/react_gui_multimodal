@@ -1,14 +1,26 @@
-// src/types.ts
+// Update in types.ts
 export interface Linecut {
-    id: number; // Unique identifier for the linecut
-    position: number; // Current position of the linecut
-    leftColor: string; // Color of the left image linecut
-    rightColor: string; // Color of the right image linecut
-    hidden: boolean; // Optional property to track if the linecut is hidden
-    width: number; // Optional property to track the width of the linecut
-    angle: number; // For inclined linecuts
-    type: 'horizontal' | 'vertical'; // Type of linecut
-  }
+  id: number;
+  position: number;      // Q-value position (in q-space)
+  pixelPosition: number; // Corresponding pixel position for data sampling
+  leftColor: string;
+  rightColor: string;
+  hidden: boolean;
+  width: number;
+  type?: 'horizontal' | 'vertical';
+}
+
+
+// export interface Linecut {
+//     id: number; // Unique identifier for the linecut
+//     position: number; // Current position of the linecut
+//     leftColor: string; // Color of the left image linecut
+//     rightColor: string; // Color of the right image linecut
+//     hidden: boolean; // Optional property to track if the linecut is hidden
+//     width: number; // Optional property to track the width of the linecut
+//     angle: number; // For inclined linecuts
+//     type: 'horizontal' | 'vertical'; // Type of linecut
+//   }
 
 export interface InclinedLinecut {
     id: number;

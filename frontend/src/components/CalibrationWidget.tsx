@@ -168,7 +168,7 @@ export default function CalibrationWidget({
 
             {/* Update Button */}
             <Button
-                className="w-full mt-4"
+                className="w-full mt-4 text-xl"
                 color={isModified ? "blue" : "gray"}
                 onClick={handleSubmit}
                 disabled={!isModified}

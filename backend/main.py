@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.routers import (
     azimuthal_integrator,
     initial_scans_fetching,
+    q_vectors,
     scatter_subplot,
 )
 
@@ -29,6 +30,7 @@ app.include_router(
 app.include_router(
     azimuthal_integrator.router, prefix="/api", tags=["Azimuthal Calibration"]
 )
+app.include_router(q_vectors.router, prefix="/api", tags=["Q Vectors"])
 
 
 @app.get("/")

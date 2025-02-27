@@ -27,18 +27,12 @@ import { Popover } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
 import useAzimuthalIntegration from './hooks/useAzimuthalIntegration';
+import useHorizontalLinecut from './hooks/useHorizontalLinecut';
+import useVerticalLinecut from './hooks/useVerticalLinecut';
+import useInclinedLinecut from './hooks/useInclinedLinecut';
+import useDataTransformation from './hooks/useDataTransformation';
 
-
-interface CalibrationParams {
-  sample_detector_distance: number;
-  beam_center_x: number;
-  beam_center_y: number;
-  pixel_size_x: number;
-  pixel_size_y: number;
-  wavelength: number;
-  tilt: number;
-  tilt_plan_rotation: number;
-}
+import { CalibrationParams } from './types';
 
 
 
@@ -48,16 +42,11 @@ function App() {
   const linecutOrder = ['Horizontal', 'Vertical', 'Inclined', 'Azimuthal'];
 
   const {
-    horizontalLinecuts,
-    setHorizontalLinecuts,
+    // Existing state
     experimentType,
     setExperimentType,
     selectedLinecuts,
     setSelectedLinecuts,
-    horizontalLinecutData1,
-    setHorizontalLinecutData1,
-    horizontalLinecutData2,
-    setHorizontalLinecutData2,
     imageHeight,
     setImageHeight,
     imageWidth,
@@ -66,15 +55,56 @@ function App() {
     setImageData1,
     imageData2,
     setImageData2,
-    updateHorizontalLinecutColor,
-    deleteHorizontalLinecut,
-    toggleHorizontalLinecutVisibility,
+    zoomedXPixelRange,
+    setZoomedXPixelRange,
+    zoomedYPixelRange,
+    setZoomedYPixelRange,
+    resolutionMessage,
+    setResolutionMessage,
+    // Calibration parameters
+    calibrationParams,
+    // setCalibrationParams,
+    updateCalibration,
+    // Q-vectors and related state
+    qXVector,
+    qYVector,
+    fetchQVectors,  // Allow manual refresh if needed
+  } = useMultimodal();
+
+  const {
+      // State
+      azimuthalIntegrations,
+      azimuthalData1,
+      azimuthalData2,
+      maxQValue,
+      globalQRange,
+      globalAzimuthRange,
+
+      // Functions
+      addAzimuthalIntegration,
+      updateAzimuthalQRange,
+      updateAzimuthalRange,
+      updateAzimuthalColor,
+      deleteAzimuthalIntegration,
+      toggleAzimuthalVisibility,
+      fetchAzimuthalData,
+  } = useAzimuthalIntegration(calibrationParams);
+
+
+  const {
+    horizontalLinecuts,
+    horizontalLinecutData1,
+    horizontalLinecutData2,
     addHorizontalLinecut,
     updateHorizontalLinecutPosition,
     updateHorizontalLinecutWidth,
-    zoomedXPixelRange,
-    setZoomedXPixelRange,
-    // verticalLinecuts
+    updateHorizontalLinecutColor,
+    deleteHorizontalLinecut,
+    toggleHorizontalLinecutVisibility,
+  } = useHorizontalLinecut(imageHeight, imageData1, imageData2, qYVector);
+
+
+  const {
     verticalLinecuts,
     verticalLinecutData1,
     verticalLinecutData2,
@@ -84,12 +114,9 @@ function App() {
     updateVerticalLinecutColor,
     deleteVerticalLinecut,
     toggleVerticalLinecutVisibility,
-    zoomedYPixelRange,
-    setZoomedYPixelRange,
-    // For the zoom resolution message
-    resolutionMessage,
-    setResolutionMessage,
-    // Inclined linecut
+  } = useVerticalLinecut(imageWidth, imageData1, imageData2);
+
+  const {
     inclinedLinecuts,
     inclinedLinecutData1,
     inclinedLinecutData2,
@@ -104,7 +131,9 @@ function App() {
     computeInclinedLinecutData,
     setInclinedLinecutData1,
     setInclinedLinecutData2,
-    // Data transformation states and functions
+  } = useInclinedLinecut(imageWidth, imageHeight, imageData1, imageData2);
+
+  const {
     isLogScale,
     setIsLogScale,
     lowerPercentile,
@@ -119,29 +148,13 @@ function App() {
     setDifferenceColormap,
     normalizationMode,
     setNormalizationMode,
-  } = useMultimodal();
+  } = useDataTransformation();
 
 
-  const {
-    // State
-    azimuthalIntegrations,
-    azimuthalData1,
-    azimuthalData2,
-    maxQValue,
-    globalQRange,
-    globalAzimuthRange,
-    calibrationParams,
 
-    // Functions
-    addAzimuthalIntegration,
-    updateAzimuthalQRange,
-    updateAzimuthalRange,
-    updateAzimuthalColor,
-    deleteAzimuthalIntegration,
-    toggleAzimuthalVisibility,
-    updateCalibration,
-    fetchAzimuthalData,
-  } = useAzimuthalIntegration();
+
+
+
 
 
     const handleCalibrationUpdate = async (params: CalibrationParams) => {
@@ -200,7 +213,7 @@ function App() {
           className="h-10 mr-4"
         />
         {/* Title */}
-        <h1 className="m-0 text-[2.5rem] font-bold text-gray-800">
+        <h1 className="m-0 text-[2.5rem] text-sky-900">
           Multimodal Analysis
         </h1>
         {/* Left collapsing arrow */}
@@ -241,15 +254,15 @@ function App() {
             ${isSecondCollapsed ? 'w-0' : 'w-[15%]'}`}
           >
             {/* Fixed Header Section */}
-            <div className="flex-shrink-0 sticky top-0 bg-gray-100 z-10 pt-4 pb-2">
-              <h1 className="text-3xl font-bold mb-4 mt-4 text-center">Scatter Controls</h1>
+            <div className="flex-shrink-0 sticky top-0 bg-gray-100 z-10">
+              <h1 className="text-4xl mb-4 mt-4 text-center">Scatter Controls</h1>
               <hr className="w-full border border-gray-300" />
             </div>
           {/* Scrollable Content Section */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden">
             {/* Dropdown for Experiment Type */}
             <Select
-              label="Select Experiment Type"
+              label="Experiment Type"
               value={experimentType}
               onChange={(value) => handleExperimentTypeChange(value, setExperimentType, setSelectedLinecuts)}
               data={[
@@ -345,6 +358,7 @@ function App() {
                           linecutType={linecutType}
                           imageHeight={imageHeight}
                           linecuts={horizontalLinecuts}
+                          qYVector={qYVector}
                           updateHorizontalLinecutPosition={updateHorizontalLinecutPosition}
                           updateHorizontalLinecutWidth={updateHorizontalLinecutWidth}
                           updateHorizontalLinecutColor={updateHorizontalLinecutColor}
@@ -513,6 +527,7 @@ function App() {
                   azimuthalData2={azimuthalData2}
                   maxQValue={maxQValue}
                   calibrationParams={calibrationParams}
+                  qYVector={qYVector}
                 />
 
                   {resolutionMessage && (
@@ -593,6 +608,8 @@ function App() {
                           imageData2={imageData2} // Data for right scatter image
                           zoomedXPixelRange={zoomedXPixelRange}
                           zoomedYPixelRange={zoomedYPixelRange}
+                          qXVector={qXVector}
+                          units="nm⁻¹"
                         />
                       </Accordion.Panel>
                     </Accordion.Item>
