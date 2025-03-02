@@ -114,7 +114,7 @@ function App() {
     updateVerticalLinecutColor,
     deleteVerticalLinecut,
     toggleVerticalLinecutVisibility,
-  } = useVerticalLinecut(imageWidth, imageData1, imageData2);
+  } = useVerticalLinecut(imageWidth, imageData1, imageData2, qXVector);
 
   const {
     inclinedLinecuts,
@@ -356,7 +356,6 @@ function App() {
                         <HorizontalLinecutWidget
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
-                          imageHeight={imageHeight}
                           linecuts={horizontalLinecuts}
                           qYVector={qYVector}
                           updateHorizontalLinecutPosition={updateHorizontalLinecutPosition}
@@ -373,8 +372,8 @@ function App() {
                         <VerticalLinecutWidget
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
-                          imageWidth={imageWidth}
                           linecuts={verticalLinecuts}
+                          qXVector={qXVector}
                           updateVerticalLinecutPosition={updateVerticalLinecutPosition}
                           updateVerticalLinecutWidth={updateVerticalLinecutWidth}
                           updateVerticalLinecutColor={updateVerticalLinecutColor}
@@ -528,6 +527,8 @@ function App() {
                   maxQValue={maxQValue}
                   calibrationParams={calibrationParams}
                   qYVector={qYVector}
+                  qXVector={qXVector}
+                  units="nm⁻¹"
                 />
 
                   {resolutionMessage && (
@@ -624,6 +625,8 @@ function App() {
                               imageData2={imageData2}
                               zoomedXPixelRange={zoomedXPixelRange}
                               zoomedYPixelRange={zoomedYPixelRange}
+                              qYVector={qYVector}
+                              units="nm⁻¹"
                             />
                         </Accordion.Panel>
                       </Accordion.Item>

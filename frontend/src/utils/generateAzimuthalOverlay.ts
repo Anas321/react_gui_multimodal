@@ -147,11 +147,13 @@ export function generateAzimuthalOverlay({
     factor,
     currentArray,
     maxQValue,
-    beamCenterX,
-    beamCenterY,
+    beamCenterX = 0,
+    beamCenterY = 0,
 }: GenerateAzimuthalOverlayParams): PlotTrace[] {
     // Return empty array if no data is available
     if (!currentArray.length || !azimuthalData) return [];
+
+
 
     // Set up Q-value parameters for finding circle points
     const qArray = azimuthalData.qArray;
@@ -164,7 +166,11 @@ export function generateAzimuthalOverlay({
     const [outerY, outerX] = findWhere(qArray, val => Math.abs(val - outerQ) < tolerance);
 
     // Calculate the actual radii from the beam center
-    const beamCenter = { x: beamCenterX, y: beamCenterY };
+    // Using non-null beam center coordinates with defaults
+    const beamCenter = {
+        x: beamCenterX ?? 0,  // Use nullish coalescing to provide fallback
+        y: beamCenterY ?? 0
+    };
     let innerRadius = Infinity;
     let outerRadius = 0;
 

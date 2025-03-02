@@ -58,6 +58,8 @@ interface ScatterSubplotProps {
   maxQValue: number;
   calibrationParams: CalibrationParams;
   qYVector: number[]; // qYVector for q-value mapping
+  qXVector: number[]; // qXVector for q-value mapping
+  units: string;
 }
 
 
@@ -89,6 +91,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   maxQValue,
   calibrationParams,
   qYVector,
+  qXVector,
+  units,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
@@ -964,14 +968,16 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           currentArray: currentArrayData,
           factor: getCurrentFactor(),
           qYVector, // Pass qYVector to the function
-          units: "nm⁻¹" // Pass units
+          units: units // Pass units
         })),
       ...(verticalLinecuts || [])
         .filter(l => !l.hidden)
         .flatMap(linecut => generateVerticalLinecutOverlay({
           linecut,
           currentArray: currentArrayData,
-          factor: getCurrentFactor()
+          factor: getCurrentFactor(),
+          qXVector, // Pass qXVector to the function
+          units: units // Pass units
         })),
         // Inclined linecuts
       ...(inclinedLinecuts || [])

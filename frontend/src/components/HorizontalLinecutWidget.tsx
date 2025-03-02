@@ -8,7 +8,6 @@ import ColorPickerPopup from "./ColorPickerPopup";
 
 interface HorizontalLinecutWidgetProps {
   linecutType: string | null;
-  imageHeight: number;
   linecuts: Linecut[];
   qYVector: number[];
   updateHorizontalLinecutPosition: (id: number, position: number) => void;
@@ -20,7 +19,7 @@ interface HorizontalLinecutWidgetProps {
 
 const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
   linecutType,
-  imageHeight,
+  // imageHeight,
   linecuts,
   qYVector,
   updateHorizontalLinecutPosition,
@@ -225,7 +224,7 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
 
                 {/* Slider and Input Box for Linecut Position */}
                 <div className="mb-4">
-                  <h4 className="text-xl mb-2">q value (nm⁻¹)</h4>
+                  <h4 className="text-xl mb-2">q<sub>y</sub> value (nm⁻¹)</h4>
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <InputSlider

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import Plot from "react-plotly.js";
 import { Linecut } from "../types";
 
@@ -8,11 +8,25 @@ interface VerticalLinecutFigProps {
   imageData2: number[][];
   zoomedXPixelRange: [number, number] | null;
   zoomedYPixelRange: [number, number] | null;
+  qYVector: number[];  // Q-values for vertical axis
+  units?: string;      // Units for q-values (e.g., "nm⁻¹", "Å⁻¹")
 }
 
 interface Dimensions {
   width: number | undefined;
   height: number | undefined;
+}
+
+// Define interface for axis configuration
+interface AxisConfig {
+  title: {
+    text: string;
+    font: { size: number }
+    standoff?: number;
+  };
+  tickfont: { size: number };
+  autorange: boolean;
+  range?: [number, number]; // Optional range for zooming
 }
 
 const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
@@ -21,6 +35,8 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
   imageData2,
   zoomedXPixelRange,
   zoomedYPixelRange,
+  qYVector,
+  units = "nm⁻¹",
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<Dimensions>({
@@ -48,14 +64,14 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
   }, []);
 
   // Compute averaged intensity for a vertical linecut
-  const computeAveragedIntensity = (
+  const computeAveragedIntensity = useCallback((
     imageData: number[][],
-    position: number,
+    pixelPosition: number,
     width: number
   ) => {
     const halfWidth = width / 2;
-    const startCol = Math.max(0, Math.round(position - halfWidth));
-    const endCol = Math.min(imageData[0].length - 1, Math.ceil(position + halfWidth));
+    const startCol = Math.max(0, Math.round(pixelPosition - halfWidth));
+    const endCol = Math.min(imageData[0].length - 1, Math.ceil(pixelPosition + halfWidth));
 
     return Array.from(
       { length: imageData.length },
@@ -64,96 +80,19 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
         let count = 0;
 
         for (let col = startCol; col <= endCol; col++) {
-          sum += imageData[rowIndex][col];
-          count++;
+          if (col >= 0 && col < imageData[rowIndex].length) {
+            sum += imageData[rowIndex][col];
+            count++;
+          }
         }
 
-        return sum / count;
+        return count > 0 ? sum / count : 0;
       }
     );
-  };
+  }, []);
 
-  // Memoize plot data - Plot as normal x-y but with synchronization on x-axis
-  const plotData = useMemo(() =>
-    linecuts
-      .filter((linecut) => !linecut.hidden)
-      .flatMap((linecut) => {
-        const averagedDataLeft = computeAveragedIntensity(
-          imageData1,
-          linecut.position,
-          linecut.width ?? 1
-        );
-
-        const averagedDataRight = computeAveragedIntensity(
-          imageData2,
-          linecut.position,
-          linecut.width ?? 1
-        );
-
-        const xValues = Array.from(
-          { length: averagedDataLeft.length },
-          (_, i) => i
-        );
-
-        return [
-          {
-            x: xValues,
-            y: averagedDataLeft,
-            type: "scatter" as const,
-            mode: "lines" as const,
-            name: `Left Linecut ${linecut.id}`,
-            line: {
-              color: linecut.leftColor,
-              width: 2,
-            },
-          },
-          {
-            x: xValues,
-            y: averagedDataRight,
-            type: "scatter" as const,
-            mode: "lines" as const,
-            name: `Right Linecut ${linecut.id}`,
-            line: {
-              color: linecut.rightColor,
-              width: 2,
-            },
-          },
-        ];
-      }),
-    [linecuts, imageData1, imageData2]
-  );
-
-
-  // // Memoize layout - Using zoomedPixelRange for y-axis but display on x-axis
-  // const layout = useMemo(() => {
-  //   return {
-  //     width: dimensions.width,
-  //     height: dimensions.height,
-  //     xaxis: {
-  //       title: { text: "Pixel Index", font: { size: 25 } },
-  //       tickfont: { size: 25 },
-  //       autorange: !zoomedYPixelRange,
-  //       range: zoomedYPixelRange || undefined,
-  //     },
-  //     yaxis: {
-  //       title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
-  //       tickfont: { size: 25 },
-  //     },
-  //     margin:{
-  //       l: 110,
-  //     },
-  //     legend: {
-  //       font: { size: 25 },
-  //     },
-  //     font: { size: 25 },
-  //     showlegend: true,
-  //   };
-  // }, [dimensions, zoomedYPixelRange]);
-
-
-
-  // Add the check for linecuts in range
-  const isLinecutInRange = (
+  // Determine if the linecut is in the zoomed range
+  const isLinecutInRange = useCallback((
     linecut: Linecut,
     xRange: [number, number] | null,
     yRange: [number, number] | null
@@ -162,53 +101,109 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
 
     // For vertical linecuts, we check if the linecut's x-position falls within the x-range
     const [xStart, xEnd] = xRange;
-    const position = linecut.position;
+    return linecut.pixelPosition >= xStart && linecut.pixelPosition <= xEnd;
+  }, []);
 
-    return position >= xStart && position <= xEnd;
-  };
+  // Memoize plot data - SWAPPED: q-values on X-axis and intensity on Y-axis
+  const plotData = useMemo(() =>
+    linecuts
+      .filter((linecut) => !linecut.hidden)
+      .flatMap((linecut) => {
+        const averagedDataLeft = computeAveragedIntensity(
+          imageData1,
+          linecut.pixelPosition,
+          linecut.width ?? 1
+        );
 
-  // Update the layout useMemo
+        const averagedDataRight = computeAveragedIntensity(
+          imageData2,
+          linecut.pixelPosition,
+          linecut.width ?? 1
+        );
+
+        // Format the position label with q-value
+        const positionLabel = `(q<sub>x</sub>=${linecut.position.toFixed(1)} ${units})`;
+
+        return [
+          {
+            x: qYVector, // Put q-values on the x-axis
+            y: averagedDataLeft, // Put intensity values on the y-axis
+            type: "scatter" as const,
+            mode: "lines" as const,
+            name: `Left Linecut ${linecut.id} ${positionLabel}`,
+            line: {
+              color: linecut.leftColor,
+              width: 2,
+            },
+          },
+          {
+            x: qYVector, // Put q-values on the x-axis
+            y: averagedDataRight, // Put intensity values on the y-axis
+            type: "scatter" as const,
+            mode: "lines" as const,
+            name: `Right Linecut ${linecut.id} ${positionLabel}`,
+            line: {
+              color: linecut.rightColor,
+              width: 2,
+            },
+          },
+        ];
+      }),
+    [linecuts, imageData1, imageData2, qYVector, units, computeAveragedIntensity]
+  );
+
+  // Update layout with swapped axis configurations
   const layout = useMemo(() => {
-
-    const defaultRange = {
-      xaxis: {
-        title: { text: "Pixel Index", font: { size: 25 } },
-        tickfont: { size: 25 },
-        autorange: true,
-      },
-    };
-
     // Check for linecuts in range
     const hasLinecutInRange = linecuts
       .filter(linecut => !linecut.hidden)
       .some(linecut => isLinecutInRange(linecut, zoomedXPixelRange, zoomedYPixelRange));
 
+    // Default x-axis configuration for q-values
+    const defaultXAxis: AxisConfig = {
+      title: {
+        text: `q<sub>y</sub> (${units})`,
+        font: { size: 25 }
+      },
+      tickfont: { size: 25 },
+      autorange: true,
+    };
 
-    // Only apply zoom range if there are linecuts in range
-    const xAxisConfig = (zoomedYPixelRange && hasLinecutInRange)
-      ? {
-          ...defaultRange.xaxis,
-          range: zoomedYPixelRange,
-          autorange: false,
-        }
-      : defaultRange.xaxis;
+    // Set x-axis range for zooming in q-space
+    let xAxisConfig: AxisConfig = { ...defaultXAxis };
+
+    if (zoomedYPixelRange && hasLinecutInRange && qYVector.length) {
+      // Convert pixel indices to q-values for the x-axis range
+      const qRange: [number, number] = [
+        qYVector[Math.min(zoomedYPixelRange[0], qYVector.length - 1)],
+        qYVector[Math.min(zoomedYPixelRange[1], qYVector.length - 1)]
+      ];
+
+      xAxisConfig = {
+        ...defaultXAxis,
+        range: qRange,
+        autorange: false,
+      };
+    }
+
+    // Default y-axis configuration for intensity values
+    const yAxisConfig: AxisConfig = {
+      title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
+      tickfont: { size: 25 },
+      autorange: true,
+    };
 
     return {
       width: dimensions.width,
       height: dimensions.height,
       xaxis: xAxisConfig,
-      yaxis: {
-        title: { text: "Intensity", font: { size: 25 }, standoff: 50 },
-        tickfont: { size: 25 },
-        autorange: true,
-      },
+      yaxis: yAxisConfig,
       margin: { l: 110 },
       legend: { font: { size: 25 } },
       font: { size: 25 },
       showlegend: true,
     };
-  }, [dimensions, zoomedYPixelRange, zoomedXPixelRange, linecuts]);
-
+  }, [dimensions, zoomedYPixelRange, zoomedXPixelRange, linecuts, qYVector, units, isLinecutInRange]);
 
   return (
     <div ref={containerRef} className="mt-4 p-4 bg-gray-100 rounded shadow">
