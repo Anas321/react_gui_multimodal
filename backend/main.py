@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # from routers import image_processing, data_fetching
-from backend.routers import (
+from routers import (
     azimuthal_integrator,
     initial_scans_fetching,
     q_vectors,

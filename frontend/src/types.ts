@@ -22,17 +22,29 @@ export interface Linecut {
 //     type: 'horizontal' | 'vertical'; // Type of linecut
 //   }
 
+// export interface InclinedLinecut {
+//     id: number;
+//     xPosition: number;
+//     yPosition: number;
+//     angle: number;
+//     width: number;
+//     leftColor: string;
+//     rightColor: string;
+//     hidden: boolean;
+//     type: 'inclined';
+//   }
+
 export interface InclinedLinecut {
-    id: number;
-    xPosition: number;
-    yPosition: number;
-    angle: number;
-    width: number;
-    leftColor: string;
-    rightColor: string;
-    hidden: boolean;
-    type: 'inclined';
-  }
+  id: number;
+  qXPosition: number;
+  qYPosition: number;
+  angle: number;
+  qWidth: number;
+  leftColor: string;
+  rightColor: string;
+  hidden: boolean;
+  type: 'inclined';
+}
 
 export interface ResolutionDataType {
     array1: number[][];

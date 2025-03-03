@@ -8,8 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 from pydantic import BaseModel
 from pyFAI.integrator.azimuthal import AzimuthalIntegrator
-
-from backend.routers.initial_scans_fetching import get_initial_scans
+from routers.initial_scans_fetching import get_initial_scans
 
 # OpenCL support is currently commented out but could be enabled for GPU acceleration
 # import pyopencl as cl

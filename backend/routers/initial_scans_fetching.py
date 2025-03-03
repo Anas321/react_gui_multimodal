@@ -2,11 +2,10 @@ import os
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException
+from src.get_images_arrays_and_names import get_images_arrays_and_names
+from src.get_local_files_names import get_local_files_names
+from src.get_scans import get_scan_options
 from tiled.client import from_uri
-
-from backend.src.get_images_arrays_and_names import get_images_arrays_and_names
-from backend.src.get_local_files_names import get_local_files_names
-from backend.src.get_scans import get_scan_options
 
 # from fastapi_cache import FastAPICache
 # from fastapi_cache.backends.memory import MemoryCacheBackend
@@ -21,10 +20,11 @@ async def get_initial_scans():
     DEV_MODE = True
 
     # Load the .env file
-    load_dotenv("./.env")
+    load_dotenv("../.env")
     # Get the values of TILED_URI and MASK_FILE_NAME
     tiled_uri = os.getenv("TILED_URI_IMAGES")
     mask_uri = os.getenv("TILED_URI_MASK")  # "MASK_FILE_NAME")
+
     mask_file_name = mask_uri.split("/")[-1]
     tiled_api_key = os.getenv("TILED_API_KEY")
 
@@ -34,7 +34,7 @@ async def get_initial_scans():
         )
 
     # data_local_path = "./new_camera"  # "./SALT_DATA"
-    data_local_path = "./SALT_DATA"
+    data_local_path = "../SALT_DATA"
 
     if DEV_MODE:
         data_files_type = ".edf"
@@ -44,6 +44,7 @@ async def get_initial_scans():
             data_local_path, data_files_type, mask_file_name
         )
     else:
+
         tiled_client = from_uri(tiled_uri, api_key=tiled_api_key)
 
         TILED_BASE_URI = tiled_client.uri

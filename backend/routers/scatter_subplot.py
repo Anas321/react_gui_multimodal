@@ -4,8 +4,7 @@ import plotly.graph_objects as go
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 from plotly.subplots import make_subplots
-
-from backend.routers.initial_scans_fetching import get_initial_scans
+from routers.initial_scans_fetching import get_initial_scans
 
 router = APIRouter()
 

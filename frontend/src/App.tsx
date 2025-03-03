@@ -128,10 +128,11 @@ function App() {
     updateInclinedLinecutColor,
     deleteInclinedLinecut,
     toggleInclinedLinecutVisibility,
-    computeInclinedLinecutData,
-    setInclinedLinecutData1,
-    setInclinedLinecutData2,
-  } = useInclinedLinecut(imageWidth, imageHeight, imageData1, imageData2);
+    calculateQPathDistance,
+    zoomedXQRange,
+    zoomedYQRange,
+  } = useInclinedLinecut(imageData1, imageData2, qXVector, qYVector, zoomedXPixelRange, zoomedYPixelRange);
+
 
   const {
     isLogScale,
@@ -149,11 +150,6 @@ function App() {
     normalizationMode,
     setNormalizationMode,
   } = useDataTransformation();
-
-
-
-
-
 
 
 
@@ -388,9 +384,10 @@ function App() {
                         <InclinedLinecutWidget
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
-                          imageWidth={imageWidth}
-                          imageHeight={imageHeight}
                           linecuts={inclinedLinecuts}
+                          qXVector={qXVector}
+                          qYVector={qYVector}
+                          units="nm⁻¹"
                           updateInclinedLinecutXPosition={updateInclinedLinecutXPosition}
                           updateInclinedLinecutYPosition={updateInclinedLinecutYPosition}
                           updateInclinedLinecutAngle={updateInclinedLinecutAngle}
@@ -463,11 +460,6 @@ function App() {
                   />
                 </Accordion.Panel>
               </Accordion.Item>
-
-
-
-
-
             </Accordion>
             </div>
           </div>
@@ -514,9 +506,9 @@ function App() {
                   isLogScale={isLogScale}
                   lowerPercentile={lowerPercentile}
                   upperPercentile={upperPercentile}
-                  computeInclinedLinecutData={computeInclinedLinecutData}
-                  setInclinedLinecutData1={setInclinedLinecutData1}
-                  setInclinedLinecutData2={setInclinedLinecutData2}
+                  // computeInclinedLinecutData={computeInclinedLinecutData}
+                  // setInclinedLinecutData1={setInclinedLinecutData1}
+                  // setInclinedLinecutData2={setInclinedLinecutData2}
                   normalization={normalization}
                   imageColormap={imageColormap}
                   differenceColormap={differenceColormap}
@@ -529,6 +521,8 @@ function App() {
                   qYVector={qYVector}
                   qXVector={qXVector}
                   units="nm⁻¹"
+                  inclinedLinecutData1={inclinedLinecutData1}
+                  inclinedLinecutData2={inclinedLinecutData2}
                 />
 
                   {resolutionMessage && (
@@ -637,12 +631,12 @@ function App() {
                       <Accordion.Panel>
                       <InclinedLinecutFig
                         linecuts={inclinedLinecuts}
-                        imageWidth={imageWidth}
-                        imageHeight={imageHeight}
                         inclinedLinecutData1={inclinedLinecutData1 || []}  // Provide default empty array
                         inclinedLinecutData2={inclinedLinecutData2 || []}  // Provide default empty array
-                        zoomedXPixelRange={zoomedXPixelRange}
-                        zoomedYPixelRange={zoomedYPixelRange}
+                        calculateQPathDistance={calculateQPathDistance}
+                        zoomedXQRange={zoomedXQRange}
+                        zoomedYQRange={zoomedYQRange}
+                        units="nm⁻¹"
                       />
                       </Accordion.Panel>
                     </Accordion.Item>

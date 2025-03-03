@@ -80,7 +80,8 @@ const VerticalLinecutFig: React.FC<VerticalLinecutFigProps> = ({
         let count = 0;
 
         for (let col = startCol; col <= endCol; col++) {
-          if (col >= 0 && col < imageData[rowIndex].length) {
+          if (col >= 0 && col < imageData[rowIndex].length &&
+              !Number.isNaN(imageData[rowIndex][col])) {
             sum += imageData[rowIndex][col];
             count++;
           }

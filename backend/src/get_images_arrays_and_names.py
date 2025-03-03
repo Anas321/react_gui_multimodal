@@ -3,9 +3,8 @@ import urllib.parse as urlparse
 
 import fabio
 import numpy as np
+from src.preprocess_image import get_processed_image
 from tiled.client import from_uri
-
-from backend.src.preprocess_image import get_processed_image
 
 
 def fetch_image_uri_by_index(index, files_uris, accumulated_data, initialization_mode):

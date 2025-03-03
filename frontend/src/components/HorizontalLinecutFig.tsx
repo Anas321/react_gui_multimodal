@@ -79,11 +79,15 @@ const HorizontalLinecutFig: React.FC<HorizontalLinecutFigProps> = ({
         let count = 0;
 
         for (let row = startRow; row <= endRow; row++) {
-          sum += imageData[row][colIndex];
-          count++;
+          // Check if the value is not NaN before adding it to the sum
+          if (!Number.isNaN(imageData[row][colIndex])) {
+            sum += imageData[row][colIndex];
+            count++;
+          }
         }
 
-        return sum / count;
+        // If all values were NaN, return 0 instead of NaN
+        return count > 0 ? sum / count : 0;
       }
     );
   }, []);
