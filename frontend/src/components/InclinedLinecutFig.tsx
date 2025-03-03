@@ -277,17 +277,26 @@ const InclinedLinecutFig: React.FC<InclinedLinecutFigProps> = ({
     );
   }, []);
 
+  // Check for NaN values in the data and replace them with 0
+  const checkForNans = (data: number[]): number[] => {
+    if (!data) return [];
+    return data.map(value => isNaN(value) ? 0 : value);
+  };
+
   // Memoize plot data
   const plotData = useMemo(() => {
     return linecuts
       .filter((linecut) => !linecut.hidden)
       .flatMap((linecut) => {
         // Find corresponding data
-        const data1 = inclinedLinecutData1?.find(d => d.id === linecut.id)?.data;
-        const data2 = inclinedLinecutData2?.find(d => d.id === linecut.id)?.data;
+        let data1 = inclinedLinecutData1?.find(d => d.id === linecut.id)?.data;
+        let data2 = inclinedLinecutData2?.find(d => d.id === linecut.id)?.data;
 
         // If no data is available, skip this linecut
         if (!data1 || !data2) return [];
+
+        data1 = checkForNans(data1);
+        data2 = checkForNans(data2);
 
         // Calculate path distance in q-space for x-axis
         const pathDistance = calculateQPathDistance(
@@ -298,7 +307,7 @@ const InclinedLinecutFig: React.FC<InclinedLinecutFigProps> = ({
         );
 
         // Format the position for the legend
-        const positionLabel = `(q${String.fromCharCode(8339)}=${linecut.qXPosition.toFixed(2)}, q${String.fromCharCode(8340)}=${linecut.qYPosition.toFixed(2)}, θ=${linecut.angle.toFixed(0)}°)`;
+        const positionLabel = `(q<sub>x</sub>=${linecut.qXPosition.toFixed(1)}, q<sub>y</sub>=${linecut.qYPosition.toFixed(1)}, θ=${linecut.angle.toFixed(0)}°)`;
 
         return [
           {
