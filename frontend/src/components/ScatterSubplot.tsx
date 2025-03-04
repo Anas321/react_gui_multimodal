@@ -694,52 +694,19 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   }, [transformedPlotData, colorScales, imageColormap, differenceColormap]);
 
 
-  // // Effect to update linecut data when transformations change
-  // useEffect(() => {
-  //   if (!transformedLineData) return;
+  // Effect to update linecut data when transformations change
+  useEffect(() => {
+    if (!transformedLineData) return;
 
-  //   // Update the full resolution image data
-  //   setImageData1(transformedLineData.array1);
-  //   setImageData2(transformedLineData.array2);
+    // Update the full resolution image data
+    setImageData1(transformedLineData.array1);
+    setImageData2(transformedLineData.array2);
 
-  //   // Recalculate all inclined linecuts using the transformed data
-  //   const updatedData1: { id: number; data: number[] }[] = [];
-  //   const updatedData2: { id: number; data: number[] }[] = [];
-
-  //   inclinedLinecuts.forEach(linecut => {
-  //     // Calculate linecut data for both images using transformed data
-  //     const newData1 = computeInclinedLinecutData(
-  //       transformedLineData.array1,
-  //       linecut.xPosition,
-  //       linecut.yPosition,
-  //       linecut.angle,
-  //       linecut.width
-  //     );
-
-  //     const newData2 = computeInclinedLinecutData(
-  //       transformedLineData.array2,
-  //       linecut.xPosition,
-  //       linecut.yPosition,
-  //       linecut.angle,
-  //       linecut.width
-  //     );
-
-  //     updatedData1.push({ id: linecut.id, data: newData1 });
-  //     updatedData2.push({ id: linecut.id, data: newData2 });
-  //   });
-
-  //   // Update all linecut data at once for better performance
-  //   setInclinedLinecutData1(updatedData1);
-  //   setInclinedLinecutData2(updatedData2);
-  // }, [
-  //   transformedLineData,
-  //   setImageData1,
-  //   setImageData2,
-  //   inclinedLinecuts,
-  //   computeInclinedLinecutData,
-  //   setInclinedLinecutData1,
-  //   setInclinedLinecutData2
-  // ]);
+  }, [
+    transformedLineData,
+    setImageData1,
+    setImageData2,
+  ]);
 
 
 
@@ -956,33 +923,35 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           qXVector, // Pass qXVector to the function
           units: units // Pass units
         })),
-      //   // Inclined linecuts
-      // ...(inclinedLinecuts || [])
-      // .filter(l => !l.hidden)
-      // .flatMap(linecut => {
-      //   // Scale positions while maintaining the angle
-      //   const scaledLinecut: InclinedLinecut = {
-      //     ...linecut,
-      //     xPosition: linecut.xPosition / factor,
-      //     yPosition: linecut.yPosition / factor,
-      //     width: (linecut.width || 1) / factor,
-      //     // These properties don't need scaling
-      //     angle: linecut.angle,
-      //     id: linecut.id,
-      //     leftColor: linecut.leftColor,
-      //     rightColor: linecut.rightColor,
-      //     hidden: linecut.hidden,
-      //     type: 'inclined'
-      //   };
+        // Inclined linecuts
+      ...(inclinedLinecuts || [])
+      .filter(l => !l.hidden)
+      .flatMap(linecut => {
+        // // Scale positions while maintaining the angle
+        // const scaledLinecut: InclinedLinecut = {
+        //   ...linecut,
+        //   xPosition: linecut.xPosition / factor,
+        //   yPosition: linecut.yPosition / factor,
+        //   width: (linecut.width || 0) / factor,
+        //   // These properties don't need scaling
+        //   angle: linecut.angle,
+        //   id: linecut.id,
+        //   leftColor: linecut.leftColor,
+        //   rightColor: linecut.rightColor,
+        //   hidden: linecut.hidden,
+        //   type: 'inclined'
+        // };
 
-      //   return generateInclinedLinecutOverlay({
-      //     linecut: scaledLinecut,
-      //     currentArray: resolutionData[currentResolution].array1,
-      //     factor,
-      //     imageWidth,
-      //     imageHeight
-      //   });
-      // }),
+        return generateInclinedLinecutOverlay({
+          linecut: linecut, //scaledLinecut,
+          currentArray: resolutionData[currentResolution].array1,
+          factor,
+          imageWidth,
+          imageHeight,
+          qXVector,
+          qYVector,
+        });
+      }),
 
       // Azimuthal integration overlays
       ...(azimuthalIntegrations || [])
@@ -1033,7 +1002,9 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     getCurrentFactor,
     maxQValue,
     calibrationParams,
-    qYVector
+    qYVector,
+    qXVector,
+    units,
   ]);
 
 

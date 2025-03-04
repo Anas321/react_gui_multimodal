@@ -36,9 +36,12 @@ export interface Linecut {
 
 export interface InclinedLinecut {
   id: number;
+  xPosition?: number;    // Optional pixel X position
+  yPosition?: number;    // Optional pixel Y position
   qXPosition: number;
   qYPosition: number;
   angle: number;
+  width: number;
   qWidth: number;
   leftColor: string;
   rightColor: string;
