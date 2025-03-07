@@ -904,6 +904,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     const imageWidth = currentArrayData[0]?.length || 0;
     const imageHeight = currentArrayData.length;
 
+    console.log('linecut:', inclinedLinecuts)
+
     return [
       ...(horizontalLinecuts || [])
         .filter(l => !l.hidden)
@@ -948,8 +950,10 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           factor,
           imageWidth,
           imageHeight,
-          qXVector,
-          qYVector,
+          beam_center_x: calibrationParams.beam_center_x,
+          beam_center_y: calibrationParams.beam_center_y,
+          // qXVector,
+          // qYVector,
         });
       }),
 

@@ -4,6 +4,9 @@ interface calculateInclinedLineEndpointsParams {
     linecut: InclinedLinecut;
     imageWidth: number;
     imageHeight: number;
+    beam_center_x: number;
+    beam_center_y: number;
+    factor: number;
 }
 
 /**
@@ -29,7 +32,10 @@ using it to find intersection points rather than clip the line.
 export function calculateInclinedLineEndpoints({
     linecut,
     imageWidth,
-    imageHeight
+    imageHeight,
+    beam_center_x,
+    beam_center_y,
+    factor,
 }: calculateInclinedLineEndpointsParams) {
 
     // Convert angle to radians and calculate direction vector components
@@ -40,8 +46,10 @@ export function calculateInclinedLineEndpoints({
     const dy = -Math.sin(radians);
 
     // Get center point coordinates from slider positions
-    const centerX = linecut.xPosition;
-    const centerY = linecut.yPosition;
+    // const centerX = linecut.xPosition;
+    // const centerY = linecut.yPosition;
+    const centerX = beam_center_x / factor;
+    const centerY = beam_center_y / factor;
 
     // Helper function to check if an intersection point lies within image boundaries
     const isInBounds = (x: number, y: number) =>

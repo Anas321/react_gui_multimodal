@@ -131,7 +131,16 @@ function App() {
     calculateQPathDistance,
     zoomedXQRange,
     zoomedYQRange,
-  } = useInclinedLinecut(imageData1, imageData2, qXVector, qYVector, zoomedXPixelRange, zoomedYPixelRange);
+  } = useInclinedLinecut(
+    imageData1,
+    imageData2,
+    qXVector,
+    qYVector,
+    zoomedXPixelRange,
+    zoomedYPixelRange,
+    calibrationParams.beam_center_x,
+    calibrationParams.beam_center_y,
+  );
 
 
   const {
@@ -385,11 +394,7 @@ function App() {
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
                           linecuts={inclinedLinecuts}
-                          qXVector={qXVector}
-                          qYVector={qYVector}
                           units="nm⁻¹"
-                          updateInclinedLinecutXPosition={updateInclinedLinecutXPosition}
-                          updateInclinedLinecutYPosition={updateInclinedLinecutYPosition}
                           updateInclinedLinecutAngle={updateInclinedLinecutAngle}
                           updateInclinedLinecutWidth={updateInclinedLinecutWidth}
                           updateInclinedLinecutColor={updateInclinedLinecutColor}
@@ -633,9 +638,11 @@ function App() {
                         linecuts={inclinedLinecuts}
                         inclinedLinecutData1={inclinedLinecutData1 || []}  // Provide default empty array
                         inclinedLinecutData2={inclinedLinecutData2 || []}  // Provide default empty array
-                        calculateQPathDistance={calculateQPathDistance}
+                        beamCenterX={calibrationParams.beam_center_x}
+                        beamCenterY={calibrationParams.beam_center_y}
                         zoomedXQRange={zoomedXQRange}
-                        zoomedYQRange={zoomedYQRange}
+                        qXVector={qXVector}
+                        qYVector={qYVector}
                         units="nm⁻¹"
                       />
                       </Accordion.Panel>

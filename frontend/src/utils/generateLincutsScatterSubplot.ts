@@ -277,124 +277,137 @@ export function generateVerticalLinecutOverlay({
   ];
 }
 
-// interface GenerateInclinedLinecutParams {
-//   linecut: InclinedLinecut;
-//   currentArray: number[][];
-//   factor: number | null;
-//   imageWidth: number;
-//   imageHeight: number;
-// }
-
-// export function generateInclinedLinecutOverlay({
-//   linecut,
-//   currentArray,
-//   factor,
-//   imageWidth,
-//   imageHeight
-// }: GenerateInclinedLinecutParams) {
-//   if (!currentArray.length || factor === null) return [];
-
-//   // Get the central line endpoints
-//   const endpoints = calculateInclinedLineEndpoints({
-//     linecut,
-//     imageWidth,
-//     imageHeight
-//   });
-
-//   if (!endpoints) return [];
-//   const { x0, y0, x1, y1 } = endpoints;
-
-//   // Calculate perpendicular vector for the width envelope
-//   const radians = (linecut.angle * Math.PI) / 180;
-//   const dx = Math.cos(radians);
-//   const dy = -Math.sin(radians);
-
-//   // Calculate perpendicular unit vector
-//   const perpDx = -dy;
-//   const perpDy = dx;
-
-//   // Scale the width
-//   const halfWidth = linecut.width / 2;
-
-//   // Calculate envelope points perpendicular to the line
-//   const envelopePoints = {
-//     x: [
-//       x0 + perpDx * halfWidth,
-//       x1 + perpDx * halfWidth,
-//       x1 - perpDx * halfWidth,
-//       x0 - perpDx * halfWidth,
-//       x0 + perpDx * halfWidth // Close the path
-//     ],
-//     y: [
-//       y0 + perpDy * halfWidth,
-//       y1 + perpDy * halfWidth,
-//       y1 - perpDy * halfWidth,
-//       y0 - perpDy * halfWidth,
-//       y0 + perpDy * halfWidth // Close the path
-//     ]
-//   };
-
-//   // Create overlays for both axes
-//   const createOverlaysForAxis = (color: string, axisNumber: number) => [
-//     // Width envelope
-//     {
-//       x: envelopePoints.x,
-//       y: envelopePoints.y,
-//       mode: 'lines',
-//       fill: 'toself',
-//       fillcolor: color,
-//       line: { color },
-//       opacity: 0.3,
-//       xaxis: `x${axisNumber}`,
-//       yaxis: `y${axisNumber}`,
-//       showlegend: false,
-//       hoverinfo: 'skip'
-//     },
-//     // Central line
-//     {
-//       x: [x0, x1],
-//       y: [y0, y1],
-//       mode: 'lines',
-//       line: { color, width: 2 },
-//       opacity: 0.75,
-//       xaxis: `x${axisNumber}`,
-//       yaxis: `y${axisNumber}`,
-//       showlegend: false,
-//       hoverinfo: 'skip'
-//     },
-//     // Center point
-//     {
-//       x: [linecut.xPosition],
-//       y: [linecut.yPosition],
-//       mode: 'markers',
-//       marker: {
-//         color: color,
-//         size: 10,
-//         symbol: 'circle',
-//       },
-//       opacity: 0.75,
-//       xaxis: `x${axisNumber}`,
-//       yaxis: `y${axisNumber}`,
-//       showlegend: false,
-//       hoverinfo: 'skip'
-//     },
-//   ];
-
-//   return [
-//     ...createOverlaysForAxis(linecut.leftColor, 1),
-//     ...createOverlaysForAxis(linecut.rightColor, 2)
-//   ];
-// }
-
 interface GenerateInclinedLinecutParams {
   linecut: InclinedLinecut;
   currentArray: number[][];
   factor: number | null;
   imageWidth: number;
   imageHeight: number;
-  qXVector?: number[];
-  qYVector?: number[];
+  beam_center_x: number;
+  beam_center_y: number;
 }
+
+export function generateInclinedLinecutOverlay({
+  linecut,
+  currentArray,
+  factor,
+  imageWidth,
+  imageHeight,
+  beam_center_x,
+  beam_center_y,
+}: GenerateInclinedLinecutParams) {
+  if (!currentArray.length || factor === null) return [];
+
+  // Get the central line endpoints
+  const endpoints = calculateInclinedLineEndpoints({
+    linecut,
+    imageWidth,
+    imageHeight,
+    beam_center_x,
+    beam_center_y,
+    factor,
+  });
+
+  if (!endpoints) return [];
+  const { x0, y0, x1, y1 } = endpoints;
+
+  // Calculate perpendicular vector for the width envelope
+  const radians = (linecut.angle * Math.PI) / 180;
+  const dx = Math.cos(radians);
+  const dy = -Math.sin(radians);
+
+  // Calculate perpendicular unit vector
+  const perpDx = -dy;
+  const perpDy = dx;
+
+  // Scale the width
+  const halfWidth = linecut.width / 2;
+
+  // Calculate envelope points perpendicular to the line
+  const envelopePoints = {
+    x: [
+      x0 + perpDx * halfWidth,
+      x1 + perpDx * halfWidth,
+      x1 - perpDx * halfWidth,
+      x0 - perpDx * halfWidth,
+      x0 + perpDx * halfWidth // Close the path
+    ],
+    y: [
+      y0 + perpDy * halfWidth,
+      y1 + perpDy * halfWidth,
+      y1 - perpDy * halfWidth,
+      y0 - perpDy * halfWidth,
+      y0 + perpDy * halfWidth // Close the path
+    ]
+  };
+
+  // Create overlays for both axes
+  const createOverlaysForAxis = (color: string, axisNumber: number) => [
+    // Width envelope
+    {
+      x: envelopePoints.x,
+      y: envelopePoints.y,
+      mode: 'lines',
+      fill: 'toself',
+      fillcolor: color,
+      line: { color },
+      opacity: 0.3,
+      xaxis: `x${axisNumber}`,
+      yaxis: `y${axisNumber}`,
+      showlegend: false,
+      hoverinfo: 'skip'
+    },
+    // Central line
+    {
+      x: [x0, x1],
+      y: [y0, y1],
+      mode: 'lines',
+      line: { color, width: 2 },
+      opacity: 0.75,
+      xaxis: `x${axisNumber}`,
+      yaxis: `y${axisNumber}`,
+      showlegend: false,
+      hoverinfo: 'skip'
+    },
+    // Center point
+    {
+      // x: [linecut.xPosition],
+      // y: [linecut.yPosition],
+      x: [beam_center_x / factor],
+      y: [beam_center_y / factor],
+      mode: 'markers',
+      marker: {
+        color: color,
+        size: 10,
+        symbol: 'circle',
+      },
+      opacity: 0.75,
+      xaxis: `x${axisNumber}`,
+      yaxis: `y${axisNumber}`,
+      showlegend: false,
+      hoverinfo: 'skip'
+    },
+  ];
+
+  return [
+    ...createOverlaysForAxis(linecut.leftColor, 1),
+    ...createOverlaysForAxis(linecut.rightColor, 2)
+  ];
+}
+
+
+
+
+
+// interface GenerateInclinedLinecutParams {
+//   linecut: InclinedLinecut;
+//   currentArray: number[][];
+//   factor: number | null;
+//   imageWidth: number;
+//   imageHeight: number;
+//   qXVector?: number[];
+//   qYVector?: number[];
+// }
 
 
 // export function generateInclinedLinecutOverlay({
@@ -533,158 +546,162 @@ interface GenerateInclinedLinecutParams {
 // }
 
 
-export function generateInclinedLinecutOverlay({
-  linecut,
-  currentArray,
-  factor,
-  imageWidth,
-  imageHeight,
-  qXVector,
-  qYVector
-}: GenerateInclinedLinecutParams) {
-  if (!currentArray.length || factor === null) return [];
-
-  // Convert q-coordinates to pixel coordinates
-  const findPixelPosition = (qValue: number, qVector: number[] | undefined, defaultPosition: number): number => {
-    if (!qVector || qVector.length === 0) return defaultPosition;
-
-    let closestIndex = 0;
-    let minDiff = Math.abs(qVector[0] - qValue);
-
-    for (let i = 1; i < qVector.length; i++) {
-      const diff = Math.abs(qVector[i] - qValue);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestIndex = i;
-      }
-    }
-
-    return closestIndex;
-  };
-
-  // Get center position in pixel coordinates
-  const pixelX = findPixelPosition(linecut.qXPosition, qXVector, Math.floor(imageWidth / 2));
-  const pixelY = findPixelPosition(linecut.qYPosition, qYVector, Math.floor(imageHeight / 2));
-
-  // Convert q-width to pixel width
-  // A simple approach - find pixel distance between qPosition and qPosition+qWidth
-  let pixelWidth = 5; // Default minimum width
-  if (linecut.qWidth > 0 && qXVector && qXVector.length > 0) {
-    const qWidthPosition = linecut.qXPosition + linecut.qWidth;
-    const widthPixelPosition = findPixelPosition(qWidthPosition, qXVector, pixelX + 5);
-    pixelWidth = Math.abs(widthPixelPosition - pixelX);
-    // Ensure a minimum width for visibility
-    pixelWidth = Math.max(pixelWidth, 5);
-  }
-
-  // Create a pixel space linecut for calculateInclinedLineEndpoints
-  const pixelLinecut: InclinedLinecut = {
-    id: linecut.id,
-    angle: linecut.angle,
-    xPosition: pixelX,
-    yPosition: pixelY,
-    width: pixelWidth,
-    qXPosition: linecut.qXPosition,
-    qYPosition: linecut.qYPosition,
-    qWidth: linecut.qWidth,
-    leftColor: linecut.leftColor,
-    rightColor: linecut.rightColor,
-    hidden: linecut.hidden,
-    type: 'inclined'
-  };
-
-  // Get endpoints using the provided function
-  const endpoints = calculateInclinedLineEndpoints({
-    linecut: pixelLinecut,
-    imageWidth,
-    imageHeight
-  });
-
-  if (!endpoints) return [];
-
-  // Apply resolution factor
-  const scaledX0 = endpoints.x0 / factor;
-  const scaledY0 = endpoints.y0 / factor;
-  const scaledX1 = endpoints.x1 / factor;
-  const scaledY1 = endpoints.y1 / factor;
-  const scaledCenterX = pixelX / factor;
-  const scaledCenterY = pixelY / factor;
-
-  // Calculate perpendicular vector for width envelope
-  const angleRad = (linecut.angle * Math.PI) / 180;
-  const perpX = -Math.sin(angleRad); // Perpendicular to direction
-  const perpY = -Math.cos(angleRad); // Perpendicular to direction
-
-  // Scale width for display
-  const scaledHalfWidth = (pixelWidth / 2) / factor;
-
-  // Calculate envelope points
-  const envelopePoints = {
-    x: [
-      scaledX0 + perpX * scaledHalfWidth,
-      scaledX1 + perpX * scaledHalfWidth,
-      scaledX1 - perpX * scaledHalfWidth,
-      scaledX0 - perpX * scaledHalfWidth,
-      scaledX0 + perpX * scaledHalfWidth // Close the path
-    ],
-    y: [
-      scaledY0 + perpY * scaledHalfWidth,
-      scaledY1 + perpY * scaledHalfWidth,
-      scaledY1 - perpY * scaledHalfWidth,
-      scaledY0 - perpY * scaledHalfWidth,
-      scaledY0 + perpY * scaledHalfWidth // Close the path
-    ]
-  };
 
 
-  // Create overlays for both axes
-  const createOverlaysForAxis = (color: string, axisNumber: number) => [
-    // Width envelope
-    {
-      x: envelopePoints.x,
-      y: envelopePoints.y,
-      mode: 'lines',
-      fill: 'toself',
-      fillcolor: color,
-      line: { color },
-      opacity: linecut.qWidth > 0 ? 0.3 : 0, // Hide fill for zero width
-      xaxis: `x${axisNumber}`,
-      yaxis: `y${axisNumber}`,
-      showlegend: false,
-      hoverinfo: 'skip'
-    },
-    // Central line
-    {
-      x: [scaledX0, scaledX1],
-      y: [scaledY0, scaledY1],
-      mode: 'lines',
-      line: { color, width: 2 },
-      opacity: 0.75,
-      xaxis: `x${axisNumber}`,
-      yaxis: `y${axisNumber}`,
-      showlegend: false,
-      hoverinfo: 'skip'
-    },
-    // Center point
-    {
-      x: [scaledCenterX],
-      y: [scaledCenterY],
-      mode: 'markers',
-      marker: {
-        color: color,
-        size: 8,
-        symbol: 'circle',
-      },
-      opacity: 0.75,
-      xaxis: `x${axisNumber}`,
-      yaxis: `y${axisNumber}`,
-      showlegend: false,
-      hoverinfo: 'skip'
-    },
-  ];
 
-  return [
-    ...createOverlaysForAxis(linecut.leftColor, 1),
-    ...createOverlaysForAxis(linecut.rightColor, 2)
-  ];
-}
+
+// export function generateInclinedLinecutOverlay({
+//   linecut,
+//   currentArray,
+//   factor,
+//   imageWidth,
+//   imageHeight,
+//   qXVector,
+//   qYVector
+// }: GenerateInclinedLinecutParams) {
+//   if (!currentArray.length || factor === null) return [];
+
+//   // Convert q-coordinates to pixel coordinates
+//   const findPixelPosition = (qValue: number, qVector: number[] | undefined, defaultPosition: number): number => {
+//     if (!qVector || qVector.length === 0) return defaultPosition;
+
+//     let closestIndex = 0;
+//     let minDiff = Math.abs(qVector[0] - qValue);
+
+//     for (let i = 1; i < qVector.length; i++) {
+//       const diff = Math.abs(qVector[i] - qValue);
+//       if (diff < minDiff) {
+//         minDiff = diff;
+//         closestIndex = i;
+//       }
+//     }
+
+//     return closestIndex;
+//   };
+
+//   // Get center position in pixel coordinates
+//   const pixelX = findPixelPosition(linecut.qXPosition, qXVector, Math.floor(imageWidth / 2));
+//   const pixelY = findPixelPosition(linecut.qYPosition, qYVector, Math.floor(imageHeight / 2));
+
+//   // Convert q-width to pixel width
+//   // A simple approach - find pixel distance between qPosition and qPosition+qWidth
+//   let pixelWidth = 5; // Default minimum width
+//   if (linecut.qWidth > 0 && qXVector && qXVector.length > 0) {
+//     const qWidthPosition = linecut.qXPosition + linecut.qWidth;
+//     const widthPixelPosition = findPixelPosition(qWidthPosition, qXVector, pixelX + 5);
+//     pixelWidth = Math.abs(widthPixelPosition - pixelX);
+//     // Ensure a minimum width for visibility
+//     pixelWidth = Math.max(pixelWidth, 5);
+//   }
+
+//   // Create a pixel space linecut for calculateInclinedLineEndpoints
+//   const pixelLinecut: InclinedLinecut = {
+//     id: linecut.id,
+//     angle: linecut.angle,
+//     xPosition: pixelX,
+//     yPosition: pixelY,
+//     width: pixelWidth,
+//     qXPosition: linecut.qXPosition,
+//     qYPosition: linecut.qYPosition,
+//     qWidth: linecut.qWidth,
+//     leftColor: linecut.leftColor,
+//     rightColor: linecut.rightColor,
+//     hidden: linecut.hidden,
+//     type: 'inclined'
+//   };
+
+//   // Get endpoints using the provided function
+//   const endpoints = calculateInclinedLineEndpoints({
+//     linecut: pixelLinecut,
+//     imageWidth,
+//     imageHeight
+//   });
+
+//   if (!endpoints) return [];
+
+//   // Apply resolution factor
+//   const scaledX0 = endpoints.x0 / factor;
+//   const scaledY0 = endpoints.y0 / factor;
+//   const scaledX1 = endpoints.x1 / factor;
+//   const scaledY1 = endpoints.y1 / factor;
+//   const scaledCenterX = pixelX / factor;
+//   const scaledCenterY = pixelY / factor;
+
+//   // Calculate perpendicular vector for width envelope
+//   const angleRad = (linecut.angle * Math.PI) / 180;
+//   const perpX = -Math.sin(angleRad); // Perpendicular to direction
+//   const perpY = -Math.cos(angleRad); // Perpendicular to direction
+
+//   // Scale width for display
+//   const scaledHalfWidth = (pixelWidth / 2) / factor;
+
+//   // Calculate envelope points
+//   const envelopePoints = {
+//     x: [
+//       scaledX0 + perpX * scaledHalfWidth,
+//       scaledX1 + perpX * scaledHalfWidth,
+//       scaledX1 - perpX * scaledHalfWidth,
+//       scaledX0 - perpX * scaledHalfWidth,
+//       scaledX0 + perpX * scaledHalfWidth // Close the path
+//     ],
+//     y: [
+//       scaledY0 + perpY * scaledHalfWidth,
+//       scaledY1 + perpY * scaledHalfWidth,
+//       scaledY1 - perpY * scaledHalfWidth,
+//       scaledY0 - perpY * scaledHalfWidth,
+//       scaledY0 + perpY * scaledHalfWidth // Close the path
+//     ]
+//   };
+
+
+//   // Create overlays for both axes
+//   const createOverlaysForAxis = (color: string, axisNumber: number) => [
+//     // Width envelope
+//     {
+//       x: envelopePoints.x,
+//       y: envelopePoints.y,
+//       mode: 'lines',
+//       fill: 'toself',
+//       fillcolor: color,
+//       line: { color },
+//       opacity: linecut.qWidth > 0 ? 0.3 : 0, // Hide fill for zero width
+//       xaxis: `x${axisNumber}`,
+//       yaxis: `y${axisNumber}`,
+//       showlegend: false,
+//       hoverinfo: 'skip'
+//     },
+//     // Central line
+//     {
+//       x: [scaledX0, scaledX1],
+//       y: [scaledY0, scaledY1],
+//       mode: 'lines',
+//       line: { color, width: 2 },
+//       opacity: 0.75,
+//       xaxis: `x${axisNumber}`,
+//       yaxis: `y${axisNumber}`,
+//       showlegend: false,
+//       hoverinfo: 'skip'
+//     },
+//     // Center point
+//     {
+//       x: [scaledCenterX],
+//       y: [scaledCenterY],
+//       mode: 'markers',
+//       marker: {
+//         color: color,
+//         size: 8,
+//         symbol: 'circle',
+//       },
+//       opacity: 0.75,
+//       xaxis: `x${axisNumber}`,
+//       yaxis: `y${axisNumber}`,
+//       showlegend: false,
+//       hoverinfo: 'skip'
+//     },
+//   ];
+
+//   return [
+//     ...createOverlaysForAxis(linecut.leftColor, 1),
+//     ...createOverlaysForAxis(linecut.rightColor, 2)
+//   ];
+// }

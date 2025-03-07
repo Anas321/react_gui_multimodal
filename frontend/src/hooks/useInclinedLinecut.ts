@@ -407,23 +407,12 @@
 
 
 
+
+
 import { useState, useCallback, useEffect } from 'react';
 import { leftImageColorPalette, rightImageColorPalette } from '../utils/constants';
 import { throttle } from 'lodash';
 import { InclinedLinecut } from '../types';
-
-// // Define the Q-space inclined linecut type
-// interface InclinedLinecut {
-//   id: number;
-//   qXPosition: number;    // X position in q-space
-//   qYPosition: number;    // Y position in q-space
-//   angle: number;         // Angle in degrees
-//   qWidth: number;        // Width in q-space units
-//   leftColor: string;     // Color for left image visualization
-//   rightColor: string;    // Color for right image visualization
-//   hidden: boolean;       // Visibility flag
-//   type: 'inclined';      // Type identifier
-// }
 
 /**
  * Custom hook for managing inclined linecuts in q-space
@@ -445,6 +434,8 @@ export default function useInclinedLinecut(
   qYVector: number[],
   zoomedXPixelRange: [number, number] | null, // Add these parameters
   zoomedYPixelRange: [number, number] | null, // to take the pixel ranges
+  beamCenterX: number,
+  beamCenterY: number
 ) {
   // State for storing linecut definitions in q-space
   const [inclinedLinecuts, setInclinedLinecuts] = useState<InclinedLinecut[]>([]);
@@ -693,6 +684,9 @@ export default function useInclinedLinecut(
   ): number[] => {
     // Calculate endpoints in pixel space
     const endpoints = calculateLinecutEndpoints(qXPosition, qYPosition, angle);
+    console.log(endpoints);
+    console.log(qXVector);
+    console.log(qXPosition);
     if (!endpoints || numPoints === 0) return [];
 
     const { x0, y0, x1, y1 } = endpoints;
@@ -721,14 +715,8 @@ export default function useInclinedLinecut(
     const existingIds = inclinedLinecuts.map((linecut) => linecut.id);
     const newId = Math.max(0, ...existingIds) + 1;
 
-    // Calculate default q-value at the middle of the available range
-    const minQX = qXVector && qXVector.length > 0 ? Math.min(...qXVector) : 0;
-    const maxQX = qXVector && qXVector.length > 0 ? Math.max(...qXVector) : 0;
-    const minQY = qYVector && qYVector.length > 0 ? Math.min(...qYVector) : 0;
-    const maxQY = qYVector && qYVector.length > 0 ? Math.max(...qYVector) : 0;
-
-    const defaultQX = (minQX + maxQX) / 2;
-    const defaultQY = (minQY + maxQY) / 2;
+    const defaultQX = 0;
+    const defaultQY = 0;
 
     // Create the new linecut object with default properties
     const newLinecut: InclinedLinecut = {
@@ -737,6 +725,7 @@ export default function useInclinedLinecut(
       qYPosition: defaultQY,
       angle: 45,  // Default 45-degree angle
       qWidth: 0,  // Start with zero width
+      width: 0,   // Width in pixels
       // Assign colors from palette, cycling through available colors
       leftColor: leftImageColorPalette[(newId - 1) % leftImageColorPalette.length],
       rightColor: rightImageColorPalette[(newId - 1) % rightImageColorPalette.length],
