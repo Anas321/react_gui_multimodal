@@ -11,29 +11,6 @@ export interface Linecut {
 }
 
 
-// export interface Linecut {
-//     id: number; // Unique identifier for the linecut
-//     position: number; // Current position of the linecut
-//     leftColor: string; // Color of the left image linecut
-//     rightColor: string; // Color of the right image linecut
-//     hidden: boolean; // Optional property to track if the linecut is hidden
-//     width: number; // Optional property to track the width of the linecut
-//     angle: number; // For inclined linecuts
-//     type: 'horizontal' | 'vertical'; // Type of linecut
-//   }
-
-// export interface InclinedLinecut {
-//     id: number;
-//     xPosition: number;
-//     yPosition: number;
-//     angle: number;
-//     width: number;
-//     leftColor: string;
-//     rightColor: string;
-//     hidden: boolean;
-//     type: 'inclined';
-//   }
-
 export interface InclinedLinecut {
   id: number;
   xPosition?: number;    // Optional pixel X position
@@ -47,6 +24,17 @@ export interface InclinedLinecut {
   rightColor: string;
   hidden: boolean;
   type: 'inclined';
+}
+
+export interface GenerateLinecutParams {
+  linecut: Linecut;
+  currentArray: number[][];
+  factor: number | null;
+  imageWidth?: number;
+  imageHeight?: number;
+  qYVector?: number[]; // Add qYVector for q-value mapping
+  qXVector?: number[]; // Add qXVector for q-value mapping
+  units?: string;     // Add units for labels
 }
 
 export interface ResolutionDataType {
@@ -82,4 +70,32 @@ export interface CalibrationParams {
         wavelength: number;
         tilt: number;
         tilt_plan_rotation: number;
+    }
+
+
+export interface TransformDataFunction {
+      /**
+       * Transform two 2D arrays of data based on specified processing options
+       *
+       * @param data1 - First 2D array of intensity values to transform
+       * @param data2 - Second 2D array of intensity values to transform
+       * @param isLog - Whether to apply logarithmic scaling to the data
+       * @param lowerPerc - Lower percentile boundary for clipping (0-100)
+       * @param upperPerc - Upper percentile boundary for clipping (0-100)
+       * @param normalization - Normalization method ('none', 'minmax', or 'mean')
+       * @param normalizationMode - How to apply normalization ('together' or 'separate')
+       * @returns Object containing the transformed arrays
+       */
+      (
+        data1: number[][],
+        data2: number[][],
+        isLog: boolean,
+        lowerPerc: number,
+        upperPerc: number,
+        normalization: string,
+        normalizationMode: string
+      ): {
+        array1: number[][];
+        array2: number[][];
+      };
     }

@@ -1,5 +1,5 @@
 // utils/handleRelayout.ts
-import { ResolutionDataType } from '../types';
+import { ResolutionDataType, TransformDataFunction } from '../types';
 import { calculateDifferenceArray } from './calculateDifferenceArray';
 import { getArrayMinMax } from './getArrayMinAndMax';
 
@@ -16,19 +16,14 @@ interface HandleRelayoutProps {
   setZoomedYPixelRange: (range: [number, number] | null) => void;
   setPlotData: (data: any) => void;
   setDragMode: (mode: string) => void;
-  transformData: (
-    data1: number[][],
-    data2: number[][],
-    isLog: boolean,
-    lowerPerc: number,
-    upperPerc: number,
-    normalization?: string
-  ) => { array1: number[][], array2: number[][] };
+  transformData: TransformDataFunction;
   isLogScale: boolean;
   lowerPercentile: number;
   upperPercentile: number;
   normalization: string;
+  normalizationMode: string;
 }
+
 
 export const handleRelayout = (
   relayoutData: any,
@@ -46,6 +41,7 @@ export const handleRelayout = (
     lowerPercentile,
     upperPercentile,
     normalization,
+    normalizationMode,
   }: HandleRelayoutProps
 ) => {
   if (!plotData) return;
@@ -72,7 +68,8 @@ export const handleRelayout = (
       isLogScale,
       lowerPercentile,
       upperPercentile,
-      normalization
+      normalization,
+      normalizationMode,
     );
 
     // Calculate difference using transformed data

@@ -136,11 +136,6 @@ export default function useMultimodal() {
       setQXVector(decodedData.q_x);
       setQYVector(decodedData.q_y);
 
-      console.log("Loaded q-vectors:", {
-        q_x_length: decodedData.q_x.length,
-        q_y_length: decodedData.q_y.length
-      });
-
     } catch (error) {
       console.error('Error fetching q-vectors:', error);
     }

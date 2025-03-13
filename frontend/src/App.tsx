@@ -138,8 +138,6 @@ function App() {
     qYVector,
     zoomedXPixelRange,
     zoomedYPixelRange,
-    calibrationParams.beam_center_x,
-    calibrationParams.beam_center_y,
   );
 
 
@@ -158,6 +156,7 @@ function App() {
     setDifferenceColormap,
     normalizationMode,
     setNormalizationMode,
+    mainTransformDataFunction,
   } = useDataTransformation();
 
 
@@ -511,9 +510,6 @@ function App() {
                   isLogScale={isLogScale}
                   lowerPercentile={lowerPercentile}
                   upperPercentile={upperPercentile}
-                  // computeInclinedLinecutData={computeInclinedLinecutData}
-                  // setInclinedLinecutData1={setInclinedLinecutData1}
-                  // setInclinedLinecutData2={setInclinedLinecutData2}
                   normalization={normalization}
                   imageColormap={imageColormap}
                   differenceColormap={differenceColormap}
@@ -526,8 +522,7 @@ function App() {
                   qYVector={qYVector}
                   qXVector={qXVector}
                   units="nm⁻¹"
-                  inclinedLinecutData1={inclinedLinecutData1}
-                  inclinedLinecutData2={inclinedLinecutData2}
+                  mainTransformDataFunction={mainTransformDataFunction}
                 />
 
                   {resolutionMessage && (
@@ -633,6 +628,18 @@ function App() {
                   {selectedLinecuts.includes('Inclined') && inclinedLinecuts.length > 0 && (
                     <Accordion.Item value="inclined-linecut-accordion">
                       <Accordion.Control>Inclined Linecut</Accordion.Control>
+
+                        {/* linecuts: InclinedLinecut[];
+                        inclinedLinecutData1: { id: number; data: number[] }[];
+                        inclinedLinecutData2: { id: number; data: number[] }[];
+                        beamCenterX: number;
+                        beamCenterY: number;
+                        zoomedXQRange: [number, number] | null;
+                        qXVector: number[];
+                        qYVector: number[];
+                        units: string; */}
+
+
                       <Accordion.Panel>
                       <InclinedLinecutFig
                         linecuts={inclinedLinecuts}
