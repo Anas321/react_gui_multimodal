@@ -12,7 +12,7 @@ interface CalibrationParams {
     tilt_plan_rotation: number;       // Tilt plane rotation in degrees
 }
 
-interface CalibrationWidgetProps {
+interface CalibrationAccordionProps {
     calibrationParams: CalibrationParams;
     onCalibrationUpdate: (params: CalibrationParams) => void;
 }
@@ -42,10 +42,10 @@ const LargeNumberInput: React.FC<LargeNumberInputProps> = ({
     );
 };
 
-export default function CalibrationWidget({
+export default function CalibrationAccordion({
     calibrationParams,
     onCalibrationUpdate,
-}: CalibrationWidgetProps) {
+}: CalibrationAccordionProps) {
     const [isModified, setIsModified] = useState(false);
     const [localParams, setLocalParams] = useState(calibrationParams);
 

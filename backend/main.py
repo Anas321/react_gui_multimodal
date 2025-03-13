@@ -22,7 +22,9 @@ app.add_middleware(
 
 
 # Include Routers
-app.include_router(initial_scans_fetching.router, prefix="/api", tags=["Initial Scans"])
+app.include_router(
+    initial_scans_fetching.router, prefix="/api", tags=["Initial Scans Fetching"]
+)
 app.include_router(scatter_subplot.router, prefix="/api", tags=["Scatter Images"])
 app.include_router(
     azimuthal_integrator.router, prefix="/api", tags=["Azimuthal Integrator"]

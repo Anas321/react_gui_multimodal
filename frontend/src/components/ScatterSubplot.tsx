@@ -50,6 +50,10 @@ interface ScatterSubplotProps {
   qXVector: number[]; // qXVector for q-value mapping
   units: string;
   mainTransformDataFunction: TransformDataFunction;
+  leftImageIndex?: number | "";
+  rightImageIndex?: number | "";
+  onImagesLoaded?: () => void;
+  setNumberOfFiles?: (value: number) => void;
 }
 
 
@@ -81,6 +85,10 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   qXVector,
   units,
   mainTransformDataFunction,
+  leftImageIndex,
+  rightImageIndex,
+  onImagesLoaded,
+  setNumberOfFiles,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
@@ -393,7 +401,18 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
   // Initial data fetch
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/scatter-subplot")
+
+    // Skip if indices aren't valid numbers
+    if (typeof leftImageIndex !== 'number' || typeof rightImageIndex !== 'number') {
+      return;
+    }
+
+    // Construct the URL with query parameters for the indices
+    const url = new URL("http://127.0.0.1:8000/api/scatter-subplot");
+    url.searchParams.append("left_image_index", leftImageIndex.toString());
+    url.searchParams.append("right_image_index", rightImageIndex.toString());
+
+    fetch(url.toString())
       .then(response => response.arrayBuffer())
       .then(buffer => {
         const decoded = decode(new Uint8Array(buffer)) as any;
@@ -483,10 +502,13 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       })
       .catch(error => console.error("Error fetching scatter subplot:", error));
   }, [
+    leftImageIndex,
+    rightImageIndex,
     setImageHeight,
     setImageWidth,
     setImageData1,
     setImageData2,
+    onImagesLoaded,
   ]);
 
 

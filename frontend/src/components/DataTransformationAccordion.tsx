@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Switch, Select } from '@mantine/core';
 
-interface DataTransformationWidgetProps {
+interface DataTransformationAccordionProps {
   isLogScale: boolean;
   setIsLogScale: (value: boolean) => void;
   lowerPercentile: number;
@@ -40,7 +40,7 @@ const SEQUENTIAL_COLORMAP_OPTIONS = [
   { value: 'Reds', label: 'Reds' },
 ];
 
-const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
+const DataTransformationAccordion: React.FC<DataTransformationAccordionProps> = ({
   isLogScale,
   setIsLogScale,
   lowerPercentile,
@@ -246,4 +246,4 @@ const DataTransformationWidget: React.FC<DataTransformationWidgetProps> = ({
   );
 };
 
-export default DataTransformationWidget;
+export default DataTransformationAccordion;

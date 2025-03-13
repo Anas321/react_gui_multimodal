@@ -11,13 +11,15 @@ import VerticalLinecutWidget from './components/VerticalLinecutWidget';
 import InclinedLinecutWidget from './components/InclinedLinecutWidget';
 import AzimuthalIntegrationWidget from './components/AzimuthalIntegrationWidget';
 
-import DataTransformationWidget from './components/DataTransformationWidget';
-import CalibrationWidget from './components/CalibrationWidget';
+import DataTransformationAccordion from './components/DataTransformationAccordion';
+import CalibrationAccordion from './components/CalibrationAccordion';
 
 import HorizontalLinecutFig from './components/HorizontalLinecutFig';
 import VerticalLinecutFig from './components/VerticalLinecutFig';
 import InclinedLinecutFig from './components/InclinedLinecutFig';
 import AzimuthalIntegrationFig from './components/AzimuthalIntegrationFig';
+
+import ScatterSpectrumAccordion from './components/ScatterSpectrumAccordion';
 
 import { handleExperimentTypeChange, addLinecut } from './utils/linecutHandlers';
 import { leftImageColorPalette, rightImageColorPalette } from './utils/constants';
@@ -31,9 +33,9 @@ import useHorizontalLinecut from './hooks/useHorizontalLinecut';
 import useVerticalLinecut from './hooks/useVerticalLinecut';
 import useInclinedLinecut from './hooks/useInclinedLinecut';
 import useDataTransformation from './hooks/useDataTransformation';
+import useScatterSpectrum from './hooks/useScatterSpectrum';
 
 import { CalibrationParams } from './types';
-
 
 
 function App() {
@@ -158,6 +160,19 @@ function App() {
     setNormalizationMode,
     mainTransformDataFunction,
   } = useDataTransformation();
+
+
+  const {
+    leftImageIndex,
+    setLeftImageIndex,
+    rightImageIndex,
+    setRightImageIndex,
+    isLoading,
+    numOfFiles,
+    setNumOfFiles,
+    handleImageIndicesChange,
+    handleImagesLoaded,
+  } = useScatterSpectrum();
 
 
 
@@ -289,6 +304,23 @@ function App() {
               classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[2rem] font-bold' }}
               className="mt-6"
             >
+
+            {/* Scatter Spectrum Accordion */}
+            <Accordion.Item value="scatter-spectrum-accordion">
+              <Accordion.Control classNames={{label: 'text-3xl font-bold'}}>
+                Scatter Spectrum
+              </Accordion.Control>
+              <Accordion.Panel>
+                <ScatterSpectrumAccordion
+                  leftImageIndex={leftImageIndex}
+                  rightImageIndex={rightImageIndex}
+                  setLeftImageIndex={setLeftImageIndex}
+                  setRightImageIndex={setRightImageIndex}
+                  numOfFiles={numOfFiles}
+                />
+              </Accordion.Panel>
+            </Accordion.Item>
+
             <Accordion.Item value="linecuts-accordion">
               <Accordion.Control
                 classNames={{label: 'text-3xl font-bold'}}
@@ -432,7 +464,7 @@ function App() {
                   Data Transformation
                 </Accordion.Control>
                 <Accordion.Panel>
-                  <DataTransformationWidget
+                  <DataTransformationAccordion
                     isLogScale={isLogScale}
                     setIsLogScale={setIsLogScale}
                     lowerPercentile={lowerPercentile}
@@ -458,7 +490,7 @@ function App() {
                   Calibration
                 </Accordion.Control>
                 <Accordion.Panel>
-                  <CalibrationWidget
+                  <CalibrationAccordion
                     onCalibrationUpdate={handleCalibrationUpdate}
                     calibrationParams={calibrationParams}
                   />
@@ -523,6 +555,10 @@ function App() {
                   qXVector={qXVector}
                   units="nm⁻¹"
                   mainTransformDataFunction={mainTransformDataFunction}
+                  leftImageIndex={leftImageIndex}
+                  rightImageIndex={rightImageIndex}
+                  onImagesLoaded={handleImagesLoaded}
+                  setNumOfFiles={setNumOfFiles}
                 />
 
                   {resolutionMessage && (

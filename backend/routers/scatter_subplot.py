@@ -1,7 +1,7 @@
 import msgpack
 import numpy as np
 import plotly.graph_objects as go
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from fastapi.responses import Response
 from plotly.subplots import make_subplots
 from routers.initial_scans_fetching import get_initial_scans
@@ -10,11 +10,18 @@ router = APIRouter()
 
 
 @router.get("/scatter-subplot")
-async def create_scatter_subplot(scans=Depends(get_initial_scans)):
+async def create_scatter_subplot(left_image_index: int = 0, right_image_index: int = 1):
+
+    scans = await get_initial_scans(
+        left_image_index=left_image_index, right_image_index=right_image_index
+    )
 
     # Convert arrays to NumPy
     scatter_image_array_1 = np.array(scans["scatter_image_array_1_full_res"])
     scatter_image_array_2 = np.array(scans["scatter_image_array_2_full_res"])
+    num_of_files = scans["num_of_files"]
+
+    print("num_of_files: ", num_of_files)
 
     # Compute absolute difference
     difference_array = scatter_image_array_1 - scatter_image_array_2

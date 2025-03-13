@@ -13,9 +13,8 @@ from tiled.client import from_uri
 router = APIRouter()
 
 
-@router.get("/initial-scans")
-# @FastAPICache(expire=60) # Cache for 60 seconds
-async def get_initial_scans():
+@router.get("/initial-scans-fetching")
+async def get_initial_scans(left_image_index: int = 0, right_image_index: int = 1):
 
     DEV_MODE = True
 
@@ -58,15 +57,6 @@ async def get_initial_scans():
 
     num_of_files = len(all_files_uris)
 
-    # Scatter images subplot
-    left_image_index = 0
-    right_image_index = 1
-
-    # image_preprocessing_store = {
-    #     "log_scale": False,
-    #     "lower_clipping_percentile": 1,
-    #     "upper_clipping_percentile": 99,
-    # }
     accumulated_data = {
         "max_intensities": [],
         "avg_intensities": [],
