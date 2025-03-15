@@ -19,9 +19,8 @@ async def create_scatter_subplot(left_image_index: int = 0, right_image_index: i
     # Convert arrays to NumPy
     scatter_image_array_1 = np.array(scans["scatter_image_array_1_full_res"])
     scatter_image_array_2 = np.array(scans["scatter_image_array_2_full_res"])
-    num_of_files = scans["num_of_files"]
 
-    print("num_of_files: ", num_of_files)
+    # print("num_of_files: ", num_of_files)
 
     # Compute absolute difference
     difference_array = scatter_image_array_1 - scatter_image_array_2
@@ -29,12 +28,6 @@ async def create_scatter_subplot(left_image_index: int = 0, right_image_index: i
     scatter_image_array_1 = scatter_image_array_1.astype(np.float32)
     scatter_image_array_2 = scatter_image_array_2.astype(np.float32)
     difference_array = difference_array.astype(np.float32)
-
-    # # Downsample images by a factor of 4
-    # downsample_factor = 4
-    # scatter_image_array_1_down = scatter_image_array_1[::downsample_factor, ::downsample_factor]
-    # scatter_image_array_2_down = scatter_image_array_2[::downsample_factor, ::downsample_factor]
-    # abs_difference_down = abs_difference_array[::downsample_factor, ::downsample_factor]
 
     zmin = float(min(np.min(scatter_image_array_1), np.min(scatter_image_array_2)))
     zmax = float(max(np.max(scatter_image_array_1), np.max(scatter_image_array_2)))
@@ -124,12 +117,6 @@ async def create_scatter_subplot(left_image_index: int = 0, right_image_index: i
         plot_bgcolor="rgba(0,0,0,0)",  # Transparent background
         paper_bgcolor="rgba(0,0,0,0)",  # Transparent paper background
     )
-    # scatter_subplot_fig.update_xaxes(
-    #     showticklabels=False,
-    #     showgrid=False,
-    #     zeroline=False,
-    #     matches="x",
-    # )
 
     scatter_subplot_fig.update_xaxes(
         showticklabels=False,
@@ -182,13 +169,6 @@ async def create_scatter_subplot(left_image_index: int = 0, right_image_index: i
         ),
     )
 
-    # scatter_subplot_fig.update_yaxes(
-    #     showticklabels=False,
-    #     showgrid=False,
-    #     zeroline=False,
-    #     scaleanchor="x",
-    # )
-
     # Serialize arrays to bytes
     array_1_bytes = scatter_image_array_1.tobytes()
     array_2_bytes = scatter_image_array_2.tobytes()
@@ -200,8 +180,6 @@ async def create_scatter_subplot(left_image_index: int = 0, right_image_index: i
         "dtype_1": str(scatter_image_array_1.dtype),
         "shape_2": scatter_image_array_2.shape,
         "dtype_2": str(scatter_image_array_2.dtype),
-        # "shape_diff": difference_array.shape,
-        # "dtype_diff": str(difference_array.dtype),
         "plotly": scatter_subplot_fig.to_plotly_json(),  # Serialize Plotly structure
     }
 
@@ -211,10 +189,6 @@ async def create_scatter_subplot(left_image_index: int = 0, right_image_index: i
             "metadata": metadata,
             "array_1": msgpack.ExtType(1, array_1_bytes),
             "array_2": msgpack.ExtType(2, array_2_bytes),
-            # "array_diff": msgpack.ExtType(3, diff_bytes),
-            # "array_1_down": msgpack.ExtType(4, array_1_down_bytes),
-            # "array_2_down": msgpack.ExtType(5, array_2_down_bytes),
-            # "array_diff_down": msgpack.ExtType(6, abs_diff_down_bytes),
         }
     )
 

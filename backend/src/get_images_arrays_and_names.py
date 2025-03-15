@@ -59,6 +59,8 @@ def get_images_arrays_and_names(
             if initialization_mode or not accumulated_data["image_names"]:
                 image_name = files_uris[images_indices[i]]
             else:
+                print("images_indices[i]: ", images_indices[i])
+                print("i: ", i)
                 image_name = accumulated_data["image_names"][images_indices[i]]
             image_path = os.path.join(data_local_path, image_name)
 

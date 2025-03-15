@@ -36,6 +36,7 @@ import useDataTransformation from './hooks/useDataTransformation';
 import useScatterSpectrum from './hooks/useScatterSpectrum';
 
 import { CalibrationParams } from './types';
+import ScatterSpectrumFig from './components/ScatterSpectrumFig';
 
 
 function App() {
@@ -163,6 +164,7 @@ function App() {
 
 
   const {
+    // State
     leftImageIndex,
     setLeftImageIndex,
     rightImageIndex,
@@ -170,8 +172,19 @@ function App() {
     isLoading,
     numOfFiles,
     setNumOfFiles,
+
+    // Spectrum data
+    maxIntensities,
+    avgIntensities,
+    imageNames,
+
+    // Handlers
+    fetchSpectrumData,
     handleImageIndicesChange,
     handleImagesLoaded,
+
+    displayOption,
+    setDisplayOption,
   } = useScatterSpectrum();
 
 
@@ -317,6 +330,8 @@ function App() {
                   setLeftImageIndex={setLeftImageIndex}
                   setRightImageIndex={setRightImageIndex}
                   numOfFiles={numOfFiles}
+                  displayOption={displayOption}
+                  setDisplayOption={setDisplayOption}
                 />
               </Accordion.Panel>
             </Accordion.Item>
@@ -603,7 +618,17 @@ function App() {
               <Accordion.Item value="intensity-spectrum-accordion">
                 <Accordion.Control>Scatter Spectrum</Accordion.Control>
                 <Accordion.Panel>
-                <div>Placeholder for Intensity Spectrum</div>
+                <div>
+                  <ScatterSpectrumFig
+                    maxIntensities={maxIntensities}
+                    avgIntensities={avgIntensities}
+                    leftImageIndex={leftImageIndex}
+                    rightImageIndex={rightImageIndex}
+                    onSelectImages={handleImageIndicesChange}
+                    isLoading={isLoading}
+                    displayOption={displayOption}
+                  ></ScatterSpectrumFig>
+                </div>
                 </Accordion.Panel>
               </Accordion.Item>
               <Accordion.Item value="linecuts-accordion-second-col">

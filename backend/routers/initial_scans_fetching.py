@@ -87,4 +87,9 @@ async def get_initial_scans(left_image_index: int = 0, right_image_index: int = 
         "left_image_name": left_image_name,
         "right_image_name": right_image_name,
         "num_of_files": num_of_files,
+        "all_files_uris": all_files_uris,
+        "mask_detector": mask_detector,
+        "tiled_uri": tiled_uri,
+        "data_local_path": data_local_path,
+        "DEV_MODE": DEV_MODE,
     }

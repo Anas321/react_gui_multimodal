@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback } from 'react';
-import { Accordion, Input, RangeSlider } from '@mantine/core';
+import { Accordion } from '@mantine/core';
 import { FaEye, FaEyeSlash, FaTrash } from 'react-icons/fa';
 import InputSliderRange from './InputSliderRange';
 import { AzimuthalIntegration } from '../types';
@@ -182,17 +182,6 @@ export default function AzimuthalIntegrationWidget({
                   <div className="mb-6">
                     <h4 className="text-xl mb-2">Q-Range (nm⁻¹)</h4>
                     <div className="space-y-2">
-                      {/* <RangeSlider
-                        value={[currentQRange[0], currentQRange[1]]}
-                        onChange={(value) => updateAzimuthalQRange(integration.id, [value[0], value[1]])}
-                        min={0}
-                        max={maxQValue}
-                        step={0.1}
-                        minRange={0.1}
-                        label={(value) => value.toFixed(2)}
-                        disabled={integration.hidden}
-                        className="w-full"
-                      /> */}
                       <InputSliderRange
                         value={[currentQRange[0], currentQRange[1]]}
                         onChange={(value) => updateAzimuthalQRange(integration.id, [value[0], value[1]])}
@@ -256,9 +245,6 @@ export default function AzimuthalIntegrationWidget({
                         min={-180}
                         max={180}
                         step={1}
-                        // label={(value) => `${value}°`}
-                        // disabled={integration.hidden}
-                        // className="w-full"
                       />
                       <div className="flex flex-col space-y-2">
                         <div className="flex items-center justify-between w-full">
