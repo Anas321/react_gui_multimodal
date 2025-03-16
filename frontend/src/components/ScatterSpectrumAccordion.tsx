@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NumberInput, Text, Badge, Select } from '@mantine/core';
+import React from 'react';
+import { NumberInput, Text, Select } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
 // Define display options type
@@ -50,23 +50,18 @@ const ScatterSpectrumAccordion: React.FC<ScatterSpectrumAccordionProps> = ({
   }
 
   return (
-    <div className="p-4">
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-3">
+    <div className="p-2">
+      <div>
+        {/* Total files text moved below the dropdown */}
+        {numOfFiles !== null && (
+        <div className="flex justify-start">
+            <Text className="text-xl">
+            Number of images: {numOfFiles}
+            </Text>
+        </div>
+        )}
+        <div className="flex justify-between items-center mt-4 mb-3">
           <Text className="text-xl">Image Selection</Text>
-          {numOfFiles !== null && (
-            <Badge
-              color="blue"
-              size="lg"
-              radius="sm"
-              classNames={{
-                root: 'px-3 py-1',
-                label: 'text-lg'
-              }}
-            >
-              Total: {numOfFiles} files
-            </Badge>
-          )}
         </div>
 
         <Text className="text-md text-gray-600 mb-6">
@@ -116,7 +111,8 @@ const ScatterSpectrumAccordion: React.FC<ScatterSpectrumAccordionProps> = ({
             styles={{
               input: { fontSize: '1.25rem', height: '2.5rem' },
               label: { fontSize: '1.25rem', marginBottom: '0.5rem' },
-              item: { fontSize: '1.1rem' }
+              dropdown: { fontSize: '1.25rem' },
+              option: { fontSize: '1.25rem' }
             }}
           />
         </div>
