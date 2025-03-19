@@ -1,11 +1,11 @@
 import React from 'react';
-import { NumberInput, Text, Select } from '@mantine/core';
+import { NumberInput, Text, Select, Button } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
 // Define display options type
 export type DisplayOption = 'both' | 'max' | 'avg';
 
-interface ScatterSpectrumAccordionProps {
+interface RawDataOverviewAccordionProps {
   leftImageIndex: number | "";
   rightImageIndex: number | "";
   setLeftImageIndex: (value: number | "") => void;
@@ -13,9 +13,12 @@ interface ScatterSpectrumAccordionProps {
   numOfFiles: number | null;
   displayOption?: DisplayOption;
   setDisplayOption?: (option: DisplayOption) => void;
+  fetchSpectrumData?: () => Promise<void>;
+  isLoading?: boolean;
+  isFetchingData?: boolean; // Add specific state for fetching data
 }
 
-const ScatterSpectrumAccordion: React.FC<ScatterSpectrumAccordionProps> = ({
+const RawDataOverviewAccordion: React.FC<RawDataOverviewAccordionProps> = ({
   leftImageIndex,
   rightImageIndex,
   setLeftImageIndex,
@@ -23,6 +26,9 @@ const ScatterSpectrumAccordion: React.FC<ScatterSpectrumAccordionProps> = ({
   numOfFiles,
   displayOption = 'both',
   setDisplayOption = () => {},
+  fetchSpectrumData = async () => {},
+  isLoading = false,
+  isFetchingData = false, // Default to false if not provided
 }) => {
   // Type-safe handlers for NumberInput
   const handleLeftIndexChange = (value: string | number) => {
@@ -52,7 +58,7 @@ const ScatterSpectrumAccordion: React.FC<ScatterSpectrumAccordionProps> = ({
   return (
     <div className="p-2">
       <div>
-        {/* Total files text moved below the dropdown */}
+        {/* Total files text */}
         {numOfFiles !== null && (
         <div className="flex justify-start">
             <Text className="text-xl">
@@ -115,10 +121,25 @@ const ScatterSpectrumAccordion: React.FC<ScatterSpectrumAccordionProps> = ({
               option: { fontSize: '1.25rem' }
             }}
           />
+
+
+          {/* Centered and Larger Fetch Data Button - Using isFetchingData instead of isLoading */}
+          <div className="flex justify-center">
+            <Button
+              onClick={fetchSpectrumData}
+              loading={isFetchingData} // Only show loading for data fetching, not image selection
+              color="blue"
+              size="xl"
+              className="w-3/4 py-3 text-lg font-semibold"
+              style={{ marginTop: '8px' }}
+            >
+              Fetch Data
+            </Button>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default ScatterSpectrumAccordion;
+export default RawDataOverviewAccordion;

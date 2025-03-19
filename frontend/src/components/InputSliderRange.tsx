@@ -29,6 +29,7 @@ type InputSliderRangeProps = {
   onChange?: (value:[number, number]) => void;
   /** Tailwind ClassNames applied to parent container */
   styles?: string;
+  disabled?: boolean;
 };
 
 export default function InputSliderRange({
@@ -46,6 +47,7 @@ export default function InputSliderRange({
   showSideInput=false,
   onChange,
   styles = "",
+  disabled = false,
   ...props
 }: InputSliderRangeProps) {
     //todo: remove this
@@ -167,8 +169,9 @@ export default function InputSliderRange({
                     <input
                         type="number"
                         value={value[0]}
-                        className="text-center text-md w-12 border appearance-none bg-white/50"
+                        className={`${disabled && "opacity-50 cursor-not-allowed"} text-center text-md w-12 border appearance-none bg-white/50`}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>)=>handleChange(0, e)}
+                        disabled={disabled}
                     />
                     <p className="pl-1">{units}</p>
                 </div>
@@ -187,7 +190,8 @@ export default function InputSliderRange({
                             step={step}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>)=>handleDrag(0, e)}
                             style={{ pointerEvents: 'none' }} // disables track and thumb
-                            className={`range-slider appearance-none w-full absolute z-10  hover:cursor-pointer bg-slate-400/50 h-2 rounded-lg focus:outline-none`}
+                            disabled={disabled} // Disable slider
+                            className={`${disabled && "opacity-50 cursor-not-allowed"} range-slider appearance-none w-full absolute z-10  hover:cursor-pointer bg-slate-400/50 h-2 rounded-lg focus:outline-none`}
                         />
                         {/** Thumb Input Number */}
                         <div className="absolute z-0 -top-8 w-12 h-24" style={{left: calculatePositionStyle(value[0])}}>
@@ -197,7 +201,8 @@ export default function InputSliderRange({
                                     <input
                                         type="number"
                                         value={value[0]}
-                                        className="w-16 text-center text-xs appearance-none bg-transparent py-[1px] group-hover:border border-slate-400"
+                                        disabled={disabled} // Disable input
+                                        className={`${disabled && "opacity-50 cursor-not-allowed"} w-16 text-center text-xs appearance-none bg-transparent py-[1px] group-hover:border border-slate-400`}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>)=>handleChange(0, e)}
                                     />
                                 </div>
@@ -230,7 +235,8 @@ export default function InputSliderRange({
                             step={step}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>)=>handleDrag(1, e)}
                             style={{ pointerEvents: 'none' }} // disables track and thumb
-                            className={`range-slider appearance-none w-full absolute z-10  hover:cursor-pointer bg-transparent h-2 rounded-lg focus:outline-none`}
+                            disabled={disabled} // Disable slider
+                            className={`${disabled && "opacity-50 cursor-not-allowed"} range-slider appearance-none w-full absolute z-10  hover:cursor-pointer bg-transparent h-2 rounded-lg focus:outline-none`}
                         />
                             <style>{`
                                 .range-slider::-webkit-slider-thumb {
@@ -248,7 +254,8 @@ export default function InputSliderRange({
                                     <input
                                         type="number"
                                         value={value[1]}
-                                        className="w-16 text-center text-xs appearance-none bg-transparent py-[1px] group-hover:border border-slate-400"
+                                        disabled={disabled} // Disable input
+                                        className={`${disabled && "opacity-50 cursor-not-allowed"} w-16 text-center text-xs appearance-none bg-transparent py-[1px] group-hover:border border-slate-400`}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>)=>handleChange(1, e)}
                                     />
                                 </div>
@@ -258,7 +265,7 @@ export default function InputSliderRange({
                 </div>
 
                 {/* The highilghted bar in between the thumbs */}
-                <span className="absolute z-0 top-0 left-0 h-2 bg-blue-700/80 -translate-y-1/2" style={{left: calculatePositionStyle(Math.min(value[0], value[1])), width: calculateTrackWidthStyle(value)}}></span>
+                <span className="absolute z-0 top-0 h-2 bg-blue-700/80 -translate-y-1/2" style={{left: calculatePositionStyle(Math.min(value[0], value[1])), width: calculateTrackWidthStyle(value)}}></span>
             </div>
 
 
@@ -268,7 +275,8 @@ export default function InputSliderRange({
                     <input
                         type="number"
                         value={value[1]}
-                        className="text-center text-md w-12 border appearance-none bg-white/50"
+                        disabled={disabled}
+                        className={`${disabled && "opacity-50 cursor-not-allowed"} text-center text-md w-12 border appearance-none bg-white/50`}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>)=>handleChange(1, e)}
                     />
                     <p className="pl-1">{units}</p>

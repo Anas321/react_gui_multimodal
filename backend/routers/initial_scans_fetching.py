@@ -16,7 +16,7 @@ router = APIRouter()
 @router.get("/initial-scans-fetching")
 async def get_initial_scans(left_image_index: int = 0, right_image_index: int = 1):
 
-    DEV_MODE = True
+    DEV_MODE = False
 
     # Load the .env file
     load_dotenv("../.env")

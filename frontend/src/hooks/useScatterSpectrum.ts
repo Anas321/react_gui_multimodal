@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { notifications } from '@mantine/notifications';
 import { decode } from "@msgpack/msgpack";
-import { DisplayOption } from './components/ScatterSpectrumAccordion';
+import { DisplayOption } from '../components/RawDataOverviewAccordion';
 
 interface ScatterSpectrumData {
     max_intensities: number[];
@@ -19,6 +19,10 @@ export default function useScatterSpectrum() {
     // State for tracking loading status
     const [isLoading, setIsLoading] = useState(false);
 
+    // Separate state for tracking data fetching vs image selection
+    const [isFetchingData, setIsFetchingData] = useState(false);
+    const [isLoadingImages, setIsLoadingImages] = useState(false);
+
     // State for storing the total number of files
     const [numOfFiles, setNumOfFiles] = useState<number | null>(null);
 
@@ -31,15 +35,12 @@ export default function useScatterSpectrum() {
         image_names: []
     });
 
-    // Fetch spectrum data on component mount
-    useEffect(() => {
-        fetchSpectrumData();
-    }, []);
-
     // Function to fetch spectrum data from the backend
     const fetchSpectrumData = useCallback(async () => {
         try {
+            setIsFetchingData(true);
             setIsLoading(true);
+
             notifications.show({
                 id: 'loading-spectrum',
                 loading: true,
@@ -93,21 +94,26 @@ export default function useScatterSpectrum() {
                 autoClose: 5000,
             });
         } finally {
+            setIsFetchingData(false);
             setIsLoading(false);
         }
     }, []);
 
     // Handler for image indices change
     const handleImageIndicesChange = useCallback((left: number | "", right: number | "") => {
+        console.log(`Setting images: left=${left}, right=${right}`);
+
         // Store the new indices
         setLeftImageIndex(left);
         setRightImageIndex(right);
 
         // Only show loading notification if both indices are valid numbers
         if (typeof left === 'number' && typeof right === 'number') {
-            // Set loading state
+            // Set loading state for images specifically
+            setIsLoadingImages(true);
             setIsLoading(true);
 
+            // Only show notification for significant changes (not from context menu clicks)
             notifications.show({
                 id: 'loading-images',
                 loading: true,
@@ -120,17 +126,21 @@ export default function useScatterSpectrum() {
 
     // Handler for when images are loaded
     const handleImagesLoaded = useCallback(() => {
+        console.log('Images loaded successfully');
+        setIsLoadingImages(false);
         setIsLoading(false);
 
-        // Update notifications
-        notifications.update({
-            id: 'loading-images',
-            color: 'green',
-            title: 'Images Loaded',
-            message: `Successfully loaded images ${leftImageIndex} and ${rightImageIndex}`,
-            autoClose: 3000,
-        });
-    }, [leftImageIndex, rightImageIndex]);
+        // Only update notification if it was a significant image load operation
+        if (isLoadingImages) {
+            notifications.update({
+                id: 'loading-images',
+                color: 'green',
+                title: 'Images Loaded',
+                message: `Successfully loaded images ${leftImageIndex} and ${rightImageIndex}`,
+                autoClose: 3000,
+            });
+        }
+    }, [leftImageIndex, rightImageIndex, isLoadingImages]);
 
     return {
         // State
@@ -139,6 +149,8 @@ export default function useScatterSpectrum() {
         rightImageIndex,
         setRightImageIndex,
         isLoading,
+        isFetchingData,
+        isLoadingImages,
         numOfFiles,
         setNumOfFiles,
 

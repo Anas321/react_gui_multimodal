@@ -19,7 +19,7 @@ import VerticalLinecutFig from './components/VerticalLinecutFig';
 import InclinedLinecutFig from './components/InclinedLinecutFig';
 import AzimuthalIntegrationFig from './components/AzimuthalIntegrationFig';
 
-import ScatterSpectrumAccordion from './components/ScatterSpectrumAccordion';
+import RawDataOverviewAccordion from './components/RawDataOverviewAccordion';
 
 import { handleExperimentTypeChange, addLinecut } from './utils/linecutHandlers';
 import { leftImageColorPalette, rightImageColorPalette } from './utils/constants';
@@ -36,7 +36,7 @@ import useDataTransformation from './hooks/useDataTransformation';
 import useScatterSpectrum from './hooks/useScatterSpectrum';
 
 import { CalibrationParams } from './types';
-import ScatterSpectrumFig from './components/ScatterSpectrumFig';
+import RawDataOverviewFig from './components/RawDataOverviewFig';
 
 
 function App() {
@@ -170,6 +170,7 @@ function App() {
     rightImageIndex,
     setRightImageIndex,
     isLoading,
+    isFetchingData,
     numOfFiles,
     setNumOfFiles,
 
@@ -321,10 +322,10 @@ function App() {
             {/* Scatter Spectrum Accordion */}
             <Accordion.Item value="scatter-spectrum-accordion">
               <Accordion.Control classNames={{label: 'text-3xl font-bold'}}>
-                Scatter Spectrum
+                Raw Data Overview
               </Accordion.Control>
               <Accordion.Panel>
-                <ScatterSpectrumAccordion
+                <RawDataOverviewAccordion
                   leftImageIndex={leftImageIndex}
                   rightImageIndex={rightImageIndex}
                   setLeftImageIndex={setLeftImageIndex}
@@ -332,6 +333,9 @@ function App() {
                   numOfFiles={numOfFiles}
                   displayOption={displayOption}
                   setDisplayOption={setDisplayOption}
+                  fetchSpectrumData={fetchSpectrumData}
+                  isLoading={isLoading}
+                  isFetchingData={isFetchingData}
                 />
               </Accordion.Panel>
             </Accordion.Item>
@@ -616,18 +620,19 @@ function App() {
                 </Accordion.Panel>
               </Accordion.Item>
               <Accordion.Item value="intensity-spectrum-accordion">
-                <Accordion.Control>Scatter Spectrum</Accordion.Control>
+                <Accordion.Control>Raw Data Overview</Accordion.Control>
                 <Accordion.Panel>
                 <div>
-                  <ScatterSpectrumFig
+                  <RawDataOverviewFig
                     maxIntensities={maxIntensities}
                     avgIntensities={avgIntensities}
                     leftImageIndex={leftImageIndex}
                     rightImageIndex={rightImageIndex}
                     onSelectImages={handleImageIndicesChange}
-                    isLoading={isLoading}
+                    isFetchingData={isFetchingData}
                     displayOption={displayOption}
-                  ></ScatterSpectrumFig>
+                    imageNames={imageNames}
+                  ></RawDataOverviewFig>
                 </div>
                 </Accordion.Panel>
               </Accordion.Item>
