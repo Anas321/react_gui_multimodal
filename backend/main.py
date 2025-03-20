@@ -1,12 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# from routers import image_processing, data_fetching
 from routers import (
     azimuthal_integrator,
     initial_scans_fetching,
     q_vectors,
-    scatter_spectrum,
+    raw_data_overview,
     scatter_subplot,
 )
 
@@ -22,6 +20,10 @@ app.add_middleware(
 )
 
 
+# Websocket
+app.include_router(raw_data_overview.router, tags=["Raw Data Overview"])
+
+
 # Include Routers
 app.include_router(
     initial_scans_fetching.router, prefix="/api", tags=["Initial Scans Fetching"]
@@ -34,8 +36,6 @@ app.include_router(
     azimuthal_integrator.router, prefix="/api", tags=["Azimuthal Calibration"]
 )
 app.include_router(q_vectors.router, prefix="/api", tags=["Q Vectors"])
-
-app.include_router(scatter_spectrum.router, prefix="/api", tags=["Scatter Spectrum"])
 
 
 @app.get("/")

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Plot from "react-plotly.js";
 import { DisplayOption } from "./RawDataOverviewAccordion";
 import { PlotMouseEvent } from "plotly.js";
+import ProgressBar from "./RawDataOverviewProgressBar"; // Import the ProgressBar component
 
 interface RawDataOverviewFigProps {
   maxIntensities: number[];
@@ -12,6 +13,8 @@ interface RawDataOverviewFigProps {
   isFetchingData?: boolean;
   displayOption: DisplayOption;
   imageNames?: string[];
+  progress?: number; // Add progress prop
+  progressMessage?: string; // Add progress message prop
 }
 
 interface Dimensions {
@@ -34,7 +37,9 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
   onSelectImages,
   isFetchingData = false,
   displayOption = 'both',
-  imageNames = []
+  imageNames = [],
+  progress = 0,
+  progressMessage = 'Loading data...'
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<Dimensions>({
@@ -105,7 +110,7 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
     }
   };
 
-  // Handle menu option clicks - completely removed loading state
+  // Handle menu option clicks
   const handleShowOnLeft = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent propagation to document click
 
@@ -185,9 +190,17 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
 
   const plotData = createPlotData();
 
+  // Generate a consistent UI revision ID based only on the data dimensions
+  // This keeps zoom state consistent even when selected points change
+  const uiRevisionId = `${maxIntensities.length}-${avgIntensities.length}-${displayOption}`;
+
+  // Generate a data revision ID that includes selected points
+  // This ensures marker highlighting updates when selections change
+  const dataRevisionId = `${uiRevisionId}-${leftImageIndex}-${rightImageIndex}`;
+
   const layout = {
     width: dimensions.width,
-    height: dimensions.height,
+    height: dimensions.height ? dimensions.height - 40 : undefined, // Adjust height to make room for progress bar
     title: {
       text: 'Intensity per Image Index',
       font: { size: 24 }
@@ -214,36 +227,58 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
       orientation: 'v' as const
     },
     hovermode: 'closest' as const,
+    clickmode: 'event' as const, // Only trigger the click event, don't do any other action
+    // The key feature: uirevision preserves UI state (like zoom) between updates
+    // Only changes when the data dimensions change, not when selection changes
+    uirevision: uiRevisionId,
+    // But allow the plot to update when selection changes
+    datarevision: dataRevisionId
   };
 
-  // ONLY show loading for data fetching, never for image selection
-  const showLoadingOverlay = isFetchingData;
+  // Determine if we should show the progress bar
+  const showProgressBar = isFetchingData && progress < 100;
 
   return (
-    <div ref={containerRef} className="w-full h-[400px] relative">
-      {showLoadingOverlay && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-50 z-10">
-          <div className="text-xl font-semibold">Loading...</div>
-        </div>
-      )}
-
-      {maxIntensities.length > 0 || avgIntensities.length > 0 ? (
-        <Plot
-          data={plotData}
-          layout={layout}
-          config={{
-            displayModeBar: true,
-            responsive: true,
-            displaylogo: false,
-          }}
-          onClick={handlePointClick}
-          style={{ width: '100%', height: '100%' }}
+    <div ref={containerRef} className="w-full h-[400px] relative flex flex-col">
+      {/* Progress Bar */}
+      <div className="w-full p-2">
+        <ProgressBar
+          progress={progress}
+          isVisible={showProgressBar}
+          label={progressMessage}
         />
-      ) : (
-        <div className="flex items-center justify-center h-full">
-          <p className="text-xl text-gray-500">No spectrum data available</p>
-        </div>
-      )}
+      </div>
+
+      <div className="flex-grow relative">
+        {isFetchingData && progress < 100 && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-50 z-10">
+            <div className="text-xl font-semibold">
+              {progress > 0 ? `Loading... ${Math.round(progress)}%` : 'Initializing...'}
+            </div>
+          </div>
+        )}
+
+        {maxIntensities.length > 0 || avgIntensities.length > 0 ? (
+          <Plot
+            data={plotData}
+            layout={layout}
+            config={{
+              displayModeBar: true,
+              responsive: true,
+              displaylogo: false,
+              scrollZoom: true,
+              doubleClick: 'reset',
+            }}
+            onClick={handlePointClick}
+            style={{ width: '100%', height: '100%' }}
+            useResizeHandler={true}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-xl text-gray-500">No data available</p>
+          </div>
+        )}
+      </div>
 
       {/* Context Menu */}
       {contextMenu.isVisible && (

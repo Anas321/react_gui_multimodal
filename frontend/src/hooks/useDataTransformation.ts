@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useCallback } from 'react';
 import { calculateGlobalPercentiles, clipArray, calculateMinMax, calculateMeanStd }
 from '../utils/transformationUtils';
+import { getArrayMinMax } from '../utils/getArrayMinAndMax';
 
 
 export default function useDataTransformation() {
@@ -170,11 +171,19 @@ export default function useDataTransformation() {
         let transformed1 = isLog ? applyLogScale(data1) : data1;
         let transformed2 = isLog ? applyLogScale(data2) : data2;
 
+
         if (normalizationMode === 'together') {
-          // Calculate global percentiles and clip both arrays using the global limits
-          const [minValue, maxValue] = calculateGlobalPercentiles(transformed1, transformed2, lowerPerc, upperPerc);
-          transformed1 = clipArray(transformed1, minValue, maxValue);
-          transformed2 = clipArray(transformed2, minValue, maxValue);
+            if (lowerPerc === 0 && upperPerc === 100) {
+                // Skip clipping if using full range
+                transformed1 = transformed1.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+                transformed2 = transformed2.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+
+              } else {
+                // Calculate global percentiles and clip both arrays using the global limits
+                const [minValue, maxValue] = calculateGlobalPercentiles(transformed1, transformed2, lowerPerc, upperPerc);
+                transformed1 = clipArray(transformed1, minValue, maxValue);
+                transformed2 = clipArray(transformed2, minValue, maxValue);
+              }
 
           // Apply normalization if needed
           switch (normalization) {
@@ -204,14 +213,27 @@ export default function useDataTransformation() {
             default:
               transformed1 = transformed1.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
               transformed2 = transformed2.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+
           }
         } else {
-          // Process each array individually
-          // Apply percentile clipping individually
-          const [minValue1, maxValue1] = calculateSingleArrayPercentiles(transformed1, lowerPerc, upperPerc);
-          const [minValue2, maxValue2] = calculateSingleArrayPercentiles(transformed2, lowerPerc, upperPerc);
-          transformed1 = clipArray(transformed1, minValue1, maxValue1);
-          transformed2 = clipArray(transformed2, minValue2, maxValue2);
+            // Process each array individually
+            if (lowerPerc === 0 && upperPerc === 100) {
+                // Skip clipping if using full range
+                transformed1 = transformed1.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+                transformed2 = transformed2.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
+            } else {
+                // Apply percentile clipping individually
+                const [minValue1, maxValue1] = calculateSingleArrayPercentiles(transformed1, lowerPerc, upperPerc);
+                const [minValue2, maxValue2] = calculateSingleArrayPercentiles(transformed2, lowerPerc, upperPerc);
+                transformed1 = clipArray(transformed1, minValue1, maxValue1);
+                transformed2 = clipArray(transformed2, minValue2, maxValue2);
+            }
+        //   // Process each array individually
+        //   // Apply percentile clipping individually
+        //   const [minValue1, maxValue1] = calculateSingleArrayPercentiles(transformed1, lowerPerc, upperPerc);
+        //   const [minValue2, maxValue2] = calculateSingleArrayPercentiles(transformed2, lowerPerc, upperPerc);
+        //   transformed1 = clipArray(transformed1, minValue1, maxValue1);
+        //   transformed2 = clipArray(transformed2, minValue2, maxValue2);
 
           // Apply normalization individually
           switch (normalization) {
@@ -258,10 +280,8 @@ export default function useDataTransformation() {
               transformed2 = transformed2.map(row => row.map(val => Number.isNaN(val) ? 0 : val));
           }
         }
-
         return { array1: transformed1, array2: transformed2 };
       }, []);
-
 
     return {
         isLogScale,

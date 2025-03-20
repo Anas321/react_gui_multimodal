@@ -1,15 +1,20 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
 import { decode } from "@msgpack/msgpack";
 import { DisplayOption } from '../components/RawDataOverviewAccordion';
 
-interface ScatterSpectrumData {
+interface RawDataOverview {
     max_intensities: number[];
     avg_intensities: number[];
     image_names: string[];
 }
 
-export default function useScatterSpectrum() {
+interface ProgressUpdate {
+    progress: number;
+    message: string;
+}
+
+export default function useRawDataOverview() {
     // State for the left image index with initial value of 0
     const [leftImageIndex, setLeftImageIndex] = useState<number | "">(0);
 
@@ -29,17 +34,88 @@ export default function useScatterSpectrum() {
     const [displayOption, setDisplayOption] = useState<DisplayOption>('both');
 
     // New state for spectrum data
-    const [spectrumData, setSpectrumData] = useState<ScatterSpectrumData>({
+    const [spectrumData, setSpectrumData] = useState<RawDataOverview>({
         max_intensities: [],
         avg_intensities: [],
         image_names: []
     });
+
+    // Progress state for data fetching
+    const [progress, setProgress] = useState<ProgressUpdate>({
+        progress: 0,
+        message: ''
+    });
+
+    // WebSocket connection
+    const webSocketRef = useRef<WebSocket | null>(null);
+
+    // Setup WebSocket connection
+    useEffect(() => {
+        // Create WebSocket connection
+        const websocket = new WebSocket('ws://127.0.0.1:8000/ws/progress');
+
+        websocket.onopen = () => {
+            console.log('WebSocket connection established');
+        };
+
+        websocket.onmessage = (event) => {
+            try {
+                // First check if this is a plain text pong message
+                if (event.data === "pong") {
+                    console.log("Received pong from server");
+                    return;
+                }
+
+                // Try to parse as JSON for progress updates
+                const data = JSON.parse(event.data);
+                setProgress({
+                    progress: data.progress,
+                    message: data.message
+                });
+            } catch (error) {
+                // If it's not valid JSON, just log the error and continue
+                console.error('Error parsing WebSocket message:', error);
+                console.log('Raw message received:', event.data);
+            }
+        };
+
+        websocket.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
+
+        websocket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+
+        webSocketRef.current = websocket;
+
+        // Ping to keep connection alive
+        const pingInterval = setInterval(() => {
+            if (websocket.readyState === WebSocket.OPEN) {
+                websocket.send('ping');
+            }
+        }, 30000); // 30 seconds
+
+        // Cleanup on component unmount
+        return () => {
+            clearInterval(pingInterval);
+            if (websocket.readyState === WebSocket.OPEN) {
+                websocket.close();
+            }
+        };
+    }, []);
 
     // Function to fetch spectrum data from the backend
     const fetchSpectrumData = useCallback(async () => {
         try {
             setIsFetchingData(true);
             setIsLoading(true);
+
+            // Reset progress
+            setProgress({
+                progress: 0,
+                message: 'Initializing...'
+            });
 
             notifications.show({
                 id: 'loading-spectrum',
@@ -49,7 +125,8 @@ export default function useScatterSpectrum() {
                 autoClose: false,
             });
 
-            const response = await fetch('http://127.0.0.1:8000/api/scatter-spectrum');
+            // Keep the /api prefix to match your backend structure
+            const response = await fetch('http://127.0.0.1:8000/api/raw-data-overview');
 
             if (!response.ok) {
                 throw new Error(`Failed to fetch spectrum data: ${response.statusText}`);
@@ -71,6 +148,12 @@ export default function useScatterSpectrum() {
                 image_names: decoded.image_names || []
             });
 
+            // Set progress to 100% when done
+            setProgress({
+                progress: 100,
+                message: 'Data loading complete!'
+            });
+
             notifications.update({
                 id: 'loading-spectrum',
                 color: 'green',
@@ -85,6 +168,12 @@ export default function useScatterSpectrum() {
             }
 
             console.error('Error fetching scatter spectrum:', error);
+
+            // Reset progress on error
+            setProgress({
+                progress: 0,
+                message: ''
+            });
 
             notifications.update({
                 id: 'loading-spectrum',
@@ -153,6 +242,10 @@ export default function useScatterSpectrum() {
         isLoadingImages,
         numOfFiles,
         setNumOfFiles,
+
+        // Progress data
+        progress: progress.progress,
+        progressMessage: progress.message,
 
         // Spectrum data
         maxIntensities: spectrumData.max_intensities,

@@ -33,7 +33,7 @@ import useHorizontalLinecut from './hooks/useHorizontalLinecut';
 import useVerticalLinecut from './hooks/useVerticalLinecut';
 import useInclinedLinecut from './hooks/useInclinedLinecut';
 import useDataTransformation from './hooks/useDataTransformation';
-import useScatterSpectrum from './hooks/useScatterSpectrum';
+import useRawDataOverview from './hooks/useRawDataOverview';
 
 import { CalibrationParams } from './types';
 import RawDataOverviewFig from './components/RawDataOverviewFig';
@@ -186,7 +186,10 @@ function App() {
 
     displayOption,
     setDisplayOption,
-  } = useScatterSpectrum();
+
+    progress,
+    progressMessage,
+  } = useRawDataOverview();
 
 
 
@@ -334,8 +337,8 @@ function App() {
                   displayOption={displayOption}
                   setDisplayOption={setDisplayOption}
                   fetchSpectrumData={fetchSpectrumData}
-                  isLoading={isLoading}
                   isFetchingData={isFetchingData}
+                  imageNames={imageNames}
                 />
               </Accordion.Panel>
             </Accordion.Item>
@@ -632,6 +635,8 @@ function App() {
                     isFetchingData={isFetchingData}
                     displayOption={displayOption}
                     imageNames={imageNames}
+                    progress={progress}
+                    progressMessage={progressMessage}
                   ></RawDataOverviewFig>
                 </div>
                 </Accordion.Panel>

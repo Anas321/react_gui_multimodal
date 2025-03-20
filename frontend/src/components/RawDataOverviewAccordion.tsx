@@ -14,8 +14,8 @@ interface RawDataOverviewAccordionProps {
   displayOption?: DisplayOption;
   setDisplayOption?: (option: DisplayOption) => void;
   fetchSpectrumData?: () => Promise<void>;
-  isLoading?: boolean;
   isFetchingData?: boolean; // Add specific state for fetching data
+  imageNames?: string[]; // Add imageNames prop
 }
 
 const RawDataOverviewAccordion: React.FC<RawDataOverviewAccordionProps> = ({
@@ -27,8 +27,8 @@ const RawDataOverviewAccordion: React.FC<RawDataOverviewAccordionProps> = ({
   displayOption = 'both',
   setDisplayOption = () => {},
   fetchSpectrumData = async () => {},
-  isLoading = false,
   isFetchingData = false, // Default to false if not provided
+  imageNames = [], // Default to empty array if not provided
 }) => {
   // Type-safe handlers for NumberInput
   const handleLeftIndexChange = (value: string | number) => {
@@ -55,6 +55,15 @@ const RawDataOverviewAccordion: React.FC<RawDataOverviewAccordionProps> = ({
     }
   }
 
+  // Get image names for selected indices
+  const leftImageName = typeof leftImageIndex === 'number' && imageNames[leftImageIndex]
+    ? imageNames[leftImageIndex]
+    : '';
+
+  const rightImageName = typeof rightImageIndex === 'number' && imageNames[rightImageIndex]
+    ? imageNames[rightImageIndex]
+    : '';
+
   return (
     <div className="p-2">
       <div>
@@ -75,33 +84,49 @@ const RawDataOverviewAccordion: React.FC<RawDataOverviewAccordionProps> = ({
         </Text>
 
         <div className="flex flex-col space-y-4">
-          <NumberInput
-            value={leftImageIndex}
-            onChange={(value) => handleLeftIndexChange(value)}
-            label="Left Image Index"
-            placeholder="0"
-            min={0}
-            max={numOfFiles !== null ? numOfFiles - 1 : undefined}
-            className="w-full"
-            styles={{
-              input: { fontSize: '1.25rem', height: '2.5rem' },
-              label: { fontSize: '1.25rem', marginBottom: '0.5rem' }
-            }}
-          />
+          <div>
+            <NumberInput
+              value={leftImageIndex}
+              onChange={(value) => handleLeftIndexChange(value)}
+              label="Left Image Index"
+              placeholder="0"
+              min={0}
+              max={numOfFiles !== null ? numOfFiles - 1 : undefined}
+              className="w-full"
+              styles={{
+                input: { fontSize: '1.25rem', height: '2.5rem' },
+                label: { fontSize: '1.25rem', marginBottom: '0.5rem' }
+              }}
+            />
+            {/* Display the image name if available */}
+            {leftImageName && (
+              <Text className="text-md text-black-600 mt-1 ml-1 italic">
+                Name: {leftImageName}
+              </Text>
+            )}
+          </div>
 
-          <NumberInput
-            value={rightImageIndex}
-            onChange={(value) => handleRightIndexChange(value)}
-            label="Right Image Index"
-            placeholder="1"
-            min={0}
-            max={numOfFiles !== null ? numOfFiles - 1 : undefined}
-            className="w-full"
-            styles={{
-              input: { fontSize: '1.25rem', height: '2.5rem' },
-              label: { fontSize: '1.25rem', marginBottom: '0.5rem' }
-            }}
-          />
+          <div>
+            <NumberInput
+              value={rightImageIndex}
+              onChange={(value) => handleRightIndexChange(value)}
+              label="Right Image Index"
+              placeholder="1"
+              min={0}
+              max={numOfFiles !== null ? numOfFiles - 1 : undefined}
+              className="w-full"
+              styles={{
+                input: { fontSize: '1.25rem', height: '2.5rem' },
+                label: { fontSize: '1.25rem', marginBottom: '0.5rem' }
+              }}
+            />
+            {/* Display the image name if available */}
+            {rightImageName && (
+              <Text className="text-md text-black-600 mt-1 ml-1 italic">
+                Name: {rightImageName}
+              </Text>
+            )}
+          </div>
 
           {/* Display Options Dropdown */}
           <Select

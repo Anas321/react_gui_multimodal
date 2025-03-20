@@ -18,6 +18,7 @@ import { generateVerticalLinecutOverlay } from "../utils/generateVerticalLinecut
 import { generateInclinedLinecutOverlay } from "../utils/generateInclinedLinecutOverlay";
 import { generateAzimuthalOverlay } from "../utils/generateAzimuthalOverlay";
 import { getArrayMinMax } from "../utils/getArrayMinAndMax";
+// import { calculateMinMax } from "../utils/transformationUtils";
 import { calculateDifferenceArray } from "../utils/calculateDifferenceArray";
 
 interface ScatterSubplotProps {
@@ -181,25 +182,27 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     mainTransformDataFunction
   ]);
 
-  // Calculate color scales for all three plots
+
   const colorScales = useMemo(() => {
-    if (
-      !transformedPlotData ||
-      !transformedPlotData.array1 ||
-      !transformedPlotData.array2 ||
-      !transformedPlotData.diff
-    ) return null;
+    // Decide which data to use for color scaling - prefer full resolution data when available
+    const dataForScaling = transformedLineData || transformedPlotData;
 
-    // Use getArrayMinMax for min/max since data is already transformed
-    const [minValue1, maxValue1] = getArrayMinMax(transformedPlotData.array1);
-    const [minValue2, maxValue2] = getArrayMinMax(transformedPlotData.array2);
-    const [minValueDiff, maxValueDiff] = getArrayMinMax(transformedPlotData.diff);
+    if (!dataForScaling || !dataForScaling.array1 || !dataForScaling.array2) {
+      return null;
+    }
 
-    // Calculate global min/max for consistent color scaling between array1 and array2
+    // Calculate min/max from full resolution data for more accurate color scaling
+    const [minValue1, maxValue1] = getArrayMinMax(dataForScaling.array1);
+    const [minValue2, maxValue2] = getArrayMinMax(dataForScaling.array2);
+
+    // Calculate diff or use existing diff value
+    const diffData = transformedPlotData ? transformedPlotData.diff
+      : calculateDifferenceArray(dataForScaling.array1, dataForScaling.array2);
+    const [minValueDiff, maxValueDiff] = getArrayMinMax(diffData);
+
+    // Rest of your code...
     const globalMinValue = Math.min(minValue1, minValue2);
     const globalMaxValue = Math.max(maxValue1, maxValue2);
-
-    // Calculate maximum absolute difference for symmetric difference plot scaling
     const maxAbsDiff = Math.max(Math.abs(minValueDiff), Math.abs(maxValueDiff));
 
     return {
@@ -209,7 +212,12 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       global: { min: globalMinValue, max: globalMaxValue },
       maxAbsDiff,
     };
-  }, [transformedPlotData]);
+  }, [
+    transformedPlotData,
+    transformedLineData,
+  ]);
+
+
 
   // Effect to update the plot with transformed data and color scales
   useEffect(() => {
@@ -398,7 +406,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   }, []); // Empty dependency array since we're using refs and closure
 
 
-
   // Initial data fetch
   useEffect(() => {
 
@@ -420,7 +427,6 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         // Reconstruct full resolution data
         const fullArray1 = reconstructFloat32Array(extractBinary(decoded.array_1), decoded.metadata.shape_1);
         const fullArray2 = reconstructFloat32Array(extractBinary(decoded.array_2), decoded.metadata.shape_2);
-        // const fullDiff = reconstructFloat32Array(extractBinary(decoded.array_diff), decoded.metadata.shape_diff);
         const fullDiff = calculateDifferenceArray(fullArray1, fullArray2);
 
         // Determine factors based on image width
