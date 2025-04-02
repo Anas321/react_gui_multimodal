@@ -82,6 +82,7 @@ function App() {
       maxQValue,
       globalQRange,
       globalAzimuthRange,
+      isProcessing,
 
       // Functions
       addAzimuthalIntegration,
@@ -580,7 +581,7 @@ function App() {
                   leftImageIndex={leftImageIndex}
                   rightImageIndex={rightImageIndex}
                   onImagesLoaded={handleImagesLoaded}
-                  setNumOfFiles={setNumOfFiles}
+                  isAzimuthalProcessing={isProcessing}
                 />
 
                   {resolutionMessage && (

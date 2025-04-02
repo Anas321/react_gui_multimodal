@@ -21,6 +21,8 @@ import { getArrayMinMax } from "../utils/getArrayMinAndMax";
 // import { calculateMinMax } from "../utils/transformationUtils";
 import { calculateDifferenceArray } from "../utils/calculateDifferenceArray";
 
+import AzimuthalLoadingSpinner from "./AzimuthalLoadingSpinner";
+
 interface ScatterSubplotProps {
   setImageHeight: (height: number) => void;
   setImageWidth: (width: number) => void;
@@ -54,7 +56,7 @@ interface ScatterSubplotProps {
   leftImageIndex?: number | "";
   rightImageIndex?: number | "";
   onImagesLoaded?: () => void;
-  setNumberOfFiles?: (value: number) => void;
+  isAzimuthalProcessing?: boolean;
 }
 
 
@@ -89,7 +91,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   leftImageIndex,
   rightImageIndex,
   onImagesLoaded,
-  setNumberOfFiles,
+  isAzimuthalProcessing = false,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
@@ -748,6 +750,12 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
             <div className="absolute top-1/2 left-[67%] -translate-y-1/2 text-5xl font-bold">=</div>
           </>
         )}
+
+        <AzimuthalLoadingSpinner
+          isLoading={isAzimuthalProcessing}
+          message="Calculating azimuthal integration..."
+        />
+
       </div>
     </div>
   );

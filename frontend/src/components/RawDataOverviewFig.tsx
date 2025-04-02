@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Plot from "react-plotly.js";
 import { DisplayOption } from "./RawDataOverviewAccordion";
 import { PlotMouseEvent } from "plotly.js";
-import ProgressBar from "./RawDataOverviewProgressBar"; // Import the ProgressBar component
+import ProgressBar from "./RawDataOverviewProgressBar";
 
 interface RawDataOverviewFigProps {
   maxIntensities: number[];
@@ -13,8 +13,8 @@ interface RawDataOverviewFigProps {
   isFetchingData?: boolean;
   displayOption: DisplayOption;
   imageNames?: string[];
-  progress?: number; // Add progress prop
-  progressMessage?: string; // Add progress message prop
+  progress?: number;
+  progressMessage?: string;
 }
 
 interface Dimensions {
@@ -82,25 +82,20 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
       }
     };
 
-    // Add the event listener to the document
     document.addEventListener('click', handleGlobalClick);
-
-    // Clean up the event listener when component unmounts
     return () => {
       document.removeEventListener('click', handleGlobalClick);
     };
   }, [contextMenu.isVisible]);
 
+
   // Handle point click for image selection
   const handlePointClick = (data: Readonly<PlotMouseEvent>) => {
-    // Prevent immediate closing of the menu
     data.event.stopPropagation();
 
     if (data.points && data.points.length > 0) {
       const pointIndex = data.points[0].pointIndex;
-      console.log(`Point clicked: ${pointIndex}`); // Debug log
 
-      // Show context menu at click position
       setContextMenu({
         isVisible: true,
         pointIndex: pointIndex,
@@ -112,42 +107,26 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
 
   // Handle menu option clicks
   const handleShowOnLeft = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent propagation to document click
-
-    // Direct update without loading state
+    e.stopPropagation();
     onSelectImages(contextMenu.pointIndex, rightImageIndex);
-
-    // Close menu immediately
     setContextMenu(prev => ({ ...prev, isVisible: false }));
   };
 
   const handleShowOnRight = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent propagation to document click
-
-    // Direct update without loading state
+    e.stopPropagation();
     onSelectImages(leftImageIndex, contextMenu.pointIndex);
-
-    // Close menu immediately
     setContextMenu(prev => ({ ...prev, isVisible: false }));
   };
 
   // Create x-axis values (image indices)
   const indices = Array.from({ length: maxIntensities.length }, (_, i) => i);
 
-  // Function to create marker styling
-  const createMarkerStyling = (indices: number[]) => {
-    return {
-      size: 10,
-      line: {
-        width: indices.map(i => (i === leftImageIndex || i === rightImageIndex) ? 2 : 0),
-        color: indices.map(i => (i === leftImageIndex) ? 'red' : (i === rightImageIndex) ? 'blue' : 'rgba(0,0,0,0)')
-      }
-    };
-  };
-
   // Create plot data based on display option
   const createPlotData = () => {
     const data = [];
+
+    // Use bright green for better visibility
+    const RIGHT_IMAGE_COLOR = 'rgb(0, 200, 0)'; // Bright green
 
     if (displayOption === 'both' || displayOption === 'max') {
       data.push({
@@ -157,8 +136,20 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
         type: 'scatter' as const,
         name: 'Max Intensity',
         marker: {
-          ...createMarkerStyling(indices),
-          color: 'rgb(31, 119, 180)'
+          size: 10,
+          color: 'rgb(31, 119, 180)',
+          line: {
+            width: indices.map(i => {
+              return (i === leftImageIndex || i === rightImageIndex) ? 4 : 0;
+            }),
+            color: indices.map(i => {
+              if (i === leftImageIndex) return 'red';
+              if (i === rightImageIndex) {
+                return RIGHT_IMAGE_COLOR;
+              }
+              return 'rgba(0,0,0,0)';
+            })
+          }
         },
         text: imageNames.length > 0 ? imageNames : undefined,
         hovertemplate: imageNames.length > 0
@@ -175,8 +166,16 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
         type: 'scatter' as const,
         name: 'Avg Intensity',
         marker: {
-          ...createMarkerStyling(indices),
-          color: 'rgb(255, 127, 14)'
+          size: 10,
+          color: 'rgb(255, 127, 14)',
+          line: {
+            width: indices.map(i => (i === leftImageIndex || i === rightImageIndex) ? 4 : 0),
+            color: indices.map(i => {
+              if (i === leftImageIndex) return 'red';
+              if (i === rightImageIndex) return RIGHT_IMAGE_COLOR;
+              return 'rgba(0,0,0,0)';
+            })
+          }
         },
         text: imageNames.length > 0 ? imageNames : undefined,
         hovertemplate: imageNames.length > 0
@@ -191,16 +190,14 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
   const plotData = createPlotData();
 
   // Generate a consistent UI revision ID based only on the data dimensions
-  // This keeps zoom state consistent even when selected points change
   const uiRevisionId = `${maxIntensities.length}-${avgIntensities.length}-${displayOption}`;
 
   // Generate a data revision ID that includes selected points
-  // This ensures marker highlighting updates when selections change
-  const dataRevisionId = `${uiRevisionId}-${leftImageIndex}-${rightImageIndex}`;
+  const dataRevisionId = `${uiRevisionId}-${leftImageIndex}-${rightImageIndex}-color-update`;
 
   const layout = {
     width: dimensions.width,
-    height: dimensions.height ? dimensions.height - 40 : undefined, // Adjust height to make room for progress bar
+    height: dimensions.height ? dimensions.height - 40 : undefined,
     title: {
       text: 'Intensity per Image Index',
       font: { size: 24 }
@@ -227,11 +224,8 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
       orientation: 'v' as const
     },
     hovermode: 'closest' as const,
-    clickmode: 'event' as const, // Only trigger the click event, don't do any other action
-    // The key feature: uirevision preserves UI state (like zoom) between updates
-    // Only changes when the data dimensions change, not when selection changes
+    clickmode: 'event' as const,
     uirevision: uiRevisionId,
-    // But allow the plot to update when selection changes
     datarevision: dataRevisionId
   };
 
@@ -274,9 +268,11 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
             useResizeHandler={true}
           />
         ) : (
+          !isFetchingData && (
           <div className="flex items-center justify-center h-full">
             <p className="text-xl text-gray-500">No data available</p>
           </div>
+          )
         )}
       </div>
 

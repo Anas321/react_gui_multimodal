@@ -190,7 +190,6 @@ export default function useRawDataOverview() {
 
     // Handler for image indices change
     const handleImageIndicesChange = useCallback((left: number | "", right: number | "") => {
-        console.log(`Setting images: left=${left}, right=${right}`);
 
         // Store the new indices
         setLeftImageIndex(left);

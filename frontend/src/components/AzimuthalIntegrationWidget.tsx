@@ -22,7 +22,7 @@ export default function AzimuthalIntegrationWidget({
     updateAzimuthalRange,
     updateAzimuthalColor,
     deleteAzimuthalIntegration,
-    toggleAzimuthalVisibility
+    toggleAzimuthalVisibility,
 }: AzimuthalIntegrationWidgetProps) {
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const [colorPicker, setColorPicker] = useState<{

@@ -75,6 +75,9 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
     // Cache for repeated API calls
     const [cachedMatrixData, setCachedMatrixData] = useState<CachedMatrixData | null>(null);
 
+    const [isProcessing, setIsProcessing] = useState<boolean>(false);
+
+
     // ======== UTILITY FUNCTIONS ========
 
     /**
@@ -150,6 +153,10 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
         qRange: [number, number] | null,
         azimuthRange: [number, number]
     ) => {
+
+        // Set loading state
+        setIsProcessing(true);
+
         // Generate a unique key for caching based on current parameters
         const currentCacheKey = createCacheKey(calibrationParams, azimuthRange);
 
@@ -230,6 +237,9 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
         } catch (error) {
             console.error('Error in azimuthal integration:', error);
             throw error;
+        } finally {
+            // Reset loading state
+            setIsProcessing(false);
         }
     }, [
         calibrationParams,
@@ -280,6 +290,7 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
             fetchAzimuthalData: typeof fetchAzimuthalData
         }) => {
             const { id, qRange, azimuthRange, setGlobalAzimuthRange, setAzimuthalIntegrations, fetchAzimuthalData } = params;
+
             setGlobalAzimuthRange(azimuthRange);
             setAzimuthalIntegrations(prev =>
                 prev.map(integration =>
@@ -458,6 +469,7 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
         maxQValue,
         globalQRange,
         globalAzimuthRange,
+        isProcessing,
 
         // Functions
         addAzimuthalIntegration,
