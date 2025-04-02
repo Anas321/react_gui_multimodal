@@ -70,7 +70,6 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
     // Q-range, azimuth range, and max Q value
     const [maxQValue, setMaxQValue] = useState<number>(2);
     const [globalQRange, setGlobalQRange] = useState<[number, number] | null>(null);
-    const [globalAzimuthRange, setGlobalAzimuthRange] = useState<[number, number]>([-180, 180]);
 
     // Cache for repeated API calls
     const [cachedMatrixData, setCachedMatrixData] = useState<CachedMatrixData | null>(null);
@@ -285,13 +284,14 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
             id: number,
             qRange: [number, number] | null,
             azimuthRange: [number, number],
-            setGlobalAzimuthRange: typeof setGlobalAzimuthRange,
+            // setGlobalAzimuthRange: typeof setGlobalAzimuthRange,
             setAzimuthalIntegrations: typeof setAzimuthalIntegrations,
             fetchAzimuthalData: typeof fetchAzimuthalData
         }) => {
-            const { id, qRange, azimuthRange, setGlobalAzimuthRange, setAzimuthalIntegrations, fetchAzimuthalData } = params;
+            const { id, qRange, azimuthRange, setAzimuthalIntegrations, fetchAzimuthalData } = params;
 
-            setGlobalAzimuthRange(azimuthRange);
+
+            // setGlobalAzimuthRange(azimuthRange);
             setAzimuthalIntegrations(prev =>
                 prev.map(integration =>
                     integration.id === id ? { ...integration, azimuthRange } : integration
@@ -333,7 +333,6 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
 
         // Add to state and trigger data fetch
         setAzimuthalIntegrations(prev => [...prev, newIntegration]);
-        setGlobalAzimuthRange(DEFAULT_AZIMUTH_RANGE);
         fetchAzimuthalData(newId, globalQRange, DEFAULT_AZIMUTH_RANGE);
     }, [fetchAzimuthalData, azimuthalIntegrations, globalQRange]);
 
@@ -364,7 +363,7 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
                 id,
                 qRange: currentIntegration.qRange,
                 azimuthRange,
-                setGlobalAzimuthRange,
+                // setGlobalAzimuthRange,
                 setAzimuthalIntegrations,
                 fetchAzimuthalData
             });
@@ -428,38 +427,6 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
         );
     }, []);
 
-    // /**
-    //  * Coordinator function for updating all visible integrations
-    //  * Used when calibration changes
-    //  */
-    // const updateAllVisibleIntegrations = useCallback(() => {
-    //     if (azimuthalIntegrations.length === 0) return;
-
-    //     // Update each visible integration with new data
-    //     azimuthalIntegrations
-    //         .filter(integration => !integration.hidden)
-    //         .forEach(integration => {
-    //             fetchAzimuthalData(
-    //                 integration.id,
-    //                 integration.qRange,
-    //                 integration.azimuthRange
-    //             );
-    //         });
-    // }, [azimuthalIntegrations, fetchAzimuthalData]);
-
-    // /**
-    //  * Refreshes data when calibration parameters change
-    //  * Now doesn't need to update parameters since they come from props
-    //  */
-    // const updateCalibration = useCallback(() => {
-    //     // Explicitly invalidate the cache
-    //     setCachedMatrixData(null);
-
-    //     // Update all visible integrations with new calibration
-    //     updateAllVisibleIntegrations();
-    // }, [updateAllVisibleIntegrations]);
-
-    // ======== RETURN HOOK INTERFACE ========
 
     return {
         // State
@@ -468,7 +435,6 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
         azimuthalData2,
         maxQValue,
         globalQRange,
-        globalAzimuthRange,
         isProcessing,
 
         // Functions
@@ -478,7 +444,5 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
         updateAzimuthalColor,
         deleteAzimuthalIntegration,
         toggleAzimuthalVisibility,
-        // updateCalibration,
-        fetchAzimuthalData,
     };
 }

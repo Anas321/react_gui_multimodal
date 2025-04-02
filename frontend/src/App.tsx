@@ -45,7 +45,6 @@ function App() {
   const linecutOrder = ['Horizontal', 'Vertical', 'Inclined', 'Azimuthal'];
 
   const {
-    // Existing state
     experimentType,
     setExperimentType,
     selectedLinecuts,
@@ -64,41 +63,30 @@ function App() {
     setZoomedYPixelRange,
     resolutionMessage,
     setResolutionMessage,
-    // Calibration parameters
     calibrationParams,
-    // setCalibrationParams,
     updateCalibration,
-    // Q-vectors and related state
     qXVector,
     qYVector,
-    fetchQVectors,  // Allow manual refresh if needed
   } = useMultimodal();
 
   const {
-      // State
       azimuthalIntegrations,
       azimuthalData1,
       azimuthalData2,
       maxQValue,
       globalQRange,
-      globalAzimuthRange,
       isProcessing,
-
-      // Functions
       addAzimuthalIntegration,
       updateAzimuthalQRange,
       updateAzimuthalRange,
       updateAzimuthalColor,
       deleteAzimuthalIntegration,
       toggleAzimuthalVisibility,
-      fetchAzimuthalData,
   } = useAzimuthalIntegration(calibrationParams);
 
 
   const {
     horizontalLinecuts,
-    horizontalLinecutData1,
-    horizontalLinecutData2,
     addHorizontalLinecut,
     updateHorizontalLinecutPosition,
     updateHorizontalLinecutWidth,
@@ -110,8 +98,6 @@ function App() {
 
   const {
     verticalLinecuts,
-    verticalLinecutData1,
-    verticalLinecutData2,
     addVerticalLinecut,
     updateVerticalLinecutPosition,
     updateVerticalLinecutWidth,
@@ -125,16 +111,12 @@ function App() {
     inclinedLinecutData1,
     inclinedLinecutData2,
     addInclinedLinecut,
-    updateInclinedLinecutXPosition,
-    updateInclinedLinecutYPosition,
     updateInclinedLinecutAngle,
     updateInclinedLinecutWidth,
     updateInclinedLinecutColor,
     deleteInclinedLinecut,
     toggleInclinedLinecutVisibility,
-    calculateQPathDistance,
     zoomedXQRange,
-    zoomedYQRange,
   } = useInclinedLinecut(
     imageData1,
     imageData2,
@@ -165,29 +147,20 @@ function App() {
 
 
   const {
-    // State
     leftImageIndex,
     setLeftImageIndex,
     rightImageIndex,
     setRightImageIndex,
-    isLoading,
     isFetchingData,
     numOfFiles,
-    setNumOfFiles,
-
-    // Spectrum data
     maxIntensities,
     avgIntensities,
     imageNames,
-
-    // Handlers
     fetchSpectrumData,
     handleImageIndicesChange,
     handleImagesLoaded,
-
     displayOption,
     setDisplayOption,
-
     progress,
     progressMessage,
   } = useRawDataOverview();

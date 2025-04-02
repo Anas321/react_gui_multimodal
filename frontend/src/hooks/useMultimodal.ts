@@ -127,6 +127,5 @@ export default function useMultimodal() {
     // Q-vectors and related state
     qXVector,
     qYVector,
-    fetchQVectors,  // Allow manual refresh if needed
-  };
+    };
 }

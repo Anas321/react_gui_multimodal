@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { Linecut } from '../types';
 import { leftImageColorPalette, rightImageColorPalette } from '../utils/constants';
 import { throttle } from 'lodash';
@@ -30,8 +30,8 @@ export default function useHorizontalLinecut(
 
   // State for storing the intensity data extracted from the images for each linecut
   // These arrays contain the actual data values that will be plotted in linecut figures
-  const [horizontalLinecutData1, setHorizontalLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
-  const [horizontalLinecutData2, setHorizontalLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
+  // const [horizontalLinecutData1, setHorizontalLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
+  // const [horizontalLinecutData2, setHorizontalLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
 
   /**
    * Converts a q-value to the corresponding pixel row index
@@ -126,14 +126,14 @@ export default function useHorizontalLinecut(
     // Add the new linecut to the state
     setHorizontalLinecuts((prev) => [...prev, newLinecut]);
 
-    // Extract and store intensity data for the new linecut from both images
-    if (imageData1.length > 0 && imageData2.length > 0) {
-      const data1 = computeHorizontalLinecutData(pixelPosition, imageData1);
-      const data2 = computeHorizontalLinecutData(pixelPosition, imageData2);
+    // // Extract and store intensity data for the new linecut from both images
+    // if (imageData1.length > 0 && imageData2.length > 0) {
+    //   const data1 = computeHorizontalLinecutData(pixelPosition, imageData1);
+    //   const data2 = computeHorizontalLinecutData(pixelPosition, imageData2);
 
-      setHorizontalLinecutData1((prev) => [...prev, { id: newId, data: data1 }]);
-      setHorizontalLinecutData2((prev) => [...prev, { id: newId, data: data2 }]);
-    }
+    //   setHorizontalLinecutData1((prev) => [...prev, { id: newId, data: data1 }]);
+    //   setHorizontalLinecutData2((prev) => [...prev, { id: newId, data: data2 }]);
+    // }
   }, 200), [  // Throttle to prevent rapid creation of multiple linecuts
     horizontalLinecuts,
     findClosestPixelForQValue,
@@ -166,23 +166,23 @@ export default function useHorizontalLinecut(
         )
       );
 
-      // Update the intensity data for both images based on the new position
-      if (imageData1.length > 0 && imageData2.length > 0) {
-        const newLinecutData1 = computeHorizontalLinecutData(pixelPosition, imageData1);
-        const newLinecutData2 = computeHorizontalLinecutData(pixelPosition, imageData2);
+      // // Update the intensity data for both images based on the new position
+      // if (imageData1.length > 0 && imageData2.length > 0) {
+      //   const newLinecutData1 = computeHorizontalLinecutData(pixelPosition, imageData1);
+      //   const newLinecutData2 = computeHorizontalLinecutData(pixelPosition, imageData2);
 
-        // Update intensity data in both datasets
-        setHorizontalLinecutData1(prev =>
-          prev.map(data =>
-            data.id === id ? { ...data, data: newLinecutData1 } : data
-          )
-        );
-        setHorizontalLinecutData2(prev =>
-          prev.map(data =>
-            data.id === id ? { ...data, data: newLinecutData2 } : data
-          )
-        );
-      }
+      //   // Update intensity data in both datasets
+      //   setHorizontalLinecutData1(prev =>
+      //     prev.map(data =>
+      //       data.id === id ? { ...data, data: newLinecutData1 } : data
+      //     )
+      //   );
+      //   setHorizontalLinecutData2(prev =>
+      //     prev.map(data =>
+      //       data.id === id ? { ...data, data: newLinecutData2 } : data
+      //     )
+      //   );
+      // }
     }, 200), // Throttle to limit updates during rapid adjustments
     [imageData1, imageData2, computeHorizontalLinecutData, findClosestPixelForQValue]
   );
@@ -245,20 +245,20 @@ export default function useHorizontalLinecut(
       }));
     });
 
-    // Similarly update the intensity data arrays for both images
-    setHorizontalLinecutData1((prev) =>
-      prev.filter((data) => data.id !== id).map((data, index) => ({
-        ...data,
-        id: index + 1,
-      }))
-    );
+    // // Similarly update the intensity data arrays for both images
+    // setHorizontalLinecutData1((prev) =>
+    //   prev.filter((data) => data.id !== id).map((data, index) => ({
+    //     ...data,
+    //     id: index + 1,
+    //   }))
+    // );
 
-    setHorizontalLinecutData2((prev) =>
-      prev.filter((data) => data.id !== id).map((data, index) => ({
-        ...data,
-        id: index + 1,
-      }))
-    );
+    // setHorizontalLinecutData2((prev) =>
+    //   prev.filter((data) => data.id !== id).map((data, index) => ({
+    //     ...data,
+    //     id: index + 1,
+    //   }))
+    // );
   }, []);
 
   /**
@@ -282,50 +282,51 @@ export default function useHorizontalLinecut(
    * (due to calibration changes, for example), all the linecuts maintain
    * their positions in q-space but update their pixel positions accordingly.
    */
-  useEffect(() => {
-    // Skip if qYVector is empty or no linecuts exist
-    if (!qYVector.length || !horizontalLinecuts.length) return;
+  // useEffect(() => {
+  //   // Skip if qYVector is empty or no linecuts exist
+  //   if (!qYVector.length || !horizontalLinecuts.length) return;
 
-    // Update all linecuts with new pixel positions based on their q-values
-    setHorizontalLinecuts(prev =>
-      prev.map(linecut => {
-        // Recalculate pixel position based on current q-value and new mapping
-        const pixelPosition = findClosestPixelForQValue(linecut.position);
-        return { ...linecut, pixelPosition };
-      })
-    );
+  //   // Update all linecuts with new pixel positions based on their q-values
+  //   setHorizontalLinecuts(prev =>
+  //     prev.map(linecut => {
+  //       // Recalculate pixel position based on current q-value and new mapping
+  //       const pixelPosition = findClosestPixelForQValue(linecut.position);
+  //       return { ...linecut, pixelPosition };
+  //     })
+  //   );
 
-    // Update intensity data for all linecuts with new pixel positions
-    horizontalLinecuts.forEach(linecut => {
-      if (imageData1.length > 0 && imageData2.length > 0) {
-        // Recalculate pixel position for current linecut
-        const pixelPosition = findClosestPixelForQValue(linecut.position);
+  //   // Update intensity data for all linecuts with new pixel positions
+  //   horizontalLinecuts.forEach(linecut => {
+  //     if (imageData1.length > 0 && imageData2.length > 0) {
+  //       // Recalculate pixel position for current linecut
+  //       const pixelPosition = findClosestPixelForQValue(linecut.position);
 
-        // Extract new intensity data based on updated pixel position
-        const newLinecutData1 = computeHorizontalLinecutData(pixelPosition, imageData1);
-        const newLinecutData2 = computeHorizontalLinecutData(pixelPosition, imageData2);
+  //       // Extract new intensity data based on updated pixel position
+  //       const newLinecutData1 = computeHorizontalLinecutData(pixelPosition, imageData1);
+  //       const newLinecutData2 = computeHorizontalLinecutData(pixelPosition, imageData2);
 
-        // Update intensity data for both images
-        setHorizontalLinecutData1(prev =>
-          prev.map(data =>
-            data.id === linecut.id ? { ...data, data: newLinecutData1 } : data
-          )
-        );
+  //       // Update intensity data for both images
+  //       setHorizontalLinecutData1(prev =>
+  //         prev.map(data =>
+  //           data.id === linecut.id ? { ...data, data: newLinecutData1 } : data
+  //         )
+  //       );
 
-        setHorizontalLinecutData2(prev =>
-          prev.map(data =>
-            data.id === linecut.id ? { ...data, data: newLinecutData2 } : data
-          )
-        );
-      }
-    });
-  }, [qYVector, horizontalLinecuts, findClosestPixelForQValue, computeHorizontalLinecutData, imageData1, imageData2]);
+  //       setHorizontalLinecutData2(prev =>
+  //         prev.map(data =>
+  //           data.id === linecut.id ? { ...data, data: newLinecutData2 } : data
+  //         )
+  //       );
+  //     }
+  //   }
+  // );
+  // }, [qYVector, horizontalLinecuts, findClosestPixelForQValue, computeHorizontalLinecutData, imageData1, imageData2]);
 
   // Return all the state and functions needed to use and manage linecuts
   return {
     horizontalLinecuts,          // Linecut definitions (position, width, colors, etc.)
-    horizontalLinecutData1,      // Intensity data for first image
-    horizontalLinecutData2,      // Intensity data for second image
+    // horizontalLinecutData1,      // Intensity data for first image
+    // horizontalLinecutData2,      // Intensity data for second image
     addHorizontalLinecut,        // Function to create a new linecut
     updateHorizontalLinecutPosition, // Function to move a linecut
     updateHorizontalLinecutWidth,    // Function to change linecut width

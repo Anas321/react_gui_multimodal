@@ -28,10 +28,10 @@ export default function useVerticalLinecut(
   // State for storing the linecut definitions (position, width, colors, etc.)
   const [verticalLinecuts, setVerticalLinecuts] = useState<Linecut[]>([]);
 
-  // State for storing the intensity data extracted from the images for each linecut
-  // These arrays contain the actual data values that will be plotted in linecut figures
-  const [verticalLinecutData1, setVerticalLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
-  const [verticalLinecutData2, setVerticalLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
+  // // State for storing the intensity data extracted from the images for each linecut
+  // // These arrays contain the actual data values that will be plotted in linecut figures
+  // const [verticalLinecutData1, setVerticalLinecutData1] = useState<{ id: number; data: number[] }[]>([]);
+  // const [verticalLinecutData2, setVerticalLinecutData2] = useState<{ id: number; data: number[] }[]>([]);
 
   /**
    * Converts a q-value to the corresponding pixel column index
@@ -129,14 +129,14 @@ export default function useVerticalLinecut(
     // Add the new linecut to the state
     setVerticalLinecuts((prev) => [...prev, newLinecut]);
 
-    // Extract and store intensity data for the new linecut from both images
-    if (imageData1 && imageData1.length > 0 && imageData2 && imageData2.length > 0) {
-      const data1 = computeVerticalLinecutData(pixelPosition, imageData1);
-      const data2 = computeVerticalLinecutData(pixelPosition, imageData2);
+    // // Extract and store intensity data for the new linecut from both images
+    // if (imageData1 && imageData1.length > 0 && imageData2 && imageData2.length > 0) {
+    //   const data1 = computeVerticalLinecutData(pixelPosition, imageData1);
+    //   const data2 = computeVerticalLinecutData(pixelPosition, imageData2);
 
-      setVerticalLinecutData1((prev) => [...prev, { id: newId, data: data1 }]);
-      setVerticalLinecutData2((prev) => [...prev, { id: newId, data: data2 }]);
-    }
+    //   setVerticalLinecutData1((prev) => [...prev, { id: newId, data: data1 }]);
+    //   setVerticalLinecutData2((prev) => [...prev, { id: newId, data: data2 }]);
+    // }
   }, 200), [  // Throttle to prevent rapid creation of multiple linecuts
     verticalLinecuts,
     findClosestPixelForQValue,
@@ -169,23 +169,23 @@ export default function useVerticalLinecut(
         )
       );
 
-      // Update the intensity data for both images based on the new position
-      if (imageData1 && imageData1.length > 0 && imageData2 && imageData2.length > 0) {
-        const newLinecutData1 = computeVerticalLinecutData(pixelPosition, imageData1);
-        const newLinecutData2 = computeVerticalLinecutData(pixelPosition, imageData2);
+      // // Update the intensity data for both images based on the new position
+      // if (imageData1 && imageData1.length > 0 && imageData2 && imageData2.length > 0) {
+      //   const newLinecutData1 = computeVerticalLinecutData(pixelPosition, imageData1);
+      //   const newLinecutData2 = computeVerticalLinecutData(pixelPosition, imageData2);
 
-        // Update intensity data in both datasets
-        setVerticalLinecutData1(prev =>
-          prev.map(data =>
-            data.id === id ? { ...data, data: newLinecutData1 } : data
-          )
-        );
-        setVerticalLinecutData2(prev =>
-          prev.map(data =>
-            data.id === id ? { ...data, data: newLinecutData2 } : data
-          )
-        );
-      }
+      //   // Update intensity data in both datasets
+      //   setVerticalLinecutData1(prev =>
+      //     prev.map(data =>
+      //       data.id === id ? { ...data, data: newLinecutData1 } : data
+      //     )
+      //   );
+      //   setVerticalLinecutData2(prev =>
+      //     prev.map(data =>
+      //       data.id === id ? { ...data, data: newLinecutData2 } : data
+      //     )
+      //   );
+      // }
     }, 200), // Throttle to limit updates during rapid adjustments
     [imageData1, imageData2, computeVerticalLinecutData, findClosestPixelForQValue]
   );
@@ -248,20 +248,20 @@ export default function useVerticalLinecut(
       }));
     });
 
-    // Similarly update the intensity data arrays for both images
-    setVerticalLinecutData1((prev) =>
-      prev.filter((data) => data.id !== id).map((data, index) => ({
-        ...data,
-        id: index + 1,
-      }))
-    );
+    // // Similarly update the intensity data arrays for both images
+    // setVerticalLinecutData1((prev) =>
+    //   prev.filter((data) => data.id !== id).map((data, index) => ({
+    //     ...data,
+    //     id: index + 1,
+    //   }))
+    // );
 
-    setVerticalLinecutData2((prev) =>
-      prev.filter((data) => data.id !== id).map((data, index) => ({
-        ...data,
-        id: index + 1,
-      }))
-    );
+    // setVerticalLinecutData2((prev) =>
+    //   prev.filter((data) => data.id !== id).map((data, index) => ({
+    //     ...data,
+    //     id: index + 1,
+    //   }))
+    // );
   }, []);
 
   /**
@@ -298,37 +298,37 @@ export default function useVerticalLinecut(
       })
     );
 
-    // Update intensity data for all linecuts with new pixel positions
-    verticalLinecuts.forEach(linecut => {
-      if (imageData1.length > 0 && imageData2.length > 0) {
-        // Recalculate pixel position for current linecut
-        const pixelPosition = findClosestPixelForQValue(linecut.position);
+    // // Update intensity data for all linecuts with new pixel positions
+    // verticalLinecuts.forEach(linecut => {
+    //   if (imageData1.length > 0 && imageData2.length > 0) {
+    //     // Recalculate pixel position for current linecut
+    //     const pixelPosition = findClosestPixelForQValue(linecut.position);
 
-        // Extract new intensity data based on updated pixel position
-        const newLinecutData1 = computeVerticalLinecutData(pixelPosition, imageData1);
-        const newLinecutData2 = computeVerticalLinecutData(pixelPosition, imageData2);
+    //     // Extract new intensity data based on updated pixel position
+    //     const newLinecutData1 = computeVerticalLinecutData(pixelPosition, imageData1);
+    //     const newLinecutData2 = computeVerticalLinecutData(pixelPosition, imageData2);
 
-        // Update intensity data for both images
-        setVerticalLinecutData1(prev =>
-          prev.map(data =>
-            data.id === linecut.id ? { ...data, data: newLinecutData1 } : data
-          )
-        );
+    //     // Update intensity data for both images
+    //     setVerticalLinecutData1(prev =>
+    //       prev.map(data =>
+    //         data.id === linecut.id ? { ...data, data: newLinecutData1 } : data
+    //       )
+    //     );
 
-        setVerticalLinecutData2(prev =>
-          prev.map(data =>
-            data.id === linecut.id ? { ...data, data: newLinecutData2 } : data
-          )
-        );
-      }
-    });
+    //     setVerticalLinecutData2(prev =>
+    //       prev.map(data =>
+    //         data.id === linecut.id ? { ...data, data: newLinecutData2 } : data
+    //       )
+    //     );
+    //   }
+    // });
   }, [qXVector, verticalLinecuts, findClosestPixelForQValue, computeVerticalLinecutData, imageData1, imageData2]);
 
   // Return all the state and functions needed to use and manage linecuts
   return {
     verticalLinecuts,          // Linecut definitions (position, width, colors, etc.)
-    verticalLinecutData1,      // Intensity data for first image
-    verticalLinecutData2,      // Intensity data for second image
+    // verticalLinecutData1,      // Intensity data for first image
+    // verticalLinecutData2,      // Intensity data for second image
     addVerticalLinecut,        // Function to create a new linecut
     updateVerticalLinecutPosition, // Function to move a linecut
     updateVerticalLinecutWidth,    // Function to change linecut width

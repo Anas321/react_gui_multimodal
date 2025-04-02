@@ -33,7 +33,7 @@ export default function useInclinedLinecut(
 
   // Add state for Q-space zoom ranges
   const [zoomedXQRange, setZoomedXQRange] = useState<[number, number] | null>(null);
-  const [zoomedYQRange, setZoomedYQRange] = useState<[number, number] | null>(null);
+  // const [zoomedYQRange, setZoomedYQRange] = useState<[number, number] | null>(null);
 
     // Convert pixel ranges to Q ranges
     useEffect(() => {
@@ -45,16 +45,16 @@ export default function useInclinedLinecut(
             ] as [number, number]
             : null;
 
-        // Convert Y pixel range to Q range
-        const yQRange = zoomedYPixelRange
-            ? [
-                qYVector[Math.min(zoomedYPixelRange[0], qYVector.length - 1)],
-                qYVector[Math.min(zoomedYPixelRange[1], qYVector.length - 1)]
-            ] as [number, number]
-            : null;
+        // // Convert Y pixel range to Q range
+        // const yQRange = zoomedYPixelRange
+        //     ? [
+        //         qYVector[Math.min(zoomedYPixelRange[0], qYVector.length - 1)],
+        //         qYVector[Math.min(zoomedYPixelRange[1], qYVector.length - 1)]
+        //     ] as [number, number]
+        //     : null;
 
         setZoomedXQRange(xQRange);
-        setZoomedYQRange(yQRange);
+        // setZoomedYQRange(yQRange);
         }, [zoomedXPixelRange, zoomedYPixelRange, qXVector, qYVector]);
 
 
@@ -296,100 +296,100 @@ export default function useInclinedLinecut(
 
 
 
-/**
- * Calculate path distance for plotting the linecut data with consistent vertical handling
- * Using top=negative, bottom=positive sign convention for vertical linecuts
- *
- * @param qXPosition - Center X position in q-space
- * @param qYPosition - Center Y position in q-space
- * @param angle - Angle in degrees
- * @param numPoints - Number of points in the intensity data
- * @returns Array of distance values in q-space
- */
-const calculateQPathDistance = useCallback((
-  qXPosition: number,
-  qYPosition: number,
-  angle: number,
-  numPoints: number
-): number[] => {
-  // Calculate endpoints in pixel space
-  const endpoints = calculateLinecutEndpoints(qXPosition, qYPosition, angle);
-  if (!endpoints || numPoints === 0) return [];
+// /**
+//  * Calculate path distance for plotting the linecut data with consistent vertical handling
+//  * Using top=negative, bottom=positive sign convention for vertical linecuts
+//  *
+//  * @param qXPosition - Center X position in q-space
+//  * @param qYPosition - Center Y position in q-space
+//  * @param angle - Angle in degrees
+//  * @param numPoints - Number of points in the intensity data
+//  * @returns Array of distance values in q-space
+//  */
+// const calculateQPathDistance = useCallback((
+//   qXPosition: number,
+//   qYPosition: number,
+//   angle: number,
+//   numPoints: number
+// ): number[] => {
+//   // Calculate endpoints in pixel space
+//   const endpoints = calculateLinecutEndpoints(qXPosition, qYPosition, angle);
+//   if (!endpoints || numPoints === 0) return [];
 
-  const { x0, y0, x1, y1 } = endpoints;
+//   const { x0, y0, x1, y1 } = endpoints;
 
-  // Check if linecut is vertical or nearly vertical (±90° ±1°)
-  const isVertical = Math.abs(Math.abs(angle) - 90) < 1;
+//   // Check if linecut is vertical or nearly vertical (±90° ±1°)
+//   const isVertical = Math.abs(Math.abs(angle) - 90) < 1;
 
-  // Determine the order of points
-  let startX, startY, endX, endY;
+//   // Determine the order of points
+//   let startX, startY, endX, endY;
 
-  if (isVertical) {
-    // For vertical linecuts, always order from top to bottom
-    // Top point has smaller y value (y-axis points downward in image coordinates)
-    if (y0 < y1) {
-      startX = x0;
-      startY = y0;
-      endX = x1;
-      endY = y1;
-    } else {
-      startX = x1;
-      startY = y1;
-      endX = x0;
-      endY = y0;
-    }
-  } else {
-    // For non-vertical linecuts, sort from left to right
-    const needsReordering = x0 > x1;
-    startX = needsReordering ? x1 : x0;
-    startY = needsReordering ? y1 : y0;
-    endX = needsReordering ? x0 : x1;
-    endY = needsReordering ? y0 : y1;
-  }
+//   if (isVertical) {
+//     // For vertical linecuts, always order from top to bottom
+//     // Top point has smaller y value (y-axis points downward in image coordinates)
+//     if (y0 < y1) {
+//       startX = x0;
+//       startY = y0;
+//       endX = x1;
+//       endY = y1;
+//     } else {
+//       startX = x1;
+//       startY = y1;
+//       endX = x0;
+//       endY = y0;
+//     }
+//   } else {
+//     // For non-vertical linecuts, sort from left to right
+//     const needsReordering = x0 > x1;
+//     startX = needsReordering ? x1 : x0;
+//     startY = needsReordering ? y1 : y0;
+//     endX = needsReordering ? x0 : x1;
+//     endY = needsReordering ? y0 : y1;
+//   }
 
-  // Calculate q-values at endpoints
-  const q0X = qXVector[Math.min(Math.max(0, Math.round(startX)), qXVector.length - 1)];
-  const q0Y = qYVector[Math.min(Math.max(0, Math.round(startY)), qYVector.length - 1)];
-  const q1X = qXVector[Math.min(Math.max(0, Math.round(endX)), qXVector.length - 1)];
-  const q1Y = qYVector[Math.min(Math.max(0, Math.round(endY)), qYVector.length - 1)];
+//   // Calculate q-values at endpoints
+//   const q0X = qXVector[Math.min(Math.max(0, Math.round(startX)), qXVector.length - 1)];
+//   const q0Y = qYVector[Math.min(Math.max(0, Math.round(startY)), qYVector.length - 1)];
+//   const q1X = qXVector[Math.min(Math.max(0, Math.round(endX)), qXVector.length - 1)];
+//   const q1Y = qYVector[Math.min(Math.max(0, Math.round(endY)), qYVector.length - 1)];
 
-  // Calculate total q-space distance
-  let qLength: number;
+//   // Calculate total q-space distance
+//   let qLength: number;
 
-  if (isVertical) {
-    // For vertical linecuts, use only the qY component for distance
-    qLength = Math.abs(q1Y - q0Y);
-  } else {
-    // For non-vertical linecuts, use both qX and qY components
-    const dqX = q1X - q0X;
-    const dqY = q1Y - q0Y;
-    qLength = Math.sqrt(dqX * dqX + dqY * dqY);
-  }
+//   if (isVertical) {
+//     // For vertical linecuts, use only the qY component for distance
+//     qLength = Math.abs(q1Y - q0Y);
+//   } else {
+//     // For non-vertical linecuts, use both qX and qY components
+//     const dqX = q1X - q0X;
+//     const dqY = q1Y - q0Y;
+//     qLength = Math.sqrt(dqX * dqX + dqY * dqY);
+//   }
 
-  // Calculate center point in pixel coordinates
-  const centerPixelX = qToPixel(qXPosition, qYPosition)[0];
-  const centerPixelY = qToPixel(qXPosition, qYPosition)[1];
+//   // Calculate center point in pixel coordinates
+//   const centerPixelX = qToPixel(qXPosition, qYPosition)[0];
+//   const centerPixelY = qToPixel(qXPosition, qYPosition)[1];
 
-  // Create an array of q-distances
-  return Array.from({ length: numPoints }, (_, i) => {
-    // Calculate normalized position along the path [0,1]
-    const t = i / (numPoints - 1);
+//   // Create an array of q-distances
+//   return Array.from({ length: numPoints }, (_, i) => {
+//     // Calculate normalized position along the path [0,1]
+//     const t = i / (numPoints - 1);
 
-    if (isVertical) {
-      // For vertical lines, distance is directly proportional to qY
-      // Calculate how far along the line the beam center is
-      const centerT = (centerPixelY - startY) / (endY - startY);
+//     if (isVertical) {
+//       // For vertical lines, distance is directly proportional to qY
+//       // Calculate how far along the line the beam center is
+//       const centerT = (centerPixelY - startY) / (endY - startY);
 
-      // Calculate signed distance
-      // Use vertical linecut convention: top=negative, bottom=positive
-      return (t - centerT) * qLength;
-    } else {
-      // For non-vertical lines, use standard left-to-right approach
-      const centerT = (centerPixelX - startX) / (endX - startX);
-      return (t - centerT) * qLength;
-    }
-  });
-}, [calculateLinecutEndpoints, qXVector, qYVector, qToPixel]);
+//       // Calculate signed distance
+//       // Use vertical linecut convention: top=negative, bottom=positive
+//       return (t - centerT) * qLength;
+//     } else {
+//       // For non-vertical lines, use standard left-to-right approach
+//       const centerT = (centerPixelX - startX) / (endX - startX);
+//       return (t - centerT) * qLength;
+//     }
+//   });
+// }, [calculateLinecutEndpoints, qXVector, qYVector, qToPixel]);
 
 
 
@@ -454,113 +454,113 @@ const calculateQPathDistance = useCallback((
     imageData2
   ]);
 
-  /**
-   * Updates the X position (q-value) of an inclined linecut
-   *
-   * @param id - ID of the linecut to update
-   * @param qXPosition - New X position in q-space
-   */
-  const updateInclinedLinecutXPosition = useCallback(throttle((
-    id: number,
-    qXPosition: number
-  ) => {
-    // Update the linecut with the new q-value
-    setInclinedLinecuts(prev =>
-      prev.map(linecut =>
-        linecut.id === id ? { ...linecut, qXPosition } : linecut
-      )
-    );
+  // /**
+  //  * Updates the X position (q-value) of an inclined linecut
+  //  *
+  //  * @param id - ID of the linecut to update
+  //  * @param qXPosition - New X position in q-space
+  //  */
+  // const updateInclinedLinecutXPosition = useCallback(throttle((
+  //   id: number,
+  //   qXPosition: number
+  // ) => {
+  //   // Update the linecut with the new q-value
+  //   setInclinedLinecuts(prev =>
+  //     prev.map(linecut =>
+  //       linecut.id === id ? { ...linecut, qXPosition } : linecut
+  //     )
+  //   );
 
-    // Get the updated linecut to recompute the data
-    const updatedLinecut = inclinedLinecuts.find(l => l.id === id);
-    if (!updatedLinecut) return;
+  //   // Get the updated linecut to recompute the data
+  //   const updatedLinecut = inclinedLinecuts.find(l => l.id === id);
+  //   if (!updatedLinecut) return;
 
-    // Recompute intensity data with the new position
-    if (imageData1.length > 0 && imageData2.length > 0) {
-      const newData1 = computeInclinedLinecutData(
-        imageData1,
-        qXPosition,
-        updatedLinecut.qYPosition,
-        updatedLinecut.angle,
-        updatedLinecut.qWidth
-      );
+  //   // Recompute intensity data with the new position
+  //   if (imageData1.length > 0 && imageData2.length > 0) {
+  //     const newData1 = computeInclinedLinecutData(
+  //       imageData1,
+  //       qXPosition,
+  //       updatedLinecut.qYPosition,
+  //       updatedLinecut.angle,
+  //       updatedLinecut.qWidth
+  //     );
 
-      const newData2 = computeInclinedLinecutData(
-        imageData2,
-        qXPosition,
-        updatedLinecut.qYPosition,
-        updatedLinecut.angle,
-        updatedLinecut.qWidth
-      );
+  //     const newData2 = computeInclinedLinecutData(
+  //       imageData2,
+  //       qXPosition,
+  //       updatedLinecut.qYPosition,
+  //       updatedLinecut.angle,
+  //       updatedLinecut.qWidth
+  //     );
 
-      // Update intensity data in both datasets
-      setInclinedLinecutData1(prev =>
-        prev.map(data =>
-          data.id === id ? { ...data, data: newData1 } : data
-        )
-      );
+  //     // Update intensity data in both datasets
+  //     setInclinedLinecutData1(prev =>
+  //       prev.map(data =>
+  //         data.id === id ? { ...data, data: newData1 } : data
+  //       )
+  //     );
 
-      setInclinedLinecutData2(prev =>
-        prev.map(data =>
-          data.id === id ? { ...data, data: newData2 } : data
-        )
-      );
-    }
-  }, 200), [inclinedLinecuts, computeInclinedLinecutData, imageData1, imageData2]);
+  //     setInclinedLinecutData2(prev =>
+  //       prev.map(data =>
+  //         data.id === id ? { ...data, data: newData2 } : data
+  //       )
+  //     );
+  //   }
+  // }, 200), [inclinedLinecuts, computeInclinedLinecutData, imageData1, imageData2]);
 
-  /**
-   * Updates the Y position (q-value) of an inclined linecut
-   *
-   * @param id - ID of the linecut to update
-   * @param qYPosition - New Y position in q-space
-   */
-  const updateInclinedLinecutYPosition = useCallback(throttle((
-    id: number,
-    qYPosition: number
-  ) => {
-    // Update the linecut with the new q-value
-    setInclinedLinecuts(prev =>
-      prev.map(linecut =>
-        linecut.id === id ? { ...linecut, qYPosition } : linecut
-      )
-    );
+  // /**
+  //  * Updates the Y position (q-value) of an inclined linecut
+  //  *
+  //  * @param id - ID of the linecut to update
+  //  * @param qYPosition - New Y position in q-space
+  //  */
+  // const updateInclinedLinecutYPosition = useCallback(throttle((
+  //   id: number,
+  //   qYPosition: number
+  // ) => {
+  //   // Update the linecut with the new q-value
+  //   setInclinedLinecuts(prev =>
+  //     prev.map(linecut =>
+  //       linecut.id === id ? { ...linecut, qYPosition } : linecut
+  //     )
+  //   );
 
-    // Get the updated linecut to recompute the data
-    const updatedLinecut = inclinedLinecuts.find(l => l.id === id);
-    if (!updatedLinecut) return;
+  //   // Get the updated linecut to recompute the data
+  //   const updatedLinecut = inclinedLinecuts.find(l => l.id === id);
+  //   if (!updatedLinecut) return;
 
-    // Recompute intensity data with the new position
-    if (imageData1.length > 0 && imageData2.length > 0) {
-      const newData1 = computeInclinedLinecutData(
-        imageData1,
-        updatedLinecut.qXPosition,
-        qYPosition,
-        updatedLinecut.angle,
-        updatedLinecut.qWidth
-      );
+  //   // Recompute intensity data with the new position
+  //   if (imageData1.length > 0 && imageData2.length > 0) {
+  //     const newData1 = computeInclinedLinecutData(
+  //       imageData1,
+  //       updatedLinecut.qXPosition,
+  //       qYPosition,
+  //       updatedLinecut.angle,
+  //       updatedLinecut.qWidth
+  //     );
 
-      const newData2 = computeInclinedLinecutData(
-        imageData2,
-        updatedLinecut.qXPosition,
-        qYPosition,
-        updatedLinecut.angle,
-        updatedLinecut.qWidth
-      );
+  //     const newData2 = computeInclinedLinecutData(
+  //       imageData2,
+  //       updatedLinecut.qXPosition,
+  //       qYPosition,
+  //       updatedLinecut.angle,
+  //       updatedLinecut.qWidth
+  //     );
 
-      // Update intensity data in both datasets
-      setInclinedLinecutData1(prev =>
-        prev.map(data =>
-          data.id === id ? { ...data, data: newData1 } : data
-        )
-      );
+  //     // Update intensity data in both datasets
+  //     setInclinedLinecutData1(prev =>
+  //       prev.map(data =>
+  //         data.id === id ? { ...data, data: newData1 } : data
+  //       )
+  //     );
 
-      setInclinedLinecutData2(prev =>
-        prev.map(data =>
-          data.id === id ? { ...data, data: newData2 } : data
-        )
-      );
-    }
-  }, 200), [inclinedLinecuts, computeInclinedLinecutData, imageData1, imageData2]);
+  //     setInclinedLinecutData2(prev =>
+  //       prev.map(data =>
+  //         data.id === id ? { ...data, data: newData2 } : data
+  //       )
+  //     );
+  //   }
+  // }, 200), [inclinedLinecuts, computeInclinedLinecutData, imageData1, imageData2]);
 
   /**
    * Updates the angle of an inclined linecut
@@ -790,15 +790,15 @@ const calculateQPathDistance = useCallback((
     inclinedLinecutData1,
     inclinedLinecutData2,
     addInclinedLinecut,
-    updateInclinedLinecutXPosition,
-    updateInclinedLinecutYPosition,
+    // updateInclinedLinecutXPosition,
+    // updateInclinedLinecutYPosition,
     updateInclinedLinecutAngle,
     updateInclinedLinecutWidth,
     updateInclinedLinecutColor,
     deleteInclinedLinecut,
     toggleInclinedLinecutVisibility,
-    calculateQPathDistance,
+    // calculateQPathDistance,
     zoomedXQRange,
-    zoomedYQRange,
+    // zoomedYQRange,
   };
 }

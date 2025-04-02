@@ -21,8 +21,8 @@ export default function useRawDataOverview() {
     // State for the right image index with initial value of 1
     const [rightImageIndex, setRightImageIndex] = useState<number | "">(1);
 
-    // State for tracking loading status
-    const [isLoading, setIsLoading] = useState(false);
+    // // State for tracking loading status
+    // const [isLoading, setIsLoading] = useState(false);
 
     // Separate state for tracking data fetching vs image selection
     const [isFetchingData, setIsFetchingData] = useState(false);
@@ -109,7 +109,7 @@ export default function useRawDataOverview() {
     const fetchSpectrumData = useCallback(async () => {
         try {
             setIsFetchingData(true);
-            setIsLoading(true);
+            // setIsLoading(true);
 
             // Reset progress
             setProgress({
@@ -184,7 +184,7 @@ export default function useRawDataOverview() {
             });
         } finally {
             setIsFetchingData(false);
-            setIsLoading(false);
+            // setIsLoading(false);
         }
     }, []);
 
@@ -199,7 +199,7 @@ export default function useRawDataOverview() {
         if (typeof left === 'number' && typeof right === 'number') {
             // Set loading state for images specifically
             setIsLoadingImages(true);
-            setIsLoading(true);
+            // setIsLoading(true);
 
             // Only show notification for significant changes (not from context menu clicks)
             notifications.show({
@@ -216,7 +216,7 @@ export default function useRawDataOverview() {
     const handleImagesLoaded = useCallback(() => {
         console.log('Images loaded successfully');
         setIsLoadingImages(false);
-        setIsLoading(false);
+        // setIsLoading(false);
 
         // Only update notification if it was a significant image load operation
         if (isLoadingImages) {
@@ -236,11 +236,9 @@ export default function useRawDataOverview() {
         setLeftImageIndex,
         rightImageIndex,
         setRightImageIndex,
-        isLoading,
         isFetchingData,
         isLoadingImages,
         numOfFiles,
-        setNumOfFiles,
 
         // Progress data
         progress: progress.progress,
