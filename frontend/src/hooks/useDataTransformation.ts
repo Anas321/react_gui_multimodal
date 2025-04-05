@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useCallback } from 'react';
 import { calculateGlobalPercentiles, clipArray, calculateMinMax, calculateMeanStd }
 from '../utils/transformationUtils';
-import { getArrayMinMax } from '../utils/getArrayMinAndMax';
 
 
 export default function useDataTransformation() {

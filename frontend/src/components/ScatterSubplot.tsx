@@ -417,7 +417,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     }
 
     // Construct the URL with query parameters for the indices
-    const url = new URL("http://127.0.0.1:8000/api/scatter-subplot");
+    const url = new URL("/api/scatter-subplot", window.location.origin);
     url.searchParams.append("left_image_index", leftImageIndex.toString());
     url.searchParams.append("right_image_index", rightImageIndex.toString());
 

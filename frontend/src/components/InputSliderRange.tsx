@@ -54,32 +54,32 @@ export default function InputSliderRange({
     const [currentValue, setCurrentValue] = useState(value);
 
     //todo: create thumb styles with a few different options, no way to control thumb style without direct CSS
-    const thumbStyleCSS = ``;
+    // const thumbStyleCSS = ``;
 
     //todo: create slider styles with a few different options, no way to control all aspects of slider style without direct CSS
-    const sliderStyleCSS = ``;
+    // const sliderStyleCSS = ``;
 
-    //todo: implement
-    const tickMarkSizes = {
-        small: '',
-        medium: '',
-        large: ''
-    };
+    // //todo: implement
+    // const tickMarkSizes = {
+    //     small: '',
+    //     medium: '',
+    //     large: ''
+    // };
 
-    //todo: implement
-    const thumbInputSizes = {
-        small: '',
-        medium: '',
-        large: ''
-    }
+    // //todo: implement
+    // const thumbInputSizes = {
+    //     small: '',
+    //     medium: '',
+    //     large: ''
+    // }
 
     //todo: make this variable based on a thumb size
     const thumbWidth = 16; //pixels
 
-        // Format a number to 2 decimal places
-        const formatValue = (val: number): string => {
-            return val.toFixed(2);
-        };
+        // // Format a number to 2 decimal places
+        // const formatValue = (val: number): string => {
+        //     return val.toFixed(2);
+        // };
 
     const handleInputChange = (index: 0| 1, newValue: number) => {
         if (newValue < min) newValue = min;

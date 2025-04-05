@@ -169,7 +169,7 @@ export default function useAzimuthalIntegration(calibrationParams: CalibrationPa
 
             if (needsNewData) {
                 // Create a URL for the azimuthal integrator endpoint
-                const url = new URL('http://127.0.0.1:8000/api/azimuthal-integrator');
+                const url = new URL('/api/azimuthal-integrator', window.location.origin);
 
                 // Add all calibration parameters to the URL
                 Object.entries(calibrationParams).forEach(([key, value]) => {

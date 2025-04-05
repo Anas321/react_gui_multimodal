@@ -1,7 +1,6 @@
 // utils/handleRelayout.ts
 import { ResolutionDataType, TransformDataFunction } from '../types';
 import { calculateDifferenceArray } from './calculateDifferenceArray';
-import { getArrayMinMax } from './getArrayMinAndMax';
 
 interface HandleRelayoutProps {
   plotData: any;
@@ -75,37 +74,20 @@ export const handleRelayout = (
     // Calculate difference using transformed data
     const transformedDiff = calculateDifferenceArray(transformedArray1, transformedArray2);
 
-    const [minValue1, maxValue1] = getArrayMinMax(transformedArray1);
-    const [minValue2, maxValue2] = getArrayMinMax(transformedArray2);
-    const [minValueDiff, maxValueDiff] = getArrayMinMax(transformedDiff);
-
-    const globalMinValue = Math.min(minValue1, minValue2);
-    const globalMaxValue = Math.max(maxValue1, maxValue2);
-    const maxAbsDiff = Math.max(Math.abs(minValueDiff), Math.abs(maxValueDiff));
-
     setPlotData(prev => ({
       ...prev,
       data: [
         {
           ...prev.data[0],
           z: transformedArray1,
-          // z: resolutionData['low'].array1,
-          // zmin: globalMinValue,
-          // zmax: globalMaxValue,
         },
         {
           ...prev.data[1],
           z: transformedArray2,
-          // z: resolutionData['low'].array2,
-          // zmin: globalMinValue,
-          // zmax: globalMaxValue,
         },
         {
           ...prev.data[2],
           z: transformedDiff,
-          // z: resolutionData['low'].diff,
-          // zmin: -maxAbsDiff,
-          // zmax: maxAbsDiff,
         }
       ],
       layout: {
@@ -116,17 +98,6 @@ export const handleRelayout = (
         yaxis: { ...prev.layout.yaxis, range: [height + 30, -20], autorange: false },
         yaxis2: { ...prev.layout.yaxis2, range: [height + 30, -20], autorange: false },
         yaxis3: { ...prev.layout.yaxis3, range: [height + 30, -20], autorange: false },
-        // coloraxis: {
-        //   ...prev.layout.coloraxis,
-        //   cmin: globalMinValue,
-        //   cmax: globalMaxValue
-        // },
-        // coloraxis2: {
-        //   ...prev.layout.coloraxis2,
-        //   cmin: -maxAbsDiff,
-        //   cmax: maxAbsDiff,
-        //   cmid: 0
-        // }
       },
     }));
 
@@ -134,10 +105,10 @@ export const handleRelayout = (
   }
 
   // Extract ranges - check for both zoom and pan events
-  const xStart = relayoutData["xaxis2.range[0]"] // ?? relayoutData["xaxis2.range.0"];
-  const xEnd = relayoutData["xaxis2.range[1]"] // ?? relayoutData["xaxis2.range.1"];
-  const yStart = relayoutData["yaxis2.range[0]"] // ?? relayoutData["yaxis2.range.0"];
-  const yEnd = relayoutData["yaxis2.range[1]"] // ?? relayoutData["yaxis2.range.1"];
+  const xStart = relayoutData["xaxis2.range[0]"]
+  const xEnd = relayoutData["xaxis2.range[1]"]
+  const yStart = relayoutData["yaxis2.range[0]"]
+  const yEnd = relayoutData["yaxis2.range[1]"]
 
   if ([xStart, xEnd, yStart, yEnd].some(v => v === undefined)) return;
 

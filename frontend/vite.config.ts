@@ -32,5 +32,15 @@ export default defineConfig({
   },
   server: {
     port: 4000,
+    host: '0.0.0.0',
+    proxy: {
+      // This forwards API requests to your backend during development
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        // Optional: remove '/api' prefix when forwarding to backend
+        // rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
   },
 });

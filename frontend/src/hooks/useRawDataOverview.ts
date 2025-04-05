@@ -126,7 +126,7 @@ export default function useRawDataOverview() {
             });
 
             // Keep the /api prefix to match your backend structure
-            const response = await fetch('http://127.0.0.1:8000/api/raw-data-overview');
+            const response = await fetch('/api/raw-data-overview');
 
             if (!response.ok) {
                 throw new Error(`Failed to fetch spectrum data: ${response.statusText}`);

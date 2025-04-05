@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80" # Map host port 3000 to container port 80 (Nginx) (Maps port 3000 on your host to port 80 in the frontend container)
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000" # Map host port 8000 to container port 8000 (FastAPI)
+    networks:
+      - app-network
+    environment:
+      - TILED_URI_IMAGES=http://host.docker.internal:8888/api/v1/metadata/raw/
+      - TILED_URI_MASK=http://host.docker.internal:8888/api/v1/metadata/raw/AgB_2024_03_25_10s_2m_mask
+      - TILED_API_KEY=${TILED_API_KEY}
+
+networks:
+  app-network:
+    driver: bridge

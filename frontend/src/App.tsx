@@ -3,7 +3,7 @@ import { MantineProvider, Container, Accordion, Select, Menu} from '@mantine/cor
 import { FiArrowRight, FiArrowLeft } from 'react-icons/fi'; // Collapsing arrows
 import '@mantine/core/styles.css';
 import './index.css'; // Import the CSS file
-import alsLogo from '/public/als_logo.jpeg';
+import alsLogo from '/src/als_logo.jpeg';
 import ScatterSubplot from './components/ScatterSubplot';
 
 import HorizontalLinecutWidget from './components/HorizontalLinecutWidget';
@@ -673,18 +673,6 @@ function App() {
                   {selectedLinecuts.includes('Inclined') && inclinedLinecuts.length > 0 && (
                     <Accordion.Item value="inclined-linecut-accordion">
                       <Accordion.Control>Inclined Linecut</Accordion.Control>
-
-                        {/* linecuts: InclinedLinecut[];
-                        inclinedLinecutData1: { id: number; data: number[] }[];
-                        inclinedLinecutData2: { id: number; data: number[] }[];
-                        beamCenterX: number;
-                        beamCenterY: number;
-                        zoomedXQRange: [number, number] | null;
-                        qXVector: number[];
-                        qYVector: number[];
-                        units: string; */}
-
-
                       <Accordion.Panel>
                       <InclinedLinecutFig
                         linecuts={inclinedLinecuts}

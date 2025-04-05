@@ -53,7 +53,7 @@ export default function useMultimodal() {
   const fetchQVectors = useCallback(async () => {
     try {
       // Create the URL with calibration parameters
-      const url = new URL('http://127.0.0.1:8000/api/q-vectors');
+      const url = new URL('/api/q-vectors', window.location.origin);
 
       // Add all calibration parameters to the URL
       Object.entries(calibrationParams).forEach(([key, value]) => {
