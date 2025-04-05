@@ -1,3 +1,18 @@
+# This is the docker-compose file for the FastAPI and Nginx setup.
+# It defines two services: frontend and backend.
+# The frontend service runs an Nginx server to serve the static files.
+# The backend service runs a FastAPI application.
+# The frontend service depends on the backend service.
+# The backend service is built from the Dockerfile in the backend directory.
+# The frontend service is built from the Dockerfile in the frontend directory.
+# The frontend service maps port 3000 on the host to port 80 in the container.
+# The backend service maps port 8000 on the host to port 8000 in the container.
+# The backend service has environment variables for Tiled API configuration.
+# The TILED_URI_IMAGES and TILED_URI_MASK environment variables are set to the host's IP address.
+# The TILED_API_KEY environment variable is set to the value of the TILED_API_KEY environment variable on the host.
+# The app-network is created to allow communication between the frontend and backend services.
+# The app-network is a bridge network.
+
 version: "3.8"
 
 services:
