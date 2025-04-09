@@ -212,23 +212,6 @@ export default function useRawDataOverview() {
         }
     }, []);
 
-    // Handler for when images are loaded
-    const handleImagesLoaded = useCallback(() => {
-        console.log('Images loaded successfully');
-        setIsLoadingImages(false);
-        // setIsLoading(false);
-
-        // Only update notification if it was a significant image load operation
-        if (isLoadingImages) {
-            notifications.update({
-                id: 'loading-images',
-                color: 'green',
-                title: 'Images Loaded',
-                message: `Successfully loaded images ${leftImageIndex} and ${rightImageIndex}`,
-                autoClose: 3000,
-            });
-        }
-    }, [leftImageIndex, rightImageIndex, isLoadingImages]);
 
     return {
         // State
@@ -238,6 +221,7 @@ export default function useRawDataOverview() {
         setRightImageIndex,
         isFetchingData,
         isLoadingImages,
+        setIsLoadingImages,
         numOfFiles,
 
         // Progress data
@@ -252,7 +236,6 @@ export default function useRawDataOverview() {
         // Handlers
         fetchSpectrumData,
         handleImageIndicesChange,
-        handleImagesLoaded,
 
         displayOption,
         setDisplayOption,

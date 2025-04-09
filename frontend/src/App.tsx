@@ -152,17 +152,23 @@ function App() {
     rightImageIndex,
     setRightImageIndex,
     isFetchingData,
+    isLoadingImages,
+    setIsLoadingImages,
     numOfFiles,
+
+    progress,
+    progressMessage,
+
     maxIntensities,
     avgIntensities,
     imageNames,
+
     fetchSpectrumData,
     handleImageIndicesChange,
-    handleImagesLoaded,
+
     displayOption,
     setDisplayOption,
-    progress,
-    progressMessage,
+
   } = useRawDataOverview();
 
 
@@ -553,7 +559,8 @@ function App() {
                   mainTransformDataFunction={mainTransformDataFunction}
                   leftImageIndex={leftImageIndex}
                   rightImageIndex={rightImageIndex}
-                  onImagesLoaded={handleImagesLoaded}
+                  isLoadingImages={isLoadingImages}
+                  setIsLoadingImages={setIsLoadingImages}
                   isAzimuthalProcessing={isProcessing}
                 />
 

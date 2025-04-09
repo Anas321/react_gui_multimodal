@@ -22,6 +22,7 @@ import { getArrayMinMax } from "../utils/getArrayMinAndMax";
 import { calculateDifferenceArray } from "../utils/calculateDifferenceArray";
 
 import AzimuthalLoadingSpinner from "./AzimuthalLoadingSpinner";
+import { set } from "lodash";
 
 interface ScatterSubplotProps {
   setImageHeight: (height: number) => void;
@@ -55,7 +56,8 @@ interface ScatterSubplotProps {
   mainTransformDataFunction: TransformDataFunction;
   leftImageIndex?: number | "";
   rightImageIndex?: number | "";
-  onImagesLoaded?: () => void;
+  isLoadingImages?: boolean;
+  setIsLoadingImages?: (isLoading: boolean) => void;
   isAzimuthalProcessing?: boolean;
 }
 
@@ -90,7 +92,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   mainTransformDataFunction,
   leftImageIndex,
   rightImageIndex,
-  onImagesLoaded,
+  isLoadingImages,
+  setIsLoadingImages,
   isAzimuthalProcessing = false,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
@@ -416,6 +419,11 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       return;
     }
 
+
+
+    // // Show loading spinner
+    setIsLoadingImages(true);
+
     // Construct the URL with query parameters for the indices
     const url = new URL("/api/scatter-subplot", window.location.origin);
     url.searchParams.append("left_image_index", leftImageIndex.toString());
@@ -506,9 +514,13 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         }
 
         setPlotData(plotlyData);
+        setIsLoadingImages(false); // Hide loading spinner
 
       })
-      .catch(error => console.error("Error fetching scatter subplot:", error));
+      .catch(error => {
+        console.error("Error fetching scatter subplot:", error);
+      });
+
   }, [
     leftImageIndex,
     rightImageIndex,
@@ -516,7 +528,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     setImageWidth,
     setImageData1,
     setImageData2,
-    onImagesLoaded,
+    setIsLoadingImages,
   ]);
 
 
@@ -750,6 +762,12 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
             <div className="absolute top-1/2 left-[67%] -translate-y-1/2 text-5xl font-bold">=</div>
           </>
         )}
+
+        {/* Loading spinner for image selection */}
+        <AzimuthalLoadingSpinner
+          isLoading={isLoadingImages}
+          message="Loading selected images..."
+        />
 
         <AzimuthalLoadingSpinner
           isLoading={isAzimuthalProcessing}
