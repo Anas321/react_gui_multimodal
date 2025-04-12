@@ -1,11 +1,12 @@
 import msgpack
 import numpy as np
-
-# import pyFAI
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
 from pydantic import BaseModel
 from pyFAI.integrator.azimuthal import AzimuthalIntegrator
+
+# import pyFAI
+# from pyFAI.units import get_unit_fiber
 from routers.initial_scans_fetching import get_initial_scans
 
 
@@ -24,7 +25,7 @@ router = APIRouter()
 
 
 @router.get("/q-vectors")
-async def q_vectors(
+def q_vectors(
     # Calibration parameters as query parameters with defaults
     sample_detector_distance: float = Query(
         default=274.83,
@@ -82,21 +83,23 @@ async def q_vectors(
         wavelength=azimuthal_integration_calibration_params["wavelength"],
     )
 
-    unit_qx = "qxgi_nm^-1"
-    unit_qy = "qygi_nm^-1"
+    # unit_qx = "qxgi_nm^-1"
+    # unit_qy = "qygi_nm^-1"
+    unit_qx = "qx_nm^-1"
+    unit_qy = "qy_nm^-1"
 
     # Ensure the detector shape is defined
     image_shape = scatter_image_array_1.shape  # e.g., (height, width)
 
     # Compute q arrays with the specified units
-    q_x = ai.array_from_unit(shape=image_shape, unit=unit_qx)[0, :]
-    q_y = ai.array_from_unit(shape=image_shape, unit=unit_qy)[:, 0]
+    q_x = ai.array_from_unit(shape=image_shape, unit=unit_qx)  # [0, :]
+    q_y = ai.array_from_unit(shape=image_shape, unit=unit_qy)  # [:, 0]
 
     # Package the results for frontend using msgpack
     # Convert NumPy arrays to lists for serialization
     result_data = {
-        "q_x": q_x.tolist(),
-        "q_y": q_y.tolist(),
+        "q_x_matrix": q_x.tolist(),
+        "q_y_matrix": q_y.tolist(),
     }
 
     # Serialize the data using msgpack

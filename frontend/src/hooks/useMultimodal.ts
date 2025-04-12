@@ -4,8 +4,8 @@ import { CalibrationParams } from '../types';
 
 // Define the response interface for q-vectors
 interface QVectorsResponse {
-  q_x: number[];
-  q_y: number[];
+  q_x_matrix: number[][];
+  q_y_matrix: number[][];
 }
 
 // Type guard to validate the response
@@ -14,8 +14,10 @@ function isQVectorsResponse(value: unknown): value is QVectorsResponse {
   return (
     typeof response === 'object' &&
     response !== null &&
-    Array.isArray(response.q_x) &&
-    Array.isArray(response.q_y)
+    Array.isArray(response.q_x_matrix) &&
+    Array.isArray(response.q_y_matrix) &&
+    Array.isArray(response.q_x_matrix[0]) &&  // Check that it's a 2D array
+    Array.isArray(response.q_y_matrix[0])     // Check that it's a 2D array
   );
 }
 
@@ -44,8 +46,8 @@ export default function useMultimodal() {
   });
 
   // Q-vector state
-  const [qXVector, setQXVector] = useState<number[]>([]);
-  const [qYVector, setQYVector] = useState<number[]>([]);
+  const [qXMatrix, setQXMatrix] = useState<number[][]>([]);
+  const [qYMatrix, setQYMatrix] = useState<number[][]>([]);
   /**
    * Fetch q-vectors from the server
    * This fetches both q_x and q_y vectors based on current calibration parameters
@@ -77,8 +79,8 @@ export default function useMultimodal() {
       }
 
       // Store the q-vectors
-      setQXVector(decodedData.q_x);
-      setQYVector(decodedData.q_y);
+      setQXMatrix(decodedData.q_x_matrix);
+      setQYMatrix(decodedData.q_y_matrix);
 
     } catch (error) {
       console.error('Error fetching q-vectors:', error);
@@ -125,7 +127,7 @@ export default function useMultimodal() {
     updateCalibration,
 
     // Q-vectors and related state
-    qXVector,
-    qYVector,
+    qXMatrix,
+    qYMatrix,
     };
 }

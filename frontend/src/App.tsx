@@ -65,8 +65,8 @@ function App() {
     setResolutionMessage,
     calibrationParams,
     updateCalibration,
-    qXVector,
-    qYVector,
+    qXMatrix,
+    qYMatrix,
   } = useMultimodal();
 
   const {
@@ -93,7 +93,7 @@ function App() {
     updateHorizontalLinecutColor,
     deleteHorizontalLinecut,
     toggleHorizontalLinecutVisibility,
-  } = useHorizontalLinecut(imageHeight, imageData1, imageData2, qYVector);
+  } = useHorizontalLinecut(imageHeight, qYMatrix);
 
 
   const {
@@ -104,7 +104,7 @@ function App() {
     updateVerticalLinecutColor,
     deleteVerticalLinecut,
     toggleVerticalLinecutVisibility,
-  } = useVerticalLinecut(imageWidth, imageData1, imageData2, qXVector);
+  } = useVerticalLinecut(imageWidth, qXMatrix);
 
   const {
     inclinedLinecuts,
@@ -120,8 +120,8 @@ function App() {
   } = useInclinedLinecut(
     imageData1,
     imageData2,
-    qXVector,
-    qYVector,
+    qXMatrix,
+    qYMatrix,
     zoomedXPixelRange,
     zoomedYPixelRange,
   );
@@ -395,7 +395,7 @@ function App() {
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
                           linecuts={horizontalLinecuts}
-                          qYVector={qYVector}
+                          qYMatrix={qYMatrix}
                           updateHorizontalLinecutPosition={updateHorizontalLinecutPosition}
                           updateHorizontalLinecutWidth={updateHorizontalLinecutWidth}
                           updateHorizontalLinecutColor={updateHorizontalLinecutColor}
@@ -411,7 +411,7 @@ function App() {
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
                           linecuts={verticalLinecuts}
-                          qXVector={qXVector}
+                          qXMatrix={qXMatrix}
                           updateVerticalLinecutPosition={updateVerticalLinecutPosition}
                           updateVerticalLinecutWidth={updateVerticalLinecutWidth}
                           updateVerticalLinecutColor={updateVerticalLinecutColor}
@@ -553,8 +553,8 @@ function App() {
                   azimuthalData2={azimuthalData2}
                   maxQValue={maxQValue}
                   calibrationParams={calibrationParams}
-                  qYVector={qYVector}
-                  qXVector={qXVector}
+                  qYMatrix={qYMatrix}
+                  qXMatrix={qXMatrix}
                   units="nm⁻¹"
                   mainTransformDataFunction={mainTransformDataFunction}
                   leftImageIndex={leftImageIndex}
@@ -655,7 +655,7 @@ function App() {
                           imageData2={imageData2} // Data for right scatter image
                           zoomedXPixelRange={zoomedXPixelRange}
                           zoomedYPixelRange={zoomedYPixelRange}
-                          qXVector={qXVector}
+                          qXMatrix={qXMatrix}
                           units="nm⁻¹"
                         />
                       </Accordion.Panel>
@@ -671,7 +671,7 @@ function App() {
                               imageData2={imageData2}
                               zoomedXPixelRange={zoomedXPixelRange}
                               zoomedYPixelRange={zoomedYPixelRange}
-                              qYVector={qYVector}
+                              qYMatrix={qYMatrix}
                               units="nm⁻¹"
                             />
                         </Accordion.Panel>
@@ -688,8 +688,8 @@ function App() {
                         beamCenterX={calibrationParams.beam_center_x}
                         beamCenterY={calibrationParams.beam_center_y}
                         zoomedXQRange={zoomedXQRange}
-                        qXVector={qXVector}
-                        qYVector={qYVector}
+                        qXMatrix={qXMatrix}
+                        qYMatrix={qYMatrix}
                         units="nm⁻¹"
                       />
                       </Accordion.Panel>
