@@ -34,7 +34,7 @@ services:
       dockerfile: Dockerfile
     # Port mapping from host to container
     ports:
-      - "3000:80" # Maps port 3000 on your host machine to port 80 in the container
+      - "127.0.0.1:3000:80" # Maps port 3000 on your host machine to port 80 in the container
         # This means you can access the frontend at http://localhost:3000
     # Dependency configuration - ensures backend starts before frontend
     depends_on:
@@ -51,10 +51,6 @@ services:
       context: ./backend
       # The name of the Dockerfile to use
       dockerfile: Dockerfile
-    # Port mapping from host to container
-    ports:
-      - "8000:8000" # Maps port 8000 on your host to port 8000 in the container
-        # This allows direct access to the API at http://localhost:8000
     # Connect this service to the defined network
     networks:
       - app-network
@@ -62,13 +58,12 @@ services:
     environment:
       # Configuration for the Tiled API that your backend connects to
       # host.docker.internal is a special Docker DNS name that resolves to the host machine
-      - TILED_URI_IMAGES=http://host.docker.internal:8888/api/v1/metadata/raw/
-      - TILED_URI_MASK=http://host.docker.internal:8888/api/v1/metadata/raw/AgB_2024_03_25_10s_2m_mask
+      - TILED_URI_IMAGES=${TILED_URI_IMAGES}
+      - TILED_URI_MASK=${TILED_URI_MASK}
       # This uses the host machine's environment variable of the same name
       # The ${} syntax allows you to pass through environment variables from your host
       - TILED_API_KEY=${TILED_API_KEY}
 
-# Define the networks used by the services
 networks:
   # Create a network named "app-network"
   app-network:
