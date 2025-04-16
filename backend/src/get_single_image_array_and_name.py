@@ -41,6 +41,7 @@ def get_single_image_array_and_name(
 
     else:
         # Load image from the tiled server
+        tiled_uri = tiled_uri if tiled_uri.endswith("/") else tiled_uri + "/"
         file_uri = urlparse.urljoin(tiled_uri, image_uri)
         # image_client = from_uri(file_uri)
 
