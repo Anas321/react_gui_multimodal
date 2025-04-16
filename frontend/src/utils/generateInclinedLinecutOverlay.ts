@@ -1,7 +1,6 @@
 import { InclinedLinecut } from "../types";
 import { calculateInclinedLineEndpoints } from "./calculateInclinedLinecutEndpoints";
 
-
 interface GenerateInclinedLinecutParams {
     linecut: InclinedLinecut;
     currentArray: number[][];
@@ -339,3 +338,197 @@ interface GenerateInclinedLinecutParams {
       y: p1.y + t * dy1
     };
   }
+
+
+
+
+
+
+
+
+
+// import { calculateInclinedLineEndpoints } from "./calculateInclinedLinecutEndpoints";
+// import { clipPolygonToImageBoundaries } from "./clipPolygonToImageBoundaries";
+
+// export function generateInclinedLinecutOverlay({
+//   linecut,
+//   currentArray,
+//   factor,
+//   imageWidth,
+//   imageHeight,
+//   beam_center_x,
+//   beam_center_y,
+//   qXMatrix,
+//   qYMatrix
+// }) {
+//   if (!currentArray.length || factor === null) return [];
+
+//   // Get the central line endpoints
+//   const endpoints = calculateInclinedLineEndpoints({
+//     linecut,
+//     imageWidth,
+//     imageHeight,
+//     beam_center_x,
+//     beam_center_y,
+//     factor,
+//   });
+
+//   if (!endpoints) return [];
+//   const { x0, y0, x1, y1 } = endpoints;
+
+//   // Calculate perpendicular vector for the width envelope
+//   const radians = (linecut.angle * Math.PI) / 180;
+//   const dx = Math.cos(radians);
+//   const dy = -Math.sin(radians);
+
+//   // Calculate perpendicular unit vector
+//   const perpDx = -dy;
+//   const perpDy = dx;
+
+//   // Calculate width in pixel space based on q-space width
+//   let halfWidthPixels = 0;
+
+//   if (linecut.qWidth > 0 && qXMatrix && qYMatrix && qXMatrix.length > 0 && qYMatrix.length > 0) {
+//     // Calculate the center point in scaled coordinates
+//     const centerX = (x0 + x1) / 2;
+//     const centerY = (y0 + y1) / 2;
+
+//     // Convert center to original (unscaled) coordinates
+//     const originalCenterX = centerX * factor;
+//     const originalCenterY = centerY * factor;
+
+//     // Bounds checking for accessing the matrices
+//     const boundedCenterX = Math.min(Math.max(0, Math.round(originalCenterX)), qXMatrix[0].length - 1);
+//     const boundedCenterY = Math.min(Math.max(0, Math.round(originalCenterY)), qXMatrix.length - 1);
+
+//     // Get the q-value at the center
+//     const centerQx = qXMatrix[boundedCenterY][boundedCenterX];
+//     const centerQy = qYMatrix[boundedCenterY][boundedCenterX];
+
+//     // Calculate points at distance qWidth/2 in q-space along the perpendicular vector
+//     // First find unit vector in q-space (perpendicular to the linecut)
+//     const qUnitPerpX = perpDx;
+//     const qUnitPerpY = perpDy;
+
+//     // Calculate point at half-width distance in q-space
+//     const halfWidth = linecut.qWidth / 2;
+//     const qPoint1x = centerQx + qUnitPerpX * halfWidth;
+//     const qPoint1y = centerQy + qUnitPerpY * halfWidth;
+
+//     // Now find the pixel position for this q-point
+//     let minDistancePoint1 = Infinity;
+//     let pixel1X = boundedCenterX;
+//     let pixel1Y = boundedCenterY;
+
+//     // Dynamically calculate search radius based on q-width value
+//     // For larger q-widths, we need a larger search area
+//     const searchRadius = Math.ceil(imageWidth * Math.max(0.25, linecut.qWidth / 10));
+
+//     // Search for the closest q-value point in the matrices
+//     for (let y = Math.max(0, boundedCenterY - searchRadius);
+//          y < Math.min(qYMatrix.length, boundedCenterY + searchRadius);
+//          y++) {
+//       for (let x = Math.max(0, boundedCenterX - searchRadius);
+//            x < Math.min(qXMatrix[0].length, boundedCenterX + searchRadius);
+//            x++) {
+//         const qx = qXMatrix[y][x];
+//         const qy = qYMatrix[y][x];
+
+//         // Calculate distance in q-space
+//         const distSq = Math.pow(qx - qPoint1x, 2) + Math.pow(qy - qPoint1y, 2);
+
+//         if (distSq < minDistancePoint1) {
+//           minDistancePoint1 = distSq;
+//           pixel1X = x;
+//           pixel1Y = y;
+//         }
+//       }
+//     }
+
+//     // Calculate pixel distance between center and half-width point
+//     const pixelDistanceHalfWidth = Math.sqrt(
+//       Math.pow(pixel1X - boundedCenterX, 2) +
+//       Math.pow(pixel1Y - boundedCenterY, 2)
+//     );
+
+//     // Scale the pixel distance by the downsampling factor
+//     halfWidthPixels = pixelDistanceHalfWidth / factor;
+//   }
+
+//   // Calculate raw envelope points (before boundary checking)
+//   const rawEnvelopePoints = {
+//     x: [
+//       x0 + perpDx * halfWidthPixels,
+//       x1 + perpDx * halfWidthPixels,
+//       x1 - perpDx * halfWidthPixels,
+//       x0 - perpDx * halfWidthPixels,
+//       x0 + perpDx * halfWidthPixels // Close the path
+//     ],
+//     y: [
+//       y0 + perpDy * halfWidthPixels,
+//       y1 + perpDy * halfWidthPixels,
+//       y1 - perpDy * halfWidthPixels,
+//       y0 - perpDy * halfWidthPixels,
+//       y0 + perpDy * halfWidthPixels // Close the path
+//     ]
+//   };
+
+//   // Clip envelope points to image boundaries
+//   const clippedEnvelopePoints = clipPolygonToImageBoundaries(
+//     rawEnvelopePoints.x,
+//     rawEnvelopePoints.y,
+//     imageWidth,
+//     imageHeight
+//   );
+
+//   // Create overlays for both axes
+//   const createOverlaysForAxis = (color, axisNumber) => [
+//     // Width envelope (using clipped points)
+//     {
+//       x: clippedEnvelopePoints.x,
+//       y: clippedEnvelopePoints.y,
+//       mode: 'lines',
+//       fill: 'toself',
+//       fillcolor: color,
+//       line: { color },
+//       opacity: linecut.qWidth > 0 ? 0.3 : 0, // Hide fill for zero width
+//       xaxis: `x${axisNumber}`,
+//       yaxis: `y${axisNumber}`,
+//       showlegend: false,
+//       hoverinfo: 'skip'
+//     },
+//     // Central line
+//     {
+//       x: [x0, x1],
+//       y: [y0, y1],
+//       mode: 'lines',
+//       line: { color, width: 2 },
+//       opacity: 0.75,
+//       xaxis: `x${axisNumber}`,
+//       yaxis: `y${axisNumber}`,
+//       showlegend: false,
+//       hoverinfo: 'skip'
+//     },
+//     // Center point
+//     {
+//       x: [beam_center_x / factor],
+//       y: [beam_center_y / factor],
+//       mode: 'markers',
+//       marker: {
+//         color: color,
+//         size: 10,
+//         symbol: 'circle',
+//       },
+//       opacity: 0.75,
+//       xaxis: `x${axisNumber}`,
+//       yaxis: `y${axisNumber}`,
+//       showlegend: false,
+//       hoverinfo: 'skip'
+//     },
+//   ];
+
+//   return [
+//     ...createOverlaysForAxis(linecut.leftColor, 1),
+//     ...createOverlaysForAxis(linecut.rightColor, 2)
+//   ];
+// }

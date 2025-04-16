@@ -127,3 +127,38 @@ export function calculateInclinedLineEndpoints({
 }
 
 export default calculateInclinedLineEndpoints;
+
+
+
+// export function calculateInclinedLineEndpoints({
+//     linecut,
+//     imageWidth,
+//     imageHeight,
+//     beam_center_x,
+//     beam_center_y,
+//     factor
+//   }) {
+//     if (!linecut) return null;
+
+//     // Convert from radians to degrees
+//     const radians = (linecut.angle * Math.PI) / 180;
+
+//     // Calculate direction vector
+//     const dx = Math.cos(radians);
+//     const dy = -Math.sin(radians); // Negative because y increases downward in image coordinates
+
+//     // Scale beam center according to current resolution
+//     const scaledBeamCenterX = beam_center_x / factor;
+//     const scaledBeamCenterY = beam_center_y / factor;
+
+//     // Calculate the length of the line (using the diagonal of the image as a reference)
+//     const maxLength = Math.sqrt(imageWidth * imageWidth + imageHeight * imageHeight);
+
+//     // Calculate endpoints by extending in both directions from the beam center
+//     const x0 = scaledBeamCenterX - dx * maxLength / 2;
+//     const y0 = scaledBeamCenterY - dy * maxLength / 2;
+//     const x1 = scaledBeamCenterX + dx * maxLength / 2;
+//     const y1 = scaledBeamCenterY + dy * maxLength / 2;
+
+//     return { x0, y0, x1, y1 };
+//   }

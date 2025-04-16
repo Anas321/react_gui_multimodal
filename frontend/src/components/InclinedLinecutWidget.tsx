@@ -207,7 +207,7 @@ const InclinedLinecutWidget: React.FC<InclinedLinecutWidgetProps> = ({
                         <InputSlider
                           min={-90}
                           max={90}
-                          marks={[-90, 0, 90]}
+                          marks={[90, 0, -90]}
                           value={linecut.angle ?? 0}
                           step={1}
                           onChange={(value) => updateInclinedLinecutAngle(linecut.id, value)}

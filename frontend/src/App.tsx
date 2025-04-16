@@ -65,8 +65,10 @@ function App() {
     setResolutionMessage,
     calibrationParams,
     updateCalibration,
-    qXMatrix,
-    qYMatrix,
+    // qXMatrix,
+    // qYMatrix,
+    qXVector,
+    qYVector,
   } = useMultimodal();
 
   const {
@@ -93,7 +95,7 @@ function App() {
     updateHorizontalLinecutColor,
     deleteHorizontalLinecut,
     toggleHorizontalLinecutVisibility,
-  } = useHorizontalLinecut(imageHeight, qYMatrix);
+  } = useHorizontalLinecut(imageHeight, imageData1, imageData2, qYVector);
 
 
   const {
@@ -104,7 +106,9 @@ function App() {
     updateVerticalLinecutColor,
     deleteVerticalLinecut,
     toggleVerticalLinecutVisibility,
-  } = useVerticalLinecut(imageWidth, qXMatrix);
+  } = useVerticalLinecut(imageWidth, imageData1, imageData2, qXVector);
+
+
 
   const {
     inclinedLinecuts,
@@ -120,8 +124,10 @@ function App() {
   } = useInclinedLinecut(
     imageData1,
     imageData2,
-    qXMatrix,
-    qYMatrix,
+    qXVector,
+    qYVector,
+    // qXMatrix[0], // First row as X vector
+    // qYMatrix.map(row => row[0]), // First column as Y vector
     zoomedXPixelRange,
     zoomedYPixelRange,
   );
@@ -395,7 +401,8 @@ function App() {
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
                           linecuts={horizontalLinecuts}
-                          qYMatrix={qYMatrix}
+                          // qYMatrix={qYMatrix}
+                          qYVector={qYVector}
                           updateHorizontalLinecutPosition={updateHorizontalLinecutPosition}
                           updateHorizontalLinecutWidth={updateHorizontalLinecutWidth}
                           updateHorizontalLinecutColor={updateHorizontalLinecutColor}
@@ -411,7 +418,8 @@ function App() {
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
                           linecuts={verticalLinecuts}
-                          qXMatrix={qXMatrix}
+                          // qXMatrix={qXMatrix}
+                          qXVector={qXVector}
                           updateVerticalLinecutPosition={updateVerticalLinecutPosition}
                           updateVerticalLinecutWidth={updateVerticalLinecutWidth}
                           updateVerticalLinecutColor={updateVerticalLinecutColor}
@@ -553,8 +561,10 @@ function App() {
                   azimuthalData2={azimuthalData2}
                   maxQValue={maxQValue}
                   calibrationParams={calibrationParams}
-                  qYMatrix={qYMatrix}
-                  qXMatrix={qXMatrix}
+                  // qYMatrix={qYMatrix}
+                  // qXMatrix={qXMatrix}
+                  qXVector={qXVector}
+                  qYVector={qYVector}
                   units="nm⁻¹"
                   mainTransformDataFunction={mainTransformDataFunction}
                   leftImageIndex={leftImageIndex}
@@ -655,7 +665,8 @@ function App() {
                           imageData2={imageData2} // Data for right scatter image
                           zoomedXPixelRange={zoomedXPixelRange}
                           zoomedYPixelRange={zoomedYPixelRange}
-                          qXMatrix={qXMatrix}
+                          // qXMatrix={qXMatrix}
+                          qXVector={qXVector}
                           units="nm⁻¹"
                         />
                       </Accordion.Panel>
@@ -671,7 +682,8 @@ function App() {
                               imageData2={imageData2}
                               zoomedXPixelRange={zoomedXPixelRange}
                               zoomedYPixelRange={zoomedYPixelRange}
-                              qYMatrix={qYMatrix}
+                              // qYMatrix={qYMatrix}
+                              qYVector={qYVector}
                               units="nm⁻¹"
                             />
                         </Accordion.Panel>
@@ -688,8 +700,10 @@ function App() {
                         beamCenterX={calibrationParams.beam_center_x}
                         beamCenterY={calibrationParams.beam_center_y}
                         zoomedXQRange={zoomedXQRange}
-                        qXMatrix={qXMatrix}
-                        qYMatrix={qYMatrix}
+                        qXVector={qXVector} // First row as X vector
+                        qYVector={qYVector} // First column as Y vector
+                        // qXVector={qXMatrix[0]} // First row as X vector
+                        // qYVector={qYMatrix.map(row => row[0])} // First column as Y vector
                         units="nm⁻¹"
                       />
                       </Accordion.Panel>
@@ -707,7 +721,6 @@ function App() {
                             azimuthalData1={azimuthalData1}
                             azimuthalData2={azimuthalData2}
                             zoomedQRange={globalQRange}
-                            isLogScale={isLogScale}
                           />
                         </Accordion.Panel>
                       </Accordion.Item>

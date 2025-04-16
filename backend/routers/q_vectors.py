@@ -92,14 +92,14 @@ def q_vectors(
     image_shape = scatter_image_array_1.shape  # e.g., (height, width)
 
     # Compute q arrays with the specified units
-    q_x = ai.array_from_unit(shape=image_shape, unit=unit_qx)  # [0, :]
-    q_y = ai.array_from_unit(shape=image_shape, unit=unit_qy)  # [:, 0]
+    q_x = ai.array_from_unit(shape=image_shape, unit=unit_qx)[0, :]
+    q_y = ai.array_from_unit(shape=image_shape, unit=unit_qy)[:, 0]
 
     # Package the results for frontend using msgpack
     # Convert NumPy arrays to lists for serialization
     result_data = {
-        "q_x_matrix": q_x.tolist(),
-        "q_y_matrix": q_y.tolist(),
+        "q_x": q_x.tolist(),
+        "q_y": q_y.tolist(),
     }
 
     # Serialize the data using msgpack

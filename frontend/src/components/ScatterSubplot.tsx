@@ -54,8 +54,10 @@ interface ScatterSubplotProps {
   azimuthalData2: AzimuthalData[];               // Integration data for second image
   maxQValue: number;
   calibrationParams: CalibrationParams;
-  qYMatrix: number[][]; // qYMatrix for q-value mapping
-  qXMatrix: number[][]; // qXMatrix for q-value mapping
+  // qYMatrix: number[][]; // qYMatrix for q-value mapping
+  // qXMatrix: number[][]; // qXMatrix for q-value mapping
+  qYVector: number[]; // qYVector for q-value mapping
+  qXVector: number[]; // qXVector for q-value mapping
   units: string;
   mainTransformDataFunction: TransformDataFunction;
   leftImageIndex?: number | "";
@@ -90,8 +92,10 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   azimuthalData2,
   maxQValue,
   calibrationParams,
-  qYMatrix,
-  qXMatrix,
+  // qYMatrix,
+  // qXMatrix,
+  qYVector,
+  qXVector,
   units,
   mainTransformDataFunction,
   leftImageIndex,
@@ -570,7 +574,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           linecut,
           currentArray: currentArrayData,
           factor: getCurrentFactor(),
-          qYMatrix, // Pass qYMatrix to the function
+          // qYMatrix, // Pass qYMatrix to the function
+          qYVector, // Pass qYMatrix to the function
           units: units // Pass units
         })),
       ...(verticalLinecuts || [])
@@ -579,7 +584,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           linecut,
           currentArray: currentArrayData,
           factor: getCurrentFactor(),
-          qXMatrix, // Pass qXMatrix to the function
+          // qXMatrix, // Pass qXMatrix to the function
+          qXVector, // Pass qXMatrix to the function
           units: units // Pass units
         })),
         // Inclined linecuts
@@ -594,8 +600,10 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           imageHeight,
           beam_center_x: calibrationParams.beam_center_x,
           beam_center_y: calibrationParams.beam_center_y,
-          qXMatrix,
-          qYMatrix,
+          qXVector,
+          qYVector,
+          // qXVector: qXMatrix[0], // First row as X vector
+          // qYVector: qYMatrix.map(row => row[0]), // First column as Y vector
         });
       }),
 
@@ -648,8 +656,10 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     getCurrentFactor,
     maxQValue,
     calibrationParams,
-    qYMatrix,
-    qXMatrix,
+    // qYMatrix,
+    // qXMatrix,
+    qYVector,
+    qXVector,
     units,
   ]);
 
