@@ -245,7 +245,7 @@ const HorizontalLinecutWidget: React.FC<HorizontalLinecutWidgetProps> = ({
                       max={maxQYValue}
                       step={0.1}
                       onChange={(e) =>
-                        updateHorizontalLinecutPosition(linecut.id, parseInt(e.target.value) || 0)
+                        updateHorizontalLinecutPosition(linecut.id, parseFloat(e.target.value) || 0)
                       }
                       className="border rounded w-20 text-center"
                       disabled={linecut.hidden}

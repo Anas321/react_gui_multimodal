@@ -5,21 +5,6 @@ import h5py
 import numpy as np
 from PIL import Image
 
-# def pad_mask(mask, target_shape):
-#     pad_height = target_shape[0] - mask.shape[0]
-#     pad_width = target_shape[1] - mask.shape[1]
-
-#     # Calculate padding for top, bottom, left, and right
-#     pad_top = pad_height // 2
-#     pad_bottom = pad_height - pad_top
-#     pad_left = pad_width // 2
-#     pad_right = pad_width - pad_left
-
-#     padded_mask = np.pad(
-#         mask, ((pad_top, pad_bottom), (pad_left, pad_right)), mode="constant"
-#     )
-#     return padded_mask
-
 
 def get_local_files_names(
     data_local_path, data_files_type, mask_file_name, pad_mask_flag=False
@@ -51,11 +36,5 @@ def get_local_files_names(
             mask_detector = np.load(mask_path)
     else:
         raise FileNotFoundError(f"Mask file not found at: {mask_path}")
-
-    # if pad_mask_flag:
-    #     first_file_path = os.path.join(data_local_path, files_names[2])
-    #     image_array = fabio.open(first_file_path).data
-
-    #     mask_detector = pad_mask(mask_detector, image_array.shape)
 
     return files_names, mask_detector

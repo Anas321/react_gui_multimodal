@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { leftImageColorPalette, rightImageColorPalette } from '../utils/constants';
 import { throttle } from 'lodash';
 import { InclinedLinecut } from '../types';
+import { calculateInclinedQSpaceToPixelWidth } from '../utils/calculateQSpaceToPixelWidthInclinedLinecut';
 
 /**
  * Custom hook for managing inclined linecuts in q-space
@@ -163,96 +164,84 @@ export default function useInclinedLinecut(
     return { x0, y0, x1, y1 };
   }, [qToPixel, imageWidth, imageHeight]);
 
-  /**
-   * Compute intensity data along an inclined linecut
-   *
-   * @param imageData - 2D array of intensity values
-   * @param qXPosition - Center X position in q-space
-   * @param qYPosition - Center Y position in q-space
-   * @param angle - Angle in degrees
-   * @param qWidth - Width in q-space units
-   * @returns Array of intensity values along the linecut
-   */
-  const computeInclinedLinecutData = useCallback((
-    imageData: number[][],
-    qXPosition: number,
-    qYPosition: number,
-    angle: number,
-    qWidth: number
-  ): number[] => {
-    // Calculate endpoints in pixel space
-    const endpoints = calculateLinecutEndpoints(qXPosition, qYPosition, angle);
-    if (!endpoints) return [];
 
-    const { x0, y0, x1, y1 } = endpoints;
 
-    // Calculate direction vectors
-    const angleRad = (angle * Math.PI) / 180;
-    const dirX = Math.cos(angleRad);
-    const dirY = -Math.sin(angleRad);
 
-    // Perpendicular vector for width calculations
-    const perpX = -dirY;
-    const perpY = -dirX;
+/**
+ * Compute intensity data along an inclined linecut
+ */
+const computeInclinedLinecutData = useCallback((
+  imageData: number[][],
+  qXPosition: number,
+  qYPosition: number,
+  angle: number,
+  qWidth: number
+): number[] => {
+  // Calculate endpoints in pixel space
+  const endpoints = calculateLinecutEndpoints(qXPosition, qYPosition, angle);
+  if (!endpoints) return [];
 
-    // Calculate total line length in pixel space
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const length = Math.sqrt(dx * dx + dy * dy);
+  const { x0, y0, x1, y1 } = endpoints;
 
-    if (length === 0) return [];
+  // Calculate direction vectors
+  const angleRad = (angle * Math.PI) / 180;
+  const dirX = Math.cos(angleRad);
+  const dirY = -Math.sin(angleRad);
 
-    // Convert q-width to approximate pixel width
-    // This is an approximation - in a real application you would need
-    // to consider the q-space scale factors in different directions
-    let pixelWidth = 0;
+  // Perpendicular vector for width calculations
+  const perpX = -dirY;
+  const perpY = dirX;
 
-    if (qWidth > 0) {
-      // Find two q-points separated by qWidth
-      const q1 = [qXPosition, qYPosition];
-      const q2 = [qXPosition + qWidth * Math.cos(angleRad), qYPosition - qWidth * Math.sin(angleRad)];
+  // Calculate total line length in pixel space
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  const length = Math.sqrt(dx * dx + dy * dy);
 
-      // Convert both to pixel space
-      const [p1x, p1y] = qToPixel(q1[0], q1[1]);
-      const [p2x, p2y] = qToPixel(q2[0], q2[1]);
+  if (length === 0) return [];
 
-      // Calculate pixel distance
-      const pdx = p2x - p1x;
-      const pdy = p2y - p1y;
-      pixelWidth = Math.sqrt(pdx * pdx + pdy * pdy);
-    }
+  // Use the centralized function to calculate pixel width
+  const pixelWidth = calculateInclinedQSpaceToPixelWidth(
+    qXPosition,
+    qYPosition,
+    angle,
+    qWidth,
+    qXVector,
+    qYVector,
+  );
 
-    // Sample points along the line
-    const numPoints = Math.ceil(length);
-    const intensities = new Array(numPoints).fill(0);
-    const halfWidth = pixelWidth / 2;
+  // Sample points along the line
+  const numPoints = Math.ceil(length);
+  const intensities = new Array(numPoints).fill(0);
+  const halfWidth = pixelWidth / 2;
 
-    // For each point along the line
-    for (let i = 0; i < numPoints; i++) {
-      let sum = 0;
-      let count = 0;
+  // For each point along the line
+  for (let i = 0; i < numPoints; i++) {
+    let sum = 0;
+    let count = 0;
 
-      // Base position along the line
-      const baseX = x0 + (i / numPoints) * dx;
-      const baseY = y0 + (i / numPoints) * dy;
+    // Base position along the line
+    const baseX = x0 + (i / numPoints) * dx;
+    const baseY = y0 + (i / numPoints) * dy;
 
-      // Sample perpendicular to the line for width averaging
-      for (let w = -halfWidth; w <= halfWidth; w += 0.5) {
-        const x = Math.round(baseX + w * perpX);
-        const y = Math.round(baseY + w * perpY);
+    // Sample perpendicular to the line for width averaging
+    for (let w = -halfWidth; w <= halfWidth; w += 0.5) {
+      const x = Math.round(baseX + w * perpX);
+      const y = Math.round(baseY + w * perpY);
 
-        // Check if point is within bounds
-        if (x >= 0 && x < imageData[0].length && y >= 0 && y < imageData.length) {
-          sum += imageData[y][x];
-          count++;
-        }
+      // Check if point is within bounds
+      if (x >= 0 && x < imageData[0].length && y >= 0 && y < imageData.length) {
+        // If value is NaN, treat it as 0
+        const value = Number.isNaN(imageData[y][x]) ? 0 : imageData[y][x];
+        sum += value;
+        count++;
       }
-
-      intensities[i] = count > 0 ? sum / count : 0;
     }
 
-    return intensities;
-  }, [calculateLinecutEndpoints, qToPixel]);
+    intensities[i] = count > 0 ? sum / count : 0;
+  }
+
+  return intensities;
+}, [calculateLinecutEndpoints, qXVector, qYVector]);
 
 
   /**

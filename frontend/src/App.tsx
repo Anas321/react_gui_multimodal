@@ -667,6 +667,7 @@ function App() {
                           zoomedYPixelRange={zoomedYPixelRange}
                           // qXMatrix={qXMatrix}
                           qXVector={qXVector}
+                          qYVector={qYVector}
                           units="nm⁻¹"
                         />
                       </Accordion.Panel>
@@ -684,6 +685,7 @@ function App() {
                               zoomedYPixelRange={zoomedYPixelRange}
                               // qYMatrix={qYMatrix}
                               qYVector={qYVector}
+                              qXVector={qXVector}
                               units="nm⁻¹"
                             />
                         </Accordion.Panel>
