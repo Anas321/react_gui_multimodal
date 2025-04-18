@@ -6,7 +6,7 @@ export function generateHorizontalLinecutOverlay({
   linecut,
   currentArray,
   factor,
-  qYVector = [],
+  qYMatrix = [],
 }: GenerateLinecutParams) {
   if (!currentArray.length || factor === null) return [];
 
@@ -16,10 +16,10 @@ export function generateHorizontalLinecutOverlay({
   // Use pixelPosition directly if available, otherwise convert from q-value
   const pixelPosition = 'pixelPosition' in linecut && linecut.pixelPosition !== undefined
     ? linecut.pixelPosition
-    : findPixelPositionForQValue(linecut.position, qYVector);
+    : findPixelPositionForQValue(linecut.position, qYMatrix, 'horizontal');
 
   // Calculate the width in pixel space using centralized function
-  const pixelWidth = calculateQSpaceToPixelWidth(linecut.position, linecut.width, qYVector);
+  const pixelWidth = calculateQSpaceToPixelWidth(linecut.position, linecut.width, qYMatrix, 'horizontal');
 
   // Scale for display based on resolution factor
   const scaledPosition = pixelPosition / factor;

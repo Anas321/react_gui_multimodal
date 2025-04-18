@@ -7,7 +7,7 @@ export function generateVerticalLinecutOverlay({
     linecut,
     currentArray,
     factor,
-    qXVector = [],
+    qXMatrix = [],
   }: GenerateLinecutParams) {
     if (!currentArray.length || factor === null) return [];
 
@@ -17,10 +17,10 @@ export function generateVerticalLinecutOverlay({
     // Use pixelPosition directly if available, otherwise convert from q-value
     const pixelPosition = 'pixelPosition' in linecut && linecut.pixelPosition !== undefined
       ? linecut.pixelPosition
-      : findPixelPositionForQValue(linecut.position, qXVector);
+      : findPixelPositionForQValue(linecut.position, qXMatrix, 'vertical');
 
     // Calculate the width in pixel space using centralized function
-    const pixelWidth = calculateQSpaceToPixelWidth(linecut.position, linecut.width, qXVector);
+    const pixelWidth = calculateQSpaceToPixelWidth(linecut.position, linecut.width, qXMatrix, 'vertical');
 
     // Scale for display based on resolution factor
     const scaledPosition = pixelPosition / factor;

@@ -65,11 +65,16 @@ function App() {
     setResolutionMessage,
     calibrationParams,
     updateCalibration,
-    // qXMatrix,
-    // qYMatrix,
-    qXVector,
-    qYVector,
+    qXMatrix,
+    qYMatrix,
+    // qXVector,
+    // qYVector,
   } = useMultimodal();
+
+  // get the first row of qXMatrix as qXVector
+  const qXVector = qXMatrix[0];
+  // get the first column of qYMatrix as qYVector
+  const qYVector = qYMatrix.map(row => row[0]);
 
   const {
       azimuthalIntegrations,
@@ -95,7 +100,7 @@ function App() {
     updateHorizontalLinecutColor,
     deleteHorizontalLinecut,
     toggleHorizontalLinecutVisibility,
-  } = useHorizontalLinecut(imageHeight, imageData1, imageData2, qYVector);
+  } = useHorizontalLinecut(imageHeight, imageData1, imageData2, qYMatrix);
 
 
   const {
@@ -106,7 +111,7 @@ function App() {
     updateVerticalLinecutColor,
     deleteVerticalLinecut,
     toggleVerticalLinecutVisibility,
-  } = useVerticalLinecut(imageWidth, imageData1, imageData2, qXVector);
+  } = useVerticalLinecut(imageWidth, imageData1, imageData2, qXMatrix);
 
 
 
@@ -401,8 +406,8 @@ function App() {
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
                           linecuts={horizontalLinecuts}
-                          // qYMatrix={qYMatrix}
-                          qYVector={qYVector}
+                          qYMatrix={qYMatrix}
+                          // qYVector={qYVector}
                           updateHorizontalLinecutPosition={updateHorizontalLinecutPosition}
                           updateHorizontalLinecutWidth={updateHorizontalLinecutWidth}
                           updateHorizontalLinecutColor={updateHorizontalLinecutColor}
@@ -418,8 +423,8 @@ function App() {
                           key={`linecut-section-${linecutType}`}
                           linecutType={linecutType}
                           linecuts={verticalLinecuts}
-                          // qXMatrix={qXMatrix}
-                          qXVector={qXVector}
+                          qXMatrix={qXMatrix}
+                          // qXVector={qXVector}
                           updateVerticalLinecutPosition={updateVerticalLinecutPosition}
                           updateVerticalLinecutWidth={updateVerticalLinecutWidth}
                           updateVerticalLinecutColor={updateVerticalLinecutColor}
@@ -561,10 +566,10 @@ function App() {
                   azimuthalData2={azimuthalData2}
                   maxQValue={maxQValue}
                   calibrationParams={calibrationParams}
-                  // qYMatrix={qYMatrix}
-                  // qXMatrix={qXMatrix}
-                  qXVector={qXVector}
-                  qYVector={qYVector}
+                  qYMatrix={qYMatrix}
+                  qXMatrix={qXMatrix}
+                  // qXVector={qXVector}
+                  // qYVector={qYVector}
                   units="nm⁻¹"
                   mainTransformDataFunction={mainTransformDataFunction}
                   leftImageIndex={leftImageIndex}
@@ -665,9 +670,10 @@ function App() {
                           imageData2={imageData2} // Data for right scatter image
                           zoomedXPixelRange={zoomedXPixelRange}
                           zoomedYPixelRange={zoomedYPixelRange}
-                          // qXMatrix={qXMatrix}
-                          qXVector={qXVector}
-                          qYVector={qYVector}
+                          qXMatrix={qXMatrix}
+                          qYMatrix={qYMatrix}
+                          // qXVector={qXVector}
+                          // qYVector={qYVector}
                           units="nm⁻¹"
                         />
                       </Accordion.Panel>
@@ -684,8 +690,10 @@ function App() {
                               zoomedXPixelRange={zoomedXPixelRange}
                               zoomedYPixelRange={zoomedYPixelRange}
                               // qYMatrix={qYMatrix}
-                              qYVector={qYVector}
-                              qXVector={qXVector}
+                              // qYVector={qYVector}
+                              // qXVector={qXVector}
+                              qXMatrix={qXMatrix}
+                              qYMatrix={qYMatrix}
                               units="nm⁻¹"
                             />
                         </Accordion.Panel>
