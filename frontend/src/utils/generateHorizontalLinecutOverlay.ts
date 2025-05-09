@@ -1,11 +1,12 @@
 import { findPixelPositionForQValue} from "./findPixelPositionForQValue";
 import { GenerateLinecutParams } from "../types";
+import { calculateQSpaceToPixelWidth } from "./calculateQSpaceToPixelWidth";
 
 export function generateHorizontalLinecutOverlay({
   linecut,
   currentArray,
   factor,
-  qYVector = [],
+  qYMatrix = [],
 }: GenerateLinecutParams) {
   if (!currentArray.length || factor === null) return [];
 
@@ -15,20 +16,10 @@ export function generateHorizontalLinecutOverlay({
   // Use pixelPosition directly if available, otherwise convert from q-value
   const pixelPosition = 'pixelPosition' in linecut && linecut.pixelPosition !== undefined
     ? linecut.pixelPosition
-    : findPixelPositionForQValue(linecut.position, qYVector);
+    : findPixelPositionForQValue(linecut.position, qYMatrix, 'horizontal');
 
-  // Calculate the width in pixel space
-  let pixelWidth = 0;
-
-  // Only calculate width if it's greater than zero
-  if (linecut.width > 0) {
-    // Find pixel positions for both edges of the width band
-    const upperQValue = linecut.position + linecut.width / 2;
-    const lowerQValue = linecut.position - linecut.width / 2;
-    const upperPixel = findPixelPositionForQValue(upperQValue, qYVector);
-    const lowerPixel = findPixelPositionForQValue(lowerQValue, qYVector);
-    pixelWidth = Math.abs(upperPixel - lowerPixel);
-  }
+  // Calculate the width in pixel space using centralized function
+  const pixelWidth = calculateQSpaceToPixelWidth(linecut.position, linecut.width, qYMatrix, 'horizontal');
 
   // Scale for display based on resolution factor
   const scaledPosition = pixelPosition / factor;

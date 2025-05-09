@@ -20,8 +20,13 @@ import { generateAzimuthalOverlay } from "../utils/generateAzimuthalOverlay";
 import { getArrayMinMax } from "../utils/getArrayMinAndMax";
 // import { calculateMinMax } from "../utils/transformationUtils";
 import { calculateDifferenceArray } from "../utils/calculateDifferenceArray";
+import { Select } from '@mantine/core';
 
 import AzimuthalLoadingSpinner from "./AzimuthalLoadingSpinner";
+import { calculateDivisionArray } from "../utils/calculateDivisionArray";
+
+// Add a type for operation
+type OperationType = 'subtract' | 'divide';
 
 interface ScatterSubplotProps {
   setImageHeight: (height: number) => void;
@@ -49,13 +54,16 @@ interface ScatterSubplotProps {
   azimuthalData2: AzimuthalData[];               // Integration data for second image
   maxQValue: number;
   calibrationParams: CalibrationParams;
-  qYVector: number[]; // qYVector for q-value mapping
-  qXVector: number[]; // qXVector for q-value mapping
+  qYMatrix: number[][]; // qYMatrix for q-value mapping
+  qXMatrix: number[][]; // qXMatrix for q-value mapping
+  // qYVector: number[]; // qYVector for q-value mapping
+  // qXVector: number[]; // qXVector for q-value mapping
   units: string;
   mainTransformDataFunction: TransformDataFunction;
   leftImageIndex?: number | "";
   rightImageIndex?: number | "";
-  onImagesLoaded?: () => void;
+  isLoadingImages?: boolean;
+  setIsLoadingImages?: (isLoading: boolean) => void;
   isAzimuthalProcessing?: boolean;
 }
 
@@ -84,22 +92,23 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   azimuthalData2,
   maxQValue,
   calibrationParams,
-  qYVector,
-  qXVector,
+  qYMatrix,
+  qXMatrix,
+  // qYVector,
+  // qXVector,
   units,
   mainTransformDataFunction,
   leftImageIndex,
   rightImageIndex,
-  onImagesLoaded,
+  isLoadingImages,
+  setIsLoadingImages,
   isAzimuthalProcessing = false,
 }) => {
   const [plotData, setPlotData] = useState<any>(null);
   const plotContainer = useRef<HTMLDivElement>(null);
   const [currentResolution, setCurrentResolution] = useState<'low' | 'medium' | 'full'>('low');
   const [dragMode, setDragMode] = useState('zoom');
-  // const [clippingLimits, setClippingLimits] = useState({ lower: 1, upper: 99 });
   const plotDataRef = useRef<any>(null);
-  // const [isTransformingData, setIsTransformingData] = useState(false);
 
 
   // Resolution-specific states
@@ -112,6 +121,19 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     medium: { array1: [], array2: [], diff: [], factor: null },
     full: { array1: [], array2: [], diff: [], factor: 1 }
   });
+
+
+  // Add state for the operation type
+  const [operationType, setOperationType] = useState<OperationType>('subtract');
+
+  // Calculate the result based on the operation type
+  const calculateResult = useCallback((array1: number[][], array2: number[][]) => {
+    if (operationType === 'subtract') {
+      return calculateDifferenceArray(array1, array2);
+    } else {
+      return calculateDivisionArray(array1, array2);
+    }
+  }, [operationType]);
 
 
 
@@ -146,7 +168,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     return {
       array1: transformedArray1,
       array2: transformedArray2,
-      diff: calculateDifferenceArray(transformedArray1, transformedArray2)
+      diff: calculateResult(transformedArray1, transformedArray2)
+      // diff: calculateDifferenceArray(transformedArray1, transformedArray2)
     };
   }, [
     resolutionData,
@@ -156,7 +179,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     upperPercentile,
     normalization,
     normalizationMode,
-    mainTransformDataFunction
+    mainTransformDataFunction,
+    calculateResult
   ]);
 
   // Transform the full resolution data for linecut calculations
@@ -199,7 +223,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
     // Calculate diff or use existing diff value
     const diffData = transformedPlotData ? transformedPlotData.diff
-      : calculateDifferenceArray(dataForScaling.array1, dataForScaling.array2);
+      : calculateResult(dataForScaling.array1, dataForScaling.array2);
+      // : calculateDifferenceArray(dataForScaling.array1, dataForScaling.array2);
     const [minValueDiff, maxValueDiff] = getArrayMinMax(diffData);
 
     // Rest of your code...
@@ -217,6 +242,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   }, [
     transformedPlotData,
     transformedLineData,
+    calculateResult,
   ]);
 
 
@@ -416,6 +442,9 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
       return;
     }
 
+    // // Show loading spinner
+    setIsLoadingImages(true);
+
     // Construct the URL with query parameters for the indices
     const url = new URL("/api/scatter-subplot", window.location.origin);
     url.searchParams.append("left_image_index", leftImageIndex.toString());
@@ -430,6 +459,7 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         const fullArray1 = reconstructFloat32Array(extractBinary(decoded.array_1), decoded.metadata.shape_1);
         const fullArray2 = reconstructFloat32Array(extractBinary(decoded.array_2), decoded.metadata.shape_2);
         const fullDiff = calculateDifferenceArray(fullArray1, fullArray2);
+        // const fullDiff = calculateResult(fullArray1, fullArray2);
 
         // Determine factors based on image width
         const lowFactor = fullArray1[0].length > 2000 || fullArray1.length > 2000 ? 8 : 4;
@@ -506,9 +536,13 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         }
 
         setPlotData(plotlyData);
+        setIsLoadingImages(false); // Hide loading spinner
 
       })
-      .catch(error => console.error("Error fetching scatter subplot:", error));
+      .catch(error => {
+        console.error("Error fetching scatter subplot:", error);
+      });
+
   }, [
     leftImageIndex,
     rightImageIndex,
@@ -516,7 +550,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     setImageWidth,
     setImageData1,
     setImageData2,
-    onImagesLoaded,
+    setIsLoadingImages,
+    // calculateResult,
   ]);
 
 
@@ -539,7 +574,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           linecut,
           currentArray: currentArrayData,
           factor: getCurrentFactor(),
-          qYVector, // Pass qYVector to the function
+          qYMatrix, // Pass qYMatrix to the function
+          // qYVector, // Pass qYMatrix to the function
           units: units // Pass units
         })),
       ...(verticalLinecuts || [])
@@ -548,7 +584,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           linecut,
           currentArray: currentArrayData,
           factor: getCurrentFactor(),
-          qXVector, // Pass qXVector to the function
+          qXMatrix, // Pass qXMatrix to the function
+          // qXVector, // Pass qXMatrix to the function
           units: units // Pass units
         })),
         // Inclined linecuts
@@ -563,8 +600,10 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
           imageHeight,
           beam_center_x: calibrationParams.beam_center_x,
           beam_center_y: calibrationParams.beam_center_y,
-          qXVector,
-          qYVector,
+          // qXVector,
+          // qYVector,
+          qXVector: qXMatrix[0], // First row as X vector
+          qYVector: qYMatrix.map(row => row[0]), // First column as Y vector
         });
       }),
 
@@ -617,8 +656,10 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     getCurrentFactor,
     maxQValue,
     calibrationParams,
-    qYVector,
-    qXVector,
+    qYMatrix,
+    qXMatrix,
+    // qYVector,
+    // qXVector,
     units,
   ]);
 
@@ -708,6 +749,12 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
     }, [currentResolution, resolutionData, setResolutionMessage, lowerPercentile, upperPercentile]);
 
 
+    // Operation select options
+    const operationOptions = [
+      { value: 'subtract', label: 'Subtract (-)' },
+      { value: 'divide', label: 'Divide (÷)' }
+    ];
+
 
   return (
     <div className="relative w-full h-full">
@@ -746,10 +793,25 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         )}
         {isThirdCollapsed && (
           <>
-            <div className="absolute top-1/2 left-[31%] -translate-y-1/2 text-5xl font-bold">−</div>
-            <div className="absolute top-1/2 left-[67%] -translate-y-1/2 text-5xl font-bold">=</div>
-          </>
+          {/* Operation selection dropdown between images */}
+          <div className="absolute top-1/2 left-[27%] -translate-y-1/2 z-10 text-5xl font-bold">
+            <Select
+              value={operationType}
+              onChange={(value) => setOperationType(value as OperationType)}
+              data={operationOptions}
+              style={{ width: '170px' }}
+              size="lg"
+            />
+          </div>
+          <div className="absolute top-1/2 left-[67%] -translate-y-1/2 text-5xl font-bold">=</div>
+        </>
         )}
+
+        {/* Loading spinner for image selection */}
+        <AzimuthalLoadingSpinner
+          isLoading={isLoadingImages}
+          message="Loading selected images..."
+        />
 
         <AzimuthalLoadingSpinner
           isLoading={isAzimuthalProcessing}

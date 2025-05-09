@@ -4,6 +4,9 @@ import { DisplayOption } from "./RawDataOverviewAccordion";
 import { PlotMouseEvent } from "plotly.js";
 import ProgressBar from "./RawDataOverviewProgressBar";
 
+// Define the autorange type
+type AutorangeType = boolean | "max" | "min" | "reversed" | "min reversed" | "max reversed";
+
 interface RawDataOverviewFigProps {
   maxIntensities: number[];
   avgIntensities: number[];
@@ -128,6 +131,46 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
     // Use bright green for better visibility
     const RIGHT_IMAGE_COLOR = 'rgb(0, 200, 0)'; // Bright green
 
+    // Add annotations array to the layout
+    const annotations = [];
+
+    // Check if we have valid indices to annotate
+    if (typeof leftImageIndex === 'number') {
+      annotations.push({
+        x: leftImageIndex,
+        y: displayOption === 'max' ? maxIntensities[leftImageIndex] :
+          displayOption === 'avg' ? avgIntensities[leftImageIndex] :
+          maxIntensities[leftImageIndex],
+        text: 'L',
+        showarrow: false,
+        font: {
+          color: 'black',
+          size: 16,
+          weight: 'bold'
+        },
+        yshift: 15 // Move text upward from the point
+      });
+    }
+
+    if (typeof rightImageIndex === 'number') {
+      annotations.push({
+        x: rightImageIndex,
+        y: displayOption === 'max' ? maxIntensities[rightImageIndex] :
+          displayOption === 'avg' ? avgIntensities[rightImageIndex] :
+          maxIntensities[rightImageIndex],
+        text: 'R',
+        showarrow: false,
+        font: {
+          color: 'black',
+          size: 16,
+          weight: 'bold'
+        },
+        yshift: 15 // Move text upward from the point
+      });
+    }
+
+
+
     if (displayOption === 'both' || displayOption === 'max') {
       data.push({
         x: indices,
@@ -184,10 +227,61 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
       });
     }
 
-    return data;
+    // Add legend-only traces for L and R indicators
+    if (typeof leftImageIndex === 'number') {
+      data.push({
+        x: [null],
+        y: [null],
+        type: 'scatter',
+        mode: 'markers',
+        name: 'L = Left Image',
+        marker: {
+          size: 10,
+          color: 'white',
+          line: {
+            color: 'red',
+            width: 4
+          }
+        },
+        showlegend: true,
+        hoverinfo: 'none',
+        legendgroup: 'selected'
+      });
+    }
+
+    if (typeof rightImageIndex === 'number') {
+      data.push({
+        x: [null],
+        y: [null],
+        type: 'scatter',
+        mode: 'markers',
+        name: 'R = Right Image',
+        marker: {
+          size: 10,
+          color: 'white',
+          line: {
+            color: RIGHT_IMAGE_COLOR,
+            width: 4
+          }
+        },
+        showlegend: true,
+        hoverinfo: 'none',
+        legendgroup: 'selected'
+      });
+    }
+
+
+
+    return {
+      plotData: data,
+      annotations: annotations, // Return annotations with the plot data
+
+    };
   };
 
-  const plotData = createPlotData();
+  const plotResult = createPlotData();
+  const plotData = plotResult.plotData;
+  const annotations = plotResult.annotations;
 
   // Generate a consistent UI revision ID based only on the data dimensions
   const uiRevisionId = `${maxIntensities.length}-${avgIntensities.length}-${displayOption}`;
@@ -209,24 +303,30 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
       },
       tickfont: { size: 18 },
       tickmode: 'linear' as const,
-      dtick: Math.ceil(indices.length / 20)
+      dtick: Math.ceil(indices.length / 20),
+      range: [-2, Math.max(indices.length, 10)], // Move these properties inside xaxis
+      autorange: false // Move this inside xaxis
     },
     yaxis: {
       title: {
         text: 'Intensity',
         font: { size: 18 }
       },
-      tickfont: { size: 18 }
+      tickfont: { size: 18 },
+      range: [-2, null], // This starts at 0 and auto-calculates the upper limit
+      autorange: 'max' as AutorangeType, // This includes 0 and extends to maximum value
     },
     legend: {
       x: 10,
       y: 1,
-      orientation: 'v' as const
+      orientation: 'v' as const,
+      font: { size: 16 },
     },
     hovermode: 'closest' as const,
     clickmode: 'event' as const,
     uirevision: uiRevisionId,
-    datarevision: dataRevisionId
+    datarevision: dataRevisionId,
+    annotations: annotations, // Add annotations to the layout
   };
 
   // Determine if we should show the progress bar
@@ -262,6 +362,10 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
               displaylogo: false,
               scrollZoom: true,
               doubleClick: 'reset',
+              modeBarButtons: [
+                ['pan2d', 'zoom2d', 'zoomIn2d', 'zoomOut2d', 'autoScale2d', 'resetScale2d', 'toImage'],
+              ],
+              showTips: true,
             }}
             onClick={handlePointClick}
             style={{ width: '100%', height: '100%' }}

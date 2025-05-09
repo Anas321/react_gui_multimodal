@@ -32,9 +32,11 @@ export interface GenerateLinecutParams {
   factor: number | null;
   imageWidth?: number;
   imageHeight?: number;
-  qYVector?: number[]; // Add qYVector for q-value mapping
-  qXVector?: number[]; // Add qXVector for q-value mapping
+  // qYVector?: number[]; // Add qYVector for q-value mapping
+  // qXVector?: number[]; // Add qXVector for q-value mapping
   units?: string;     // Add units for labels
+  qXMatrix?: number[][]; // Changed from qXVector
+  qYMatrix?: number[][]; // Changed from qYVector
 }
 
 export interface ResolutionDataType {

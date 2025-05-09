@@ -56,79 +56,6 @@ const InclinedLinecutFig: React.FC<InclinedLinecutFigProps> = ({
         return () => resizeObserver.disconnect();
     }, []);
 
-    // // Compute q radial values along the linecut path - wrapped in useCallback to stabilize the reference
-    // const computeQRadialDistance = useCallback(
-    //     (linecut: InclinedLinecut, dataLength: number): number[] => {
-    //         // If we don't have q vectors or data, return empty array
-    //         if (!qXVector.length || !qYVector.length || dataLength === 0) {
-    //             return [];
-    //         }
-
-    //         // For the given linecut with angle, calculate the endpoints
-    //         const imageWidth = qXVector.length;
-    //         const imageHeight = qYVector.length;
-
-    //         const endpoints = calculateInclinedLineEndpoints({
-    //             linecut,
-    //             imageWidth,
-    //             imageHeight,
-    //             beam_center_x: beamCenterX,
-    //             beam_center_y: beamCenterY,
-    //             factor: 1
-    //         });
-
-    //         if (!endpoints) return Array(dataLength).fill(0);
-
-    //         const { x0, y0, x1, y1 } = endpoints;
-
-    //         // Calculate the total pixel distance
-    //         // const dx = x1 - x0;
-    //         // const dy = y1 - y0;
-    //         // const pixelLength = Math.sqrt(dx * dx + dy * dy);
-
-    //         // Generate evenly spaced points along the linecut
-    //         const qRadialValues = new Array(dataLength);
-
-    //         // Determine if endpoints are sorted correctly (we want to move from left to right)
-    //         const needsReordering = x0 > x1;
-    //         const startX = needsReordering ? x1 : x0;
-    //         const startY = needsReordering ? y1 : y0;
-    //         const endX = needsReordering ? x0 : x1;
-    //         const endY = needsReordering ? y0 : y1;
-    //         const adjustedDx = endX - startX;
-    //         const adjustedDy = endY - startY;
-
-    //         for (let i = 0; i < dataLength; i++) {
-    //             // Interpolate position along the line
-    //             const t = i / (dataLength - 1); // Normalized position [0,1]
-
-    //             // Calculate pixel coordinates at this position
-    //             const pixelX = Math.round(startX + t * adjustedDx);
-    //             const pixelY = Math.round(startY + t * adjustedDy);
-
-    //             // Bounds checking to avoid accessing out of range indices
-    //             const boundedX = Math.min(Math.max(0, pixelX), imageWidth - 1);
-    //             const boundedY = Math.min(Math.max(0, pixelY), imageHeight - 1);
-
-    //             // Get q values at this position
-    //             const qX = qXVector[boundedX];
-    //             const qY = qYVector[boundedY];
-
-    //             // Calculate q radial (q_r = sqrt(qx^2 + qy^2))
-    //             const qRadial = Math.sqrt(qX * qX + qY * qY);
-
-    //             // Assign sign based on position relative to beam center
-    //             // Negative if to the left of beam center, positive if to the right
-    //             const isLeftOfBeamCenter = pixelX < beamCenterX / 1; // Assuming beam center is in pixel coordinates
-    //             qRadialValues[i] = isLeftOfBeamCenter ? -qRadial : qRadial;
-    //         }
-
-    //         return qRadialValues;
-    //     },
-    //     [qXVector, qYVector, beamCenterX, beamCenterY]
-    // );
-
-
     /**
      * Compute q radial values along the linecut path with consistent vertical handling
      *
@@ -354,13 +281,7 @@ const InclinedLinecutFig: React.FC<InclinedLinecutFigProps> = ({
                 range: yRange,
             },
             margin: { l: 110, r: 50, t: 50, b: 110 },
-            legend: {
-                font: { size: 25 },
-                xanchor: 'right' as const,
-                yanchor: 'top' as const,
-                x: 0.98,
-                y: 0.98,
-            },
+            legend: { font: { size: 25 } },
             font: { size: 25 },
             showlegend: true,
             hovermode: 'closest' as const,

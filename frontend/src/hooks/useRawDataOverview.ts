@@ -52,7 +52,14 @@ export default function useRawDataOverview() {
     // Setup WebSocket connection
     useEffect(() => {
         // Create WebSocket connection
-        const websocket = new WebSocket('ws://127.0.0.1:8000/ws/progress');
+        // const websocket = new WebSocket('ws://127.0.0.1:8000/ws/progress');
+        // Instead of hardcoding the WebSocket URL, use a relative URL or determine it dynamically
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = process.env.NODE_ENV === 'production'
+            ? `${protocol}//${window.location.host}/ws/progress`  // For production
+            : 'ws://127.0.0.1:8000/ws/progress';  // For development
+
+        const websocket = new WebSocket(wsUrl);
 
         websocket.onopen = () => {
             console.log('WebSocket connection established');
@@ -212,23 +219,6 @@ export default function useRawDataOverview() {
         }
     }, []);
 
-    // Handler for when images are loaded
-    const handleImagesLoaded = useCallback(() => {
-        console.log('Images loaded successfully');
-        setIsLoadingImages(false);
-        // setIsLoading(false);
-
-        // Only update notification if it was a significant image load operation
-        if (isLoadingImages) {
-            notifications.update({
-                id: 'loading-images',
-                color: 'green',
-                title: 'Images Loaded',
-                message: `Successfully loaded images ${leftImageIndex} and ${rightImageIndex}`,
-                autoClose: 3000,
-            });
-        }
-    }, [leftImageIndex, rightImageIndex, isLoadingImages]);
 
     return {
         // State
@@ -238,6 +228,7 @@ export default function useRawDataOverview() {
         setRightImageIndex,
         isFetchingData,
         isLoadingImages,
+        setIsLoadingImages,
         numOfFiles,
 
         // Progress data
@@ -252,7 +243,6 @@ export default function useRawDataOverview() {
         // Handlers
         fetchSpectrumData,
         handleImageIndicesChange,
-        handleImagesLoaded,
 
         displayOption,
         setDisplayOption,

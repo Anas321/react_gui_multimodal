@@ -94,6 +94,7 @@ def get_images_arrays_and_names(
         for i in range(len(all_images_uris)):
 
             image_uri = all_images_uris[i]
+            tiled_uri = tiled_uri if tiled_uri.endswith("/") else tiled_uri + "/"
             file_uri = urlparse.urljoin(tiled_uri, image_uri)
             image_client = from_uri(file_uri)
             image_array = image_client.read()  # Retrieve the NumPy array
