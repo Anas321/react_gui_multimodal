@@ -50,17 +50,15 @@ def get_images_arrays_and_names(
 
     if DEV_MODE:
 
-        # if downsample_factor != 1:
-        #     mask_detector = zoom(mask_detector, downsample_factor)
-
         # Load local images
+        if len(files_uris) == 1:
+            files_uris = [files_uris[0]] * len(images_indices)
+
         for i in range(len(images_indices)):
 
             if initialization_mode or not accumulated_data["image_names"]:
                 image_name = files_uris[images_indices[i]]
             else:
-                print("images_indices[i]: ", images_indices[i])
-                print("i: ", i)
                 image_name = accumulated_data["image_names"][images_indices[i]]
             image_path = os.path.join(data_local_path, image_name)
 
