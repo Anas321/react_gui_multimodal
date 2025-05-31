@@ -43,7 +43,7 @@ async def create_scatter_subplot(left_image_index: int = 0, right_image_index: i
         cols=3,
         shared_xaxes=True,
         shared_yaxes=True,
-        horizontal_spacing=0.1,  # Adjust spacing between subplots
+        horizontal_spacing=0.2,  # Adjust spacing between subplots
     )
 
     # Add the scatter image figures to the subplots with a shared coloraxis
@@ -84,12 +84,12 @@ async def create_scatter_subplot(left_image_index: int = 0, right_image_index: i
             cmin=zmin,
             cmax=zmax,
             colorbar=dict(
-                len=1.0,  # Adjust the height of the colorbar
-                thickness=30,  # Adjust the thickness of the colorbar
-                x=0.63,  # Position it to the right of the subplots
+                len=0.7,  # Adjust the height of the colorbar
+                thickness=20,  # Adjust the thickness of the colorbar
+                x=0.62,  # Position it to the right of the subplots
                 xanchor="left",
                 tickfont=dict(
-                    size=19, color="black"
+                    size=12, color="black"
                 ),  # Adjust the font size of the colorbar ticks
             ),
         ),
@@ -99,12 +99,12 @@ async def create_scatter_subplot(left_image_index: int = 0, right_image_index: i
             cmax=diff_max,
             cmid=0,
             colorbar=dict(
-                len=1.0,  # Adjust the height of the colorbar
-                thickness=30,  # Adjust the thickness of the colorbar
-                x=1.01,  # Position it to the right of the subplots
+                len=0.7,  # Adjust the height of the colorbar
+                thickness=20,  # Adjust the thickness of the colorbar
+                x=0.97,  # Position it to the right of the subplots
                 xanchor="left",
                 tickfont=dict(
-                    size=19, color="black"
+                    size=12, color="black"
                 ),  # Adjust the font size of the colorbar ticks
             ),
         ),
@@ -125,16 +125,16 @@ async def create_scatter_subplot(left_image_index: int = 0, right_image_index: i
     # Update x-axes matching explicitly
     scatter_subplot_fig.update_layout(
         xaxis=dict(
-            domain=[0, 0.26666666666666666],
+            domain=[0, 0.25],
             anchor="y",
         ),
         xaxis2=dict(
-            domain=[0.36666666666666666, 0.63333333333333333],
+            domain=[0.4, 0.65],
             anchor="y2",
             matches="x",  # Match with first x-axis
         ),
         xaxis3=dict(
-            domain=[0.73333333333333333, 1],
+            domain=[0.75, 1],
             anchor="y3",
             matches="x",  # Match with first x-axis
         ),

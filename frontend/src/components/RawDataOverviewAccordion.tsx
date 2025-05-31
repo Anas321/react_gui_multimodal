@@ -62,20 +62,20 @@ const RawDataOverviewAccordion: React.FC<RawDataOverviewAccordionProps> = ({
         {/* Total files text */}
         {numOfFiles !== null && (
         <div className="flex justify-start">
-            <Text className="text-xl">
+            <Text className="text-base">
             Number of images: {numOfFiles}
             </Text>
         </div>
         )}
-        <div className="flex justify-between items-center mt-4 mb-3">
-          <Text className="text-xl">Image Selection</Text>
+        <div className="flex justify-between items-center mb-1">
+          <Text className="text-base font-sm">Image Selection</Text>
         </div>
 
-        <Text className="text-md text-gray-600 mb-6">
+        <Text className="text-xs text-gray-600 mb-3">
           Select the images to compare from the dropdown menus or click on the data point directly in the figure.
         </Text>
 
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-2">
           <div>
             <Select
               value={leftSelectValue}
@@ -86,10 +86,10 @@ const RawDataOverviewAccordion: React.FC<RawDataOverviewAccordionProps> = ({
               searchable
               className="w-full"
               styles={{
-                input: { fontSize: '1.25rem', height: '2.5rem' },
-                label: { fontSize: '1.25rem', marginBottom: '0.5rem' },
-                dropdown: { fontSize: '1.125rem' },
-                option: { fontSize: '1.125rem' }
+                input: { fontSize: '0.875rem', height: '2rem' },
+                label: { fontSize: '0.875rem', marginBottom: '0.25rem' },
+                dropdown: { fontSize: '0.875rem' },
+                option: { fontSize: '0.875rem' }
               }}
             />
           </div>
@@ -104,10 +104,10 @@ const RawDataOverviewAccordion: React.FC<RawDataOverviewAccordionProps> = ({
               searchable
               className="w-full"
               styles={{
-                input: { fontSize: '1.25rem', height: '2.5rem' },
-                label: { fontSize: '1.25rem', marginBottom: '0.5rem' },
-                dropdown: { fontSize: '1.125rem' },
-                option: { fontSize: '1.125rem' }
+                input: { fontSize: '0.875rem', height: '2rem' },
+                label: { fontSize: '0.875rem', marginBottom: '0.25rem' },
+                dropdown: { fontSize: '0.875rem' },
+                option: { fontSize: '0.875rem' }
               }}
             />
           </div>
@@ -124,10 +124,10 @@ const RawDataOverviewAccordion: React.FC<RawDataOverviewAccordionProps> = ({
               { value: 'avg', label: 'Avg Intensity Only' },
             ]}
             styles={{
-              input: { fontSize: '1.25rem', height: '2.5rem' },
-              label: { fontSize: '1.25rem', marginBottom: '0.5rem' },
-              dropdown: { fontSize: '1.25rem' },
-              option: { fontSize: '1.25rem' }
+              input: { fontSize: '0.875rem', height: '2rem' },
+              label: { fontSize: '0.875rem', marginBottom: '0.25rem' },
+              dropdown: { fontSize: '0.875rem' },
+              option: { fontSize: '0.875rem' }
             }}
           />
 
@@ -137,8 +137,8 @@ const RawDataOverviewAccordion: React.FC<RawDataOverviewAccordionProps> = ({
               onClick={fetchSpectrumData}
               loading={isFetchingData}
               color="blue"
-              size="xl"
-              className="w-12/12 px-12 py-3 bg-blue-500 text-white text-[1.75rem] font-semibold rounded-lg shadow hover:bg-blue-600 transition mx-auto block"
+              size="sm"
+              className="w-full py-1 text-sm font-medium rounded-md"
               style={{ marginTop: '8px' }}
             >
               Fetch Data

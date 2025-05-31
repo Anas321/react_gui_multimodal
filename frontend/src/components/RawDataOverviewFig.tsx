@@ -145,7 +145,7 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
         showarrow: false,
         font: {
           color: 'black',
-          size: 16,
+          size: 12,
           weight: 'bold'
         },
         yshift: 15 // Move text upward from the point
@@ -179,7 +179,7 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
         type: 'scatter' as const,
         name: 'Max Intensity',
         marker: {
-          size: 10,
+          size: 8,
           color: 'rgb(31, 119, 180)',
           line: {
             width: indices.map(i => {
@@ -291,17 +291,17 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
 
   const layout = {
     width: dimensions.width,
-    height: dimensions.height ? dimensions.height - 40 : undefined,
+    height: dimensions.height ? dimensions.height - 20 : 200,
     title: {
       text: 'Intensity per Image Index',
-      font: { size: 24 }
+      font: { size: 16 }
     },
     xaxis: {
       title: {
         text: 'Image Index',
-        font: { size: 18 }
+        font: { size: 14 }
       },
-      tickfont: { size: 18 },
+      tickfont: { size: 12 },
       tickmode: 'linear' as const,
       dtick: Math.ceil(indices.length / 20),
       range: [-2, Math.max(indices.length, 10)], // Move these properties inside xaxis
@@ -310,17 +310,17 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
     yaxis: {
       title: {
         text: 'Intensity',
-        font: { size: 18 }
+        font: { size: 14 }
       },
-      tickfont: { size: 18 },
+      tickfont: { size: 12 },
       range: [-2, null], // This starts at 0 and auto-calculates the upper limit
       autorange: 'max' as AutorangeType, // This includes 0 and extends to maximum value
     },
     legend: {
       x: 10,
-      y: 1,
+      y: 0.98,
       orientation: 'v' as const,
-      font: { size: 16 },
+      font: { size: 12 },
     },
     hovermode: 'closest' as const,
     clickmode: 'event' as const,
@@ -333,7 +333,7 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
   const showProgressBar = isFetchingData && progress < 100;
 
   return (
-    <div ref={containerRef} className="w-full h-[400px] relative flex flex-col">
+    <div ref={containerRef} className="w-full h-full relative flex flex-col">
       {/* Progress Bar */}
       <div className="w-full p-2">
         <ProgressBar
@@ -373,7 +373,7 @@ const RawDataOverviewFig: React.FC<RawDataOverviewFigProps> = ({
           />
         ) : (
           !isFetchingData && (
-          <div className="flex items-center justify-center h-full">
+          <div className="absolute inset-0 flex items-center justify-center w-full h-full">
             <p className="text-xl text-gray-500">No data available</p>
           </div>
           )

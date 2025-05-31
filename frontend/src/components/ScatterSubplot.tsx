@@ -669,18 +669,24 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
   const layoutOptions = useMemo(() => {
     const baseLayout = {
       dragmode: dragMode,
+      // Add more horizontal spacing between subplots
+      grid: {
+        rows: 1,
+        columns: 3,
+        pattern: 'independent',
+      },
       coloraxis: {
         ...plotData?.layout.coloraxis,
         colorbar: {
           ...plotData?.layout.coloraxis?.colorbar,
-          len: isThirdCollapsed ? 1.0 : 0.53,
+          len: isThirdCollapsed ? 1.0 : 0.4,
         }
       },
       coloraxis2: {
         ...plotData?.layout.coloraxis2,
         colorbar: {
           ...plotData?.layout.coloraxis2?.colorbar,
-          len: isThirdCollapsed ? 1.0 : 0.53,
+          len: isThirdCollapsed ? 1.0 : 0.4,
         }
       },
     };
@@ -751,8 +757,8 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
 
     // Operation select options
     const operationOptions = [
-      { value: 'subtract', label: 'Subtract (-)' },
-      { value: 'divide', label: 'Divide (÷)' }
+      { value: 'subtract', label: '-'},
+      { value: 'divide', label: '÷' }
     ];
 
 
@@ -791,21 +797,41 @@ const ScatterSubplot: React.FC<ScatterSubplotProps> = React.memo(({
         ) : (
           <p>Loading scatter subplot...</p>
         )}
+
+
         {isThirdCollapsed && (
-          <>
-          {/* Operation selection dropdown between images */}
-          <div className="absolute top-1/2 left-[27%] -translate-y-1/2 z-10 text-5xl font-bold">
-            <Select
-              value={operationType}
-              onChange={(value) => setOperationType(value as OperationType)}
-              data={operationOptions}
-              style={{ width: '170px' }}
-              size="lg"
-            />
+        <>
+          {/* Operation selection dropdown with custom styling */}
+          <div className="absolute top-1/2 left-[25%] -translate-y-1/2 z-10">
+            <div className="bg-white bg-opacity-90 rounded-md">
+              <Select
+                value={operationType}
+                onChange={(value) => setOperationType(value as OperationType)}
+                data={operationOptions}
+                classNames={{
+                  input: "text-[28px] font-bold text-center",
+                  dropdown: "rounded-md",
+                }}
+                styles={{
+                  input: {
+                    padding: '6px 12px',
+                    width: '80px',
+                    cursor: 'pointer',
+                  },
+                }}
+                size="md"
+                // rightSection={<span style={{ fontSize: '12px' }}>▼</span>}
+              />
+            </div>
           </div>
-          <div className="absolute top-1/2 left-[67%] -translate-y-1/2 text-5xl font-bold">=</div>
+
+          {/* Equal sign */}
+          <div className="absolute top-1/2 left-[68%] -translate-y-1/2 z-10">
+            <span className="text-4xl font-bold">=</span>
+          </div>
         </>
-        )}
+      )}
+
 
         {/* Loading spinner for image selection */}
         <AzimuthalLoadingSpinner

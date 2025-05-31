@@ -41,7 +41,8 @@ import RawDataOverviewFig from './components/RawDataOverviewFig';
 
 function App() {
   const [isSecondCollapsed, setSecondCollapsed] = useState(false);
-  const [isThirdCollapsed, setThirdCollapsed] = useState(false);
+  // const [isThirdCollapsed, setThirdCollapsed] = useState(false);
+  const isThirdCollapsed = true; // Set to true to collapse the third column by default
   const linecutOrder = ['Horizontal', 'Vertical', 'Inclined', 'Azimuthal'];
 
   const {
@@ -67,8 +68,6 @@ function App() {
     updateCalibration,
     qXMatrix,
     qYMatrix,
-    // qXVector,
-    // qYVector,
   } = useMultimodal();
 
   // get the first row of qXMatrix as qXVector
@@ -241,10 +240,10 @@ function App() {
         />
         {/* Title */}
         <h1 className="m-0 text-[2.5rem] text-sky-900">
-          Multimodal Analysis
+          Scattering Analysis
         </h1>
         {/* Left collapsing arrow */}
-        <div
+        {/* <div
               className="absolute top-[50px] -left-0 flex items-center justify-center bg-gray-200 rounded-full w-10 h-10 cursor-pointer shadow-md z-[1000]"
               onClick={() => {
                 setSecondCollapsed(!isSecondCollapsed);
@@ -252,16 +251,16 @@ function App() {
               }}
             >
               {isSecondCollapsed ? <FiArrowRight size={20} /> : <FiArrowLeft size={20} />}
-        </div>
+        </div> */}
         {/* Right collapsing arrow */}
-        <div
+        {/* <div
               className="absolute top-[50px] -right-0 flex items-center justify-center bg-gray-200 rounded-full w-10 h-10 cursor-pointer shadow-md z-[1000]"
               onClick={() => {
                 setThirdCollapsed(!isThirdCollapsed);
               }}
             >
               {isThirdCollapsed ? <FiArrowLeft size={20} /> : <FiArrowRight size={20} />}
-        </div>
+        </div> */}
       </div>
 
       {/* Main Layout */}
@@ -269,7 +268,8 @@ function App() {
         fluid
         style={{
           display: 'flex',
-          height: '100vh',
+          // height: '100vh',
+          height: 'calc(100vh - 70px)',
           width: '100%',
           padding: 0,
         }}
@@ -277,16 +277,21 @@ function App() {
       {/* <div className="flex flex-row h-[150vh] w-[100vw] p-0"> */}
         {/* First Column */}
         {!isSecondCollapsed && (
-          <div className={`border border-gray-300 shadow-lg h-full bg-gray-100 relative transition-all duration-300 flex-shrink-0 flex flex-col h-[calc(100vh-70px)]
+          // <div className={`border border-gray-300 shadow-lg h-full bg-gray-100 relative transition-all duration-300 flex-shrink-0 flex flex-col h-[calc(100vh-70px)]
+          //   ${isSecondCollapsed ? 'w-0' : 'w-[15%]'}`}
+          // >
+          <div className={`border border-gray-300 shadow-lg bg-gray-100 relative transition-all duration-300 flex-shrink-0 flex flex-col h-full overflow-y-auto
             ${isSecondCollapsed ? 'w-0' : 'w-[15%]'}`}
+            style={{ height: 'calc(100vh - 70px)', maxHeight: 'calc(100vh - 70px)' }} // Force height with style
           >
             {/* Fixed Header Section */}
             <div className="flex-shrink-0 sticky top-0 bg-gray-100 z-10">
-              <h1 className="text-4xl mb-4 mt-4 text-center">Scatter Controls</h1>
+              <h1 className="text-xl mb-4 mt-4 text-center">Controls</h1>
               <hr className="w-full border border-gray-300" />
             </div>
           {/* Scrollable Content Section */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          {/* <div className="flex-1 overflow-y-auto overflow-x-hidden"> */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden h-full">
             {/* Dropdown for Experiment Type */}
             <Select
               label="Experiment Type"
@@ -298,8 +303,10 @@ function App() {
               ]}
               className="mt-6 mx-auto w-[90%]" // Center it horizontally
               classNames={{
-                label: 'text-xl font-bold mb-2 pl-1', // Tailwind for the label
-                input: 'text-lg py-3 px-4', // Tailwind for input size and padding
+                // label: 'text-xl font-bold mb-2 pl-1', // Tailwind for the label
+                // input: 'text-lg py-3 px-4', // Tailwind for input size and padding
+                label: 'text-sm font-bold mb-2 pl-1', // Tailwind for the label
+                input: 'text-sm py-3 px-4', // Tailwind for input size and padding
                 dropdown: 'p-2', // Tailwind for dropdown padding
                 option: 'text-lg py-2 px-4 hover:bg-gray-100 cursor-pointer rounded', // Tailwind for dropdown items
               }}
@@ -309,13 +316,15 @@ function App() {
               multiple
               defaultValue={['horizontal-linecut-accordion']} // Expanded by default
               chevronPosition="right"
-              classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[2rem] font-bold' }}
+              // classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[2rem] font-bold' }}
+              classNames={{ chevron: 'text-sm font-bold', label: 'text-base font-bold' }}
               className="mt-6"
             >
 
             {/* Scatter Spectrum Accordion */}
             <Accordion.Item value="scatter-spectrum-accordion">
-              <Accordion.Control classNames={{label: 'text-3xl font-bold'}}>
+              {/* <Accordion.Control classNames={{label: 'text-3xl font-bold'}}> */}
+              <Accordion.Control classNames={{label: 'text-lg font-bold'}}>
                 Raw Data Overview
               </Accordion.Control>
               <Accordion.Panel>
@@ -347,7 +356,8 @@ function App() {
                       {/* Menu Button */}
                       <Menu.Target>
                         <button
-                          className="w-12/12 px-12 py-3 bg-blue-500 text-white text-[1.75rem] font-semibold rounded-lg shadow hover:bg-blue-600 transition mx-auto block"
+                          // className="w-12/12 px-12 py-3 bg-blue-500 text-white text-[1.75rem] font-semibold rounded-lg shadow hover:bg-blue-600 transition mx-auto block"
+                          className="w-full px-4 py-2 bg-blue-500 text-white text-base font-semibold rounded-lg shadow hover:bg-blue-600 transition mx-auto block"
                           type="button"
                         >
                           Add Linecut
@@ -362,7 +372,8 @@ function App() {
                           addHorizontalLinecut();
                         }}
                         >
-                          <span className="text-2xl font-medium">Horizontal Linecut</span>
+                          {/* <span className="text-2xl font-medium">Horizontal Linecut</span> */}
+                        <span className="text-base font-medium">Horizontal Linecut</span>
                         </Menu.Item>
 
                         <Menu.Item
@@ -371,7 +382,8 @@ function App() {
                             addVerticalLinecut();
                           }}
                         >
-                          <span className="text-2xl font-medium">Vertical Linecut</span>
+                          {/* <span className="text-2xl font-medium">Vertical Linecut</span> */}
+                          <span className="text-base font-medium">Vertical Linecut</span>
                         </Menu.Item>
 
                         {/* Conditionally render Azimuthal Integration in the menu*/}
@@ -381,7 +393,8 @@ function App() {
                           addInclinedLinecut();
                         }}
                         >
-                          <span className="text-2xl font-medium">Inclined Linecut</span>
+                          {/* <span className="text-2xl font-medium">Inclined Linecut</span> */}
+                          <span className="text-base font-medium">Inclined Linecut</span>
                         </Menu.Item>
                         {/* Conditionally render Azimuthal Integration */}
                         {experimentType === 'SAXS' && (
@@ -391,7 +404,8 @@ function App() {
                             addAzimuthalIntegration();
                           }}
                           >
-                          <span className="text-2xl font-medium">Azimuthal Integration</span>
+                          {/* <span className="text-2xl font-medium">Azimuthal Integration</span> */}
+                          <span className="text-base font-medium">Azimuthal Integration</span>
                           </Menu.Item>
                         )}
                       </Menu.Dropdown>
@@ -475,7 +489,8 @@ function App() {
 
               {/* Data transformation accordion */}
               <Accordion.Item value="data-transformation-accordion">
-                <Accordion.Control classNames={{label: 'text-3xl font-bold'}}>
+                {/* <Accordion.Control classNames={{label: 'text-3xl font-bold'}}> */}
+                <Accordion.Control classNames={{label: 'text-lg font-bold'}}>
                   Data Transformation
                 </Accordion.Control>
                 <Accordion.Panel>
@@ -501,7 +516,8 @@ function App() {
 
                 {/* Data transformation accordion */}
                 <Accordion.Item value="calibration accordion">
-                <Accordion.Control classNames={{label: 'text-3xl font-bold'}}>
+                {/* <Accordion.Control classNames={{label: 'text-3xl font-bold'}}> */}
+                <Accordion.Control classNames={{label: 'text-lg font-bold'}}>
                   Calibration
                 </Accordion.Control>
                 <Accordion.Panel>
@@ -517,79 +533,88 @@ function App() {
 
       )}
         {/* Second Column */}
-        <div
+        {/* <div
           className={`h-[calc(100vh-70px)] border-r-2 border-gray-300 transition-all duration-300
             ${isSecondCollapsed
             ? 'flex-grow-0 w-0 overflow-hidden'
-            : isThirdCollapsed
-            ? 'flex-grow w-[85%]'
-            : 'flex-grow w-[35%]'
+            : 'flex-grow w-[85%]' // Always use 85% when visible
+            // : isThirdCollapsed
+            // ? 'flex-grow w-[85%]'
+            // : 'flex-grow w-[35%]'
           }`}
-        >
+        > */}
+        <div
+            className={`transition-all duration-300 border-r-2 border-gray-300
+              ${isSecondCollapsed
+              ? 'flex-grow-0 w-0 overflow-hidden'
+              : 'flex-grow w-[85%]'
+            }`}
+            style={{ height: 'calc(100vh - 70px)', maxHeight: 'calc(100vh - 70px)', overflow: 'auto' }} // Match the exact same height
+          >
           {/* {!isSecondCollapsed && ( */}
           <div className="flex-1 overflow-y-auto">
             <Accordion
               multiple
               defaultValue={['scatter-images-accordion', 'intensity-spectrum-accordion', 'linecuts-accordion-second-col']} // Expanded by default
               chevronPosition="right"
-              classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[2rem] font-bold'}}
+              classNames={{ chevron: 'text-[1.5rem] font-bold', label: 'text-[1.5rem] font-bold'}}
             >
-              <Accordion.Item value="scatter-images-accordion">
-                <Accordion.Control>
-                  Scatter Images
-                </Accordion.Control>
-                <Accordion.Panel>
-                <div className="h-full">
-                <ScatterSubplot
-                  setImageHeight={setImageHeight}
-                  setImageWidth={setImageWidth}
-                  setImageData1={setImageData1}
-                  setImageData2={setImageData2}
-                  horizontalLinecuts={horizontalLinecuts}
-                  verticalLinecuts={verticalLinecuts}
-                  inclinedLinecuts={inclinedLinecuts}
-                  leftImageColorPalette={leftImageColorPalette}
-                  rightImageColorPalette={rightImageColorPalette}
-                  setZoomedXPixelRange={setZoomedXPixelRange}
-                  setZoomedYPixelRange={setZoomedYPixelRange}
-                  isThirdCollapsed={isThirdCollapsed}
-                  setResolutionMessage={setResolutionMessage}
-                  isLogScale={isLogScale}
-                  lowerPercentile={lowerPercentile}
-                  upperPercentile={upperPercentile}
-                  normalization={normalization}
-                  imageColormap={imageColormap}
-                  differenceColormap={differenceColormap}
-                  normalizationMode={normalizationMode}
-                  azimuthalIntegrations={azimuthalIntegrations}
-                  azimuthalData1={azimuthalData1}
-                  azimuthalData2={azimuthalData2}
-                  maxQValue={maxQValue}
-                  calibrationParams={calibrationParams}
-                  qYMatrix={qYMatrix}
-                  qXMatrix={qXMatrix}
-                  // qXVector={qXVector}
-                  // qYVector={qYVector}
-                  units="nm⁻¹"
-                  mainTransformDataFunction={mainTransformDataFunction}
-                  leftImageIndex={leftImageIndex}
-                  rightImageIndex={rightImageIndex}
-                  isLoadingImages={isLoadingImages}
-                  setIsLoadingImages={setIsLoadingImages}
-                  isAzimuthalProcessing={isProcessing}
-                />
-
+            <Accordion.Item value="scatter-images-accordion">
+              <Accordion.Control>
+                Images
+              </Accordion.Control>
+               <Accordion.Panel>
+                <div className="flex flex-col h-[40vh]">
+                <div className="flex-1" style={{ height: 'calc(40vh - 30px)' }}>
+                  <ScatterSubplot
+                    setImageHeight={setImageHeight}
+                    setImageWidth={setImageWidth}
+                    setImageData1={setImageData1}
+                    setImageData2={setImageData2}
+                    horizontalLinecuts={horizontalLinecuts}
+                    verticalLinecuts={verticalLinecuts}
+                    inclinedLinecuts={inclinedLinecuts}
+                    leftImageColorPalette={leftImageColorPalette}
+                    rightImageColorPalette={rightImageColorPalette}
+                    setZoomedXPixelRange={setZoomedXPixelRange}
+                    setZoomedYPixelRange={setZoomedYPixelRange}
+                    isThirdCollapsed={isThirdCollapsed}
+                    setResolutionMessage={setResolutionMessage}
+                    isLogScale={isLogScale}
+                    lowerPercentile={lowerPercentile}
+                    upperPercentile={upperPercentile}
+                    normalization={normalization}
+                    imageColormap={imageColormap}
+                    differenceColormap={differenceColormap}
+                    normalizationMode={normalizationMode}
+                    azimuthalIntegrations={azimuthalIntegrations}
+                    azimuthalData1={azimuthalData1}
+                    azimuthalData2={azimuthalData2}
+                    maxQValue={maxQValue}
+                    calibrationParams={calibrationParams}
+                    qYMatrix={qYMatrix}
+                    qXMatrix={qXMatrix}
+                    units="nm⁻¹"
+                    mainTransformDataFunction={mainTransformDataFunction}
+                    leftImageIndex={leftImageIndex}
+                    rightImageIndex={rightImageIndex}
+                    isLoadingImages={isLoadingImages}
+                    setIsLoadingImages={setIsLoadingImages}
+                    isAzimuthalProcessing={isProcessing}
+                  />
+                </div>
+                  {/* Image Selection */}
                   {resolutionMessage && (
-                    <div className="flex items-center text-xl text-gray-500 text-left mt-4 mb-1 whitespace-nowrap overflow-x-auto">
+                    <div className="flex-shrink-0 flex items-center text-sm text-gray-500 text-left whitespace-nowrap overflow-x-auto">
                       <span>{resolutionMessage}</span>
-                      <Popover width={900} position="top"> {/* Increased width to 600px */}
+                      <Popover width={670} position="top"> {/* Increased width to 600px */}
                         <Popover.Target>
                           <div className="cursor-pointer">
-                            <Info className="ml-2 w-5 h-5" />
+                            <Info className="ml-2 w-4 h-4" />
                           </div>
                         </Popover.Target>
                         <Popover.Dropdown>
-                          <div className="text-xl space-y-4 whitespace-normal"> {/* Added whitespace-normal to allow natural text wrapping */}
+                          <div className="text-sm space-y-4 whitespace-normal"> {/* Added whitespace-normal to allow natural text wrapping */}
                             <p className="font-medium mb-2">
                               The resolution of the displayed image changes based on the zoom level:
                             </p>
@@ -616,12 +641,12 @@ function App() {
                     </div>
                   )}
                 </div>
-                </Accordion.Panel>
+               </Accordion.Panel>
               </Accordion.Item>
               <Accordion.Item value="intensity-spectrum-accordion">
                 <Accordion.Control>Raw Data Overview</Accordion.Control>
                 <Accordion.Panel>
-                <div>
+                <div className="h-[25vh] flex items-center justify-center">
                   <RawDataOverviewFig
                     maxIntensities={maxIntensities}
                     avgIntensities={avgIntensities}
@@ -744,7 +769,7 @@ function App() {
            </div>
         </div>
 
-        {/* Third Column */}
+        {/* Third Column
         <div
           className={`h-full border-r-2 border-gray-300 transition-all duration-300
             ${isThirdCollapsed
@@ -782,8 +807,9 @@ function App() {
             </Accordion>
           )}
         </div>
+        */}
 
-        {/* Fourth Column */}
+        {/* Fourth Column
         {!isThirdCollapsed && (
           <div className={`border border-gray-300 shadow-lg h-full bg-gray-100 relative transition-all duration-300 flex-shrink-0
             ${isThirdCollapsed ? 'w-0' : 'w-[15%]'}`}
@@ -792,6 +818,7 @@ function App() {
             <hr className="w-full border border-gray-300" />
           </div>
     )}
+    */}
       {/* </div> */}
       </Container>
     </MantineProvider>

@@ -11,3 +11,20 @@
     padding: 1rem;
     font-size: 0.875rem;
   }
+
+
+.modebar {
+  transform: scale(0.7) !important; /* Reduces the overall size to 70% */
+  transform-origin: top right !important; /* Keep it anchored to the top right */
+}
+
+.modebar-btn {
+  height: 24px !important; /* Smaller buttons */
+  width: 24px !important;
+  padding: 2px !important;
+}
+
+.modebar-btn svg {
+  height: 20px !important; /* Smaller icons */
+  width: 20px !important;
+}
